@@ -14,6 +14,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Xceed.Wpf.AvalonDock;
 
 namespace DAR
 {
@@ -44,8 +45,6 @@ namespace DAR
                 //col.Insert(player);
                 col.EnsureIndex(x => x.Name);
                 var r = col.FindOne(x => x.Name.Contains("Houkaa"));
-                listViewCharacters.
-                listViewCharacters.Items.Add(r);
                 
             }
         }

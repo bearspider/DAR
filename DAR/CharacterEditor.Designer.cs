@@ -46,8 +46,6 @@
             this.labelTimerBarColor = new System.Windows.Forms.Label();
             this.labelTimerFontColor = new System.Windows.Forms.Label();
             this.groupBoxCEAudio = new System.Windows.Forms.GroupBox();
-            this.buttonSample = new System.Windows.Forms.Button();
-            this.buttonPhonetic = new System.Windows.Forms.Button();
             this.textBoxSample = new System.Windows.Forms.TextBox();
             this.textBoxPhonetic = new System.Windows.Forms.TextBox();
             this.comboBoxVoice = new System.Windows.Forms.ComboBox();
@@ -58,6 +56,10 @@
             this.labelRate = new System.Windows.Forms.Label();
             this.labelVoice = new System.Windows.Forms.Label();
             this.labelVolume = new System.Windows.Forms.Label();
+            this.buttonNamePlay = new System.Windows.Forms.Button();
+            this.buttonSamplePlay = new System.Windows.Forms.Button();
+            this.labelVolumeValue = new System.Windows.Forms.Label();
+            this.labelRateValue = new System.Windows.Forms.Label();
             this.groupBoxCESettings.SuspendLayout();
             this.groupBoxCEColors.SuspendLayout();
             this.groupBoxCEAudio.SuspendLayout();
@@ -221,8 +223,10 @@
             // 
             // groupBoxCEAudio
             // 
-            this.groupBoxCEAudio.Controls.Add(this.buttonSample);
-            this.groupBoxCEAudio.Controls.Add(this.buttonPhonetic);
+            this.groupBoxCEAudio.Controls.Add(this.labelRateValue);
+            this.groupBoxCEAudio.Controls.Add(this.labelVolumeValue);
+            this.groupBoxCEAudio.Controls.Add(this.buttonSamplePlay);
+            this.groupBoxCEAudio.Controls.Add(this.buttonNamePlay);
             this.groupBoxCEAudio.Controls.Add(this.textBoxSample);
             this.groupBoxCEAudio.Controls.Add(this.textBoxPhonetic);
             this.groupBoxCEAudio.Controls.Add(this.comboBoxVoice);
@@ -240,36 +244,18 @@
             this.groupBoxCEAudio.TabStop = false;
             this.groupBoxCEAudio.Text = "Audio Settings";
             // 
-            // buttonSample
-            // 
-            this.buttonSample.Location = new System.Drawing.Point(416, 181);
-            this.buttonSample.Name = "buttonSample";
-            this.buttonSample.Size = new System.Drawing.Size(75, 23);
-            this.buttonSample.TabIndex = 11;
-            this.buttonSample.Text = "button2";
-            this.buttonSample.UseVisualStyleBackColor = true;
-            // 
-            // buttonPhonetic
-            // 
-            this.buttonPhonetic.Location = new System.Drawing.Point(335, 148);
-            this.buttonPhonetic.Name = "buttonPhonetic";
-            this.buttonPhonetic.Size = new System.Drawing.Size(75, 23);
-            this.buttonPhonetic.TabIndex = 10;
-            this.buttonPhonetic.Text = "button1";
-            this.buttonPhonetic.UseVisualStyleBackColor = true;
-            // 
             // textBoxSample
             // 
             this.textBoxSample.Location = new System.Drawing.Point(100, 178);
             this.textBoxSample.Name = "textBoxSample";
-            this.textBoxSample.Size = new System.Drawing.Size(310, 22);
+            this.textBoxSample.Size = new System.Drawing.Size(292, 22);
             this.textBoxSample.TabIndex = 9;
             // 
             // textBoxPhonetic
             // 
             this.textBoxPhonetic.Location = new System.Drawing.Point(100, 150);
             this.textBoxPhonetic.Name = "textBoxPhonetic";
-            this.textBoxPhonetic.Size = new System.Drawing.Size(220, 22);
+            this.textBoxPhonetic.Size = new System.Drawing.Size(211, 22);
             this.textBoxPhonetic.TabIndex = 8;
             // 
             // comboBoxVoice
@@ -283,16 +269,21 @@
             // trackBarRate
             // 
             this.trackBarRate.Location = new System.Drawing.Point(100, 99);
+            this.trackBarRate.Minimum = -10;
             this.trackBarRate.Name = "trackBarRate";
             this.trackBarRate.Size = new System.Drawing.Size(220, 45);
             this.trackBarRate.TabIndex = 6;
+            this.trackBarRate.Scroll += new System.EventHandler(this.trackBarRate_Scroll);
             // 
             // trackBarVolume
             // 
             this.trackBarVolume.Location = new System.Drawing.Point(100, 21);
+            this.trackBarVolume.Maximum = 100;
             this.trackBarVolume.Name = "trackBarVolume";
             this.trackBarVolume.Size = new System.Drawing.Size(220, 45);
             this.trackBarVolume.TabIndex = 5;
+            this.trackBarVolume.Value = 90;
+            this.trackBarVolume.Scroll += new System.EventHandler(this.trackBarVolume_Scroll);
             // 
             // labelSample
             // 
@@ -338,6 +329,41 @@
             this.labelVolume.Size = new System.Drawing.Size(45, 13);
             this.labelVolume.TabIndex = 0;
             this.labelVolume.Text = "Volume";
+            // 
+            // buttonNamePlay
+            // 
+            this.buttonNamePlay.Location = new System.Drawing.Point(317, 149);
+            this.buttonNamePlay.Name = "buttonNamePlay";
+            this.buttonNamePlay.Size = new System.Drawing.Size(75, 23);
+            this.buttonNamePlay.TabIndex = 10;
+            this.buttonNamePlay.Text = "Play";
+            this.buttonNamePlay.UseVisualStyleBackColor = true;
+            this.buttonNamePlay.Click += new System.EventHandler(this.buttonNamePlay_Click);
+            // 
+            // buttonSamplePlay
+            // 
+            this.buttonSamplePlay.Location = new System.Drawing.Point(398, 177);
+            this.buttonSamplePlay.Name = "buttonSamplePlay";
+            this.buttonSamplePlay.Size = new System.Drawing.Size(75, 23);
+            this.buttonSamplePlay.TabIndex = 11;
+            this.buttonSamplePlay.Text = "Play";
+            this.buttonSamplePlay.UseVisualStyleBackColor = true;
+            // 
+            // labelVolumeValue
+            // 
+            this.labelVolumeValue.AutoSize = true;
+            this.labelVolumeValue.Location = new System.Drawing.Point(327, 22);
+            this.labelVolumeValue.Name = "labelVolumeValue";
+            this.labelVolumeValue.Size = new System.Drawing.Size(0, 13);
+            this.labelVolumeValue.TabIndex = 12;
+            // 
+            // labelRateValue
+            // 
+            this.labelRateValue.AutoSize = true;
+            this.labelRateValue.Location = new System.Drawing.Point(327, 99);
+            this.labelRateValue.Name = "labelRateValue";
+            this.labelRateValue.Size = new System.Drawing.Size(0, 13);
+            this.labelRateValue.TabIndex = 13;
             // 
             // CharacterEditor
             // 
@@ -394,7 +420,9 @@
         private System.Windows.Forms.ComboBox comboBoxVoice;
         private System.Windows.Forms.TrackBar trackBarRate;
         private System.Windows.Forms.TrackBar trackBarVolume;
-        private System.Windows.Forms.Button buttonSample;
-        private System.Windows.Forms.Button buttonPhonetic;
+        private System.Windows.Forms.Label labelRateValue;
+        private System.Windows.Forms.Label labelVolumeValue;
+        private System.Windows.Forms.Button buttonSamplePlay;
+        private System.Windows.Forms.Button buttonNamePlay;
     }
 }

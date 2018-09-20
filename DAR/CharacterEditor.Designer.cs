@@ -39,13 +39,17 @@
             this.labelProfile = new System.Windows.Forms.Label();
             this.labelLog = new System.Windows.Forms.Label();
             this.groupBoxCEColors = new System.Windows.Forms.GroupBox();
-            this.comboBox3 = new System.Windows.Forms.ComboBox();
+            this.comboBoxTimerBar = new System.Windows.Forms.ComboBox();
             this.labelTextColor = new System.Windows.Forms.Label();
-            this.comboBox2 = new System.Windows.Forms.ComboBox();
-            this.comboBox1 = new System.Windows.Forms.ComboBox();
+            this.comboBoxTimerFont = new System.Windows.Forms.ComboBox();
+            this.comboBoxTextFont = new System.Windows.Forms.ComboBox();
             this.labelTimerBarColor = new System.Windows.Forms.Label();
             this.labelTimerFontColor = new System.Windows.Forms.Label();
             this.groupBoxCEAudio = new System.Windows.Forms.GroupBox();
+            this.labelRateValue = new System.Windows.Forms.Label();
+            this.labelVolumeValue = new System.Windows.Forms.Label();
+            this.buttonSamplePlay = new System.Windows.Forms.Button();
+            this.buttonNamePlay = new System.Windows.Forms.Button();
             this.textBoxSample = new System.Windows.Forms.TextBox();
             this.textBoxPhonetic = new System.Windows.Forms.TextBox();
             this.comboBoxVoice = new System.Windows.Forms.ComboBox();
@@ -56,10 +60,8 @@
             this.labelRate = new System.Windows.Forms.Label();
             this.labelVoice = new System.Windows.Forms.Label();
             this.labelVolume = new System.Windows.Forms.Label();
-            this.buttonNamePlay = new System.Windows.Forms.Button();
-            this.buttonSamplePlay = new System.Windows.Forms.Button();
-            this.labelVolumeValue = new System.Windows.Forms.Label();
-            this.labelRateValue = new System.Windows.Forms.Label();
+            this.buttonCancel = new System.Windows.Forms.Button();
+            this.buttonSave = new System.Windows.Forms.Button();
             this.groupBoxCESettings.SuspendLayout();
             this.groupBoxCEColors.SuspendLayout();
             this.groupBoxCEAudio.SuspendLayout();
@@ -95,6 +97,7 @@
             this.buttonLoadFile.Text = ". . .";
             this.buttonLoadFile.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             this.buttonLoadFile.UseVisualStyleBackColor = true;
+            this.buttonLoadFile.Click += new System.EventHandler(this.ButtonLoadFile_Click);
             // 
             // textBoxCECharacter
             // 
@@ -120,6 +123,8 @@
             // checkBoxMonitor
             // 
             this.checkBoxMonitor.AutoSize = true;
+            this.checkBoxMonitor.Checked = true;
+            this.checkBoxMonitor.CheckState = System.Windows.Forms.CheckState.Checked;
             this.checkBoxMonitor.Location = new System.Drawing.Point(6, 93);
             this.checkBoxMonitor.Name = "checkBoxMonitor";
             this.checkBoxMonitor.Size = new System.Drawing.Size(126, 17);
@@ -157,10 +162,10 @@
             // 
             // groupBoxCEColors
             // 
-            this.groupBoxCEColors.Controls.Add(this.comboBox3);
+            this.groupBoxCEColors.Controls.Add(this.comboBoxTimerBar);
             this.groupBoxCEColors.Controls.Add(this.labelTextColor);
-            this.groupBoxCEColors.Controls.Add(this.comboBox2);
-            this.groupBoxCEColors.Controls.Add(this.comboBox1);
+            this.groupBoxCEColors.Controls.Add(this.comboBoxTimerFont);
+            this.groupBoxCEColors.Controls.Add(this.comboBoxTextFont);
             this.groupBoxCEColors.Controls.Add(this.labelTimerBarColor);
             this.groupBoxCEColors.Controls.Add(this.labelTimerFontColor);
             this.groupBoxCEColors.Location = new System.Drawing.Point(13, 135);
@@ -170,13 +175,14 @@
             this.groupBoxCEColors.TabStop = false;
             this.groupBoxCEColors.Text = "Colors";
             // 
-            // comboBox3
+            // comboBoxTimerBar
             // 
-            this.comboBox3.FormattingEnabled = true;
-            this.comboBox3.Location = new System.Drawing.Point(122, 75);
-            this.comboBox3.Name = "comboBox3";
-            this.comboBox3.Size = new System.Drawing.Size(121, 21);
-            this.comboBox3.TabIndex = 5;
+            this.comboBoxTimerBar.FormattingEnabled = true;
+            this.comboBoxTimerBar.Location = new System.Drawing.Point(122, 75);
+            this.comboBoxTimerBar.Name = "comboBoxTimerBar";
+            this.comboBoxTimerBar.Size = new System.Drawing.Size(270, 21);
+            this.comboBoxTimerBar.TabIndex = 5;
+            this.comboBoxTimerBar.SelectedIndexChanged += new System.EventHandler(this.ComboBoxTimerBar_SelectedIndexChanged);
             // 
             // labelTextColor
             // 
@@ -187,21 +193,23 @@
             this.labelTextColor.TabIndex = 0;
             this.labelTextColor.Text = "Text Font Color";
             // 
-            // comboBox2
+            // comboBoxTimerFont
             // 
-            this.comboBox2.FormattingEnabled = true;
-            this.comboBox2.Location = new System.Drawing.Point(122, 48);
-            this.comboBox2.Name = "comboBox2";
-            this.comboBox2.Size = new System.Drawing.Size(121, 21);
-            this.comboBox2.TabIndex = 4;
+            this.comboBoxTimerFont.FormattingEnabled = true;
+            this.comboBoxTimerFont.Location = new System.Drawing.Point(122, 48);
+            this.comboBoxTimerFont.Name = "comboBoxTimerFont";
+            this.comboBoxTimerFont.Size = new System.Drawing.Size(270, 21);
+            this.comboBoxTimerFont.TabIndex = 4;
+            this.comboBoxTimerFont.SelectedIndexChanged += new System.EventHandler(this.ComboBoxTimerFont_SelectedIndexChanged);
             // 
-            // comboBox1
+            // comboBoxTextFont
             // 
-            this.comboBox1.FormattingEnabled = true;
-            this.comboBox1.Location = new System.Drawing.Point(122, 21);
-            this.comboBox1.Name = "comboBox1";
-            this.comboBox1.Size = new System.Drawing.Size(121, 21);
-            this.comboBox1.TabIndex = 3;
+            this.comboBoxTextFont.FormattingEnabled = true;
+            this.comboBoxTextFont.Location = new System.Drawing.Point(122, 21);
+            this.comboBoxTextFont.Name = "comboBoxTextFont";
+            this.comboBoxTextFont.Size = new System.Drawing.Size(270, 21);
+            this.comboBoxTextFont.TabIndex = 3;
+            this.comboBoxTextFont.SelectedIndexChanged += new System.EventHandler(this.ComboBoxTextFont_SelectedIndexChanged);
             // 
             // labelTimerBarColor
             // 
@@ -244,6 +252,42 @@
             this.groupBoxCEAudio.TabStop = false;
             this.groupBoxCEAudio.Text = "Audio Settings";
             // 
+            // labelRateValue
+            // 
+            this.labelRateValue.AutoSize = true;
+            this.labelRateValue.Location = new System.Drawing.Point(327, 99);
+            this.labelRateValue.Name = "labelRateValue";
+            this.labelRateValue.Size = new System.Drawing.Size(0, 13);
+            this.labelRateValue.TabIndex = 13;
+            // 
+            // labelVolumeValue
+            // 
+            this.labelVolumeValue.AutoSize = true;
+            this.labelVolumeValue.Location = new System.Drawing.Point(327, 22);
+            this.labelVolumeValue.Name = "labelVolumeValue";
+            this.labelVolumeValue.Size = new System.Drawing.Size(0, 13);
+            this.labelVolumeValue.TabIndex = 12;
+            // 
+            // buttonSamplePlay
+            // 
+            this.buttonSamplePlay.Location = new System.Drawing.Point(398, 177);
+            this.buttonSamplePlay.Name = "buttonSamplePlay";
+            this.buttonSamplePlay.Size = new System.Drawing.Size(75, 23);
+            this.buttonSamplePlay.TabIndex = 11;
+            this.buttonSamplePlay.Text = "Play";
+            this.buttonSamplePlay.UseVisualStyleBackColor = true;
+            this.buttonSamplePlay.Click += new System.EventHandler(this.ButtonSamplePlay_Click);
+            // 
+            // buttonNamePlay
+            // 
+            this.buttonNamePlay.Location = new System.Drawing.Point(317, 149);
+            this.buttonNamePlay.Name = "buttonNamePlay";
+            this.buttonNamePlay.Size = new System.Drawing.Size(75, 23);
+            this.buttonNamePlay.TabIndex = 10;
+            this.buttonNamePlay.Text = "Play";
+            this.buttonNamePlay.UseVisualStyleBackColor = true;
+            this.buttonNamePlay.Click += new System.EventHandler(this.ButtonNamePlay_Click);
+            // 
             // textBoxSample
             // 
             this.textBoxSample.Location = new System.Drawing.Point(100, 178);
@@ -265,6 +309,7 @@
             this.comboBoxVoice.Name = "comboBoxVoice";
             this.comboBoxVoice.Size = new System.Drawing.Size(220, 21);
             this.comboBoxVoice.TabIndex = 7;
+            this.comboBoxVoice.SelectedIndexChanged += new System.EventHandler(this.ComboBoxVoice_SelectedIndexChanged);
             // 
             // trackBarRate
             // 
@@ -273,7 +318,7 @@
             this.trackBarRate.Name = "trackBarRate";
             this.trackBarRate.Size = new System.Drawing.Size(220, 45);
             this.trackBarRate.TabIndex = 6;
-            this.trackBarRate.Scroll += new System.EventHandler(this.trackBarRate_Scroll);
+            this.trackBarRate.Scroll += new System.EventHandler(this.TrackBarRate_Scroll);
             // 
             // trackBarVolume
             // 
@@ -283,7 +328,7 @@
             this.trackBarVolume.Size = new System.Drawing.Size(220, 45);
             this.trackBarVolume.TabIndex = 5;
             this.trackBarVolume.Value = 90;
-            this.trackBarVolume.Scroll += new System.EventHandler(this.trackBarVolume_Scroll);
+            this.trackBarVolume.Scroll += new System.EventHandler(this.TrackBarVolume_Scroll);
             // 
             // labelSample
             // 
@@ -330,46 +375,33 @@
             this.labelVolume.TabIndex = 0;
             this.labelVolume.Text = "Volume";
             // 
-            // buttonNamePlay
+            // buttonCancel
             // 
-            this.buttonNamePlay.Location = new System.Drawing.Point(317, 149);
-            this.buttonNamePlay.Name = "buttonNamePlay";
-            this.buttonNamePlay.Size = new System.Drawing.Size(75, 23);
-            this.buttonNamePlay.TabIndex = 10;
-            this.buttonNamePlay.Text = "Play";
-            this.buttonNamePlay.UseVisualStyleBackColor = true;
-            this.buttonNamePlay.Click += new System.EventHandler(this.buttonNamePlay_Click);
+            this.buttonCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+            this.buttonCancel.Location = new System.Drawing.Point(421, 486);
+            this.buttonCancel.Name = "buttonCancel";
+            this.buttonCancel.Size = new System.Drawing.Size(75, 23);
+            this.buttonCancel.TabIndex = 3;
+            this.buttonCancel.Text = "Cancel";
+            this.buttonCancel.UseVisualStyleBackColor = true;
             // 
-            // buttonSamplePlay
+            // buttonSave
             // 
-            this.buttonSamplePlay.Location = new System.Drawing.Point(398, 177);
-            this.buttonSamplePlay.Name = "buttonSamplePlay";
-            this.buttonSamplePlay.Size = new System.Drawing.Size(75, 23);
-            this.buttonSamplePlay.TabIndex = 11;
-            this.buttonSamplePlay.Text = "Play";
-            this.buttonSamplePlay.UseVisualStyleBackColor = true;
-            // 
-            // labelVolumeValue
-            // 
-            this.labelVolumeValue.AutoSize = true;
-            this.labelVolumeValue.Location = new System.Drawing.Point(327, 22);
-            this.labelVolumeValue.Name = "labelVolumeValue";
-            this.labelVolumeValue.Size = new System.Drawing.Size(0, 13);
-            this.labelVolumeValue.TabIndex = 12;
-            // 
-            // labelRateValue
-            // 
-            this.labelRateValue.AutoSize = true;
-            this.labelRateValue.Location = new System.Drawing.Point(327, 99);
-            this.labelRateValue.Name = "labelRateValue";
-            this.labelRateValue.Size = new System.Drawing.Size(0, 13);
-            this.labelRateValue.TabIndex = 13;
+            this.buttonSave.Location = new System.Drawing.Point(340, 486);
+            this.buttonSave.Name = "buttonSave";
+            this.buttonSave.Size = new System.Drawing.Size(75, 23);
+            this.buttonSave.TabIndex = 4;
+            this.buttonSave.Text = "Save";
+            this.buttonSave.UseVisualStyleBackColor = true;
+            this.buttonSave.Click += new System.EventHandler(this.ButtonSave_Click);
             // 
             // CharacterEditor
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(504, 483);
+            this.ClientSize = new System.Drawing.Size(508, 521);
+            this.Controls.Add(this.buttonSave);
+            this.Controls.Add(this.buttonCancel);
             this.Controls.Add(this.groupBoxCEAudio);
             this.Controls.Add(this.groupBoxCEColors);
             this.Controls.Add(this.groupBoxCESettings);
@@ -379,6 +411,7 @@
             this.Name = "CharacterEditor";
             this.ShowInTaskbar = false;
             this.Text = "Character Editor";
+            this.Load += new System.EventHandler(this.CharacterEditor_Load);
             this.groupBoxCESettings.ResumeLayout(false);
             this.groupBoxCESettings.PerformLayout();
             this.groupBoxCEColors.ResumeLayout(false);
@@ -407,9 +440,9 @@
         private System.Windows.Forms.Label labelTimerBarColor;
         private System.Windows.Forms.Label labelTimerFontColor;
         private System.Windows.Forms.Label labelTextColor;
-        private System.Windows.Forms.ComboBox comboBox3;
-        private System.Windows.Forms.ComboBox comboBox2;
-        private System.Windows.Forms.ComboBox comboBox1;
+        private System.Windows.Forms.ComboBox comboBoxTimerBar;
+        private System.Windows.Forms.ComboBox comboBoxTimerFont;
+        private System.Windows.Forms.ComboBox comboBoxTextFont;
         private System.Windows.Forms.Label labelSample;
         private System.Windows.Forms.Label labelPhonetic;
         private System.Windows.Forms.Label labelRate;
@@ -424,5 +457,7 @@
         private System.Windows.Forms.Label labelVolumeValue;
         private System.Windows.Forms.Button buttonSamplePlay;
         private System.Windows.Forms.Button buttonNamePlay;
+        private System.Windows.Forms.Button buttonCancel;
+        private System.Windows.Forms.Button buttonSave;
     }
 }

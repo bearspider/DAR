@@ -7,7 +7,7 @@
         xmlns:Custom="http://schemas.microsoft.com/winfx/2006/xaml/presentation/ribbon" x:Class="DAR.MainWindow"
         mc:Ignorable="d"
         Title="EQ Audio Triggers" Height="812.13" Width="1170.118" Icon="Tonev-Windows-7-Windows-7-headphone.ico" WindowStyle="ThreeDBorderWindow">
-    <Custom:Ribbon HorizontalAlignment="Left" Height="141" VerticalAlignment="Top" Width="1160" FontFamily="Global User Interface" RenderTransformOrigin="0.512,1.045">
+    <Custom:Ribbon x:Name="ribbonMain" HorizontalAlignment="Left" Height="141" VerticalAlignment="Top" Width="1160" FontFamily="Global User Interface" RenderTransformOrigin="0.512,1.045">
         <Custom:Ribbon.ApplicationMenu>
             <Custom:RibbonApplicationMenu>
                 <Custom:RibbonApplicationMenuItem Header="Settings"/>

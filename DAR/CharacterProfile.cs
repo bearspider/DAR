@@ -9,6 +9,7 @@ namespace DAR
 {
     public class CharacterProfile
     {
+        public int id;
         public string characterName;
         public string logFile;
         public string profileName;
@@ -23,10 +24,24 @@ namespace DAR
         //Constructor
         public CharacterProfile()
         {
+            id = 0;
+            characterName = "Beastmaster";
+            monitor = true;
+            textFontColor = "Black";
+            timerFontColor = "Blue";
+            timerBarColor = "Lime";
+            voice = "Microsoft David Desktop";
+            volumeValue = 90;
+            speechRate = 0;
             synth = new SpeechSynthesizer();
-            synth.Rate = 0;
-            synth.Volume = 90;
-            synth.SelectVoice("Microsoft David Desktop");
+            synth.Rate = speechRate;
+            synth.Volume = volumeValue;
+            synth.SelectVoice(voice);
+        }
+        public int Id
+        {
+            get { return id; }
+            set { id = value; }
         }
         public string Name
         {
@@ -63,10 +78,26 @@ namespace DAR
             get { return voice; }
             set { voice = value; }
         }
+        public string TextFontColor
+        {
+            get { return textFontColor; }
+            set { textFontColor = value; }
+        }
+        public string TimerFontColor
+        {
+            get { return timerFontColor; }
+            set { timerFontColor = value; }
+        }
+        public string TimerBarColor
+        {
+            get { return timerBarColor; }
+            set { timerBarColor = value; }
+        }
         public void Speak(string output)
         {
             synth.Speak(output);
         }
+
     }
 
 

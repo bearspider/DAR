@@ -43,8 +43,8 @@ namespace DAR
                     TextFontColor = "Blue"
                 };
                 //col.Insert(player);
-                col.EnsureIndex(x => x.Name);
-                var r = col.FindOne(x => x.Name.Contains("Houkaa"));
+                //col.EnsureIndex(x => x.Name);
+                //var r = col.FindOne(x => x.Name.Contains("Houkaa"));
                 
             }
         }
@@ -53,6 +53,11 @@ namespace DAR
         {
             CharacterEditor newCharacter = new CharacterEditor();
             newCharacter.ShowDialog();
+        }
+
+        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            ribbonMain.Width = ActualWidth;
         }
 
     }

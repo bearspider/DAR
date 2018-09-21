@@ -3,99 +3,116 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/avalondock"
+        xmlns:xcad="http://schemas.xceed.com/wpf/xaml/avalondock"
         xmlns:local="clr-namespace:DAR"
         xmlns:Custom="http://schemas.microsoft.com/winfx/2006/xaml/presentation/ribbon" x:Class="DAR.MainWindow"
         mc:Ignorable="d"
-        Title="EQ Audio Triggers" Height="812.13" Width="1170.118" Icon="Tonev-Windows-7-Windows-7-headphone.ico" WindowStyle="ThreeDBorderWindow">
-    <Custom:Ribbon x:Name="ribbonMain" HorizontalAlignment="Left" Height="141" VerticalAlignment="Top" Width="1160" FontFamily="Global User Interface" RenderTransformOrigin="0.512,1.045">
-        <Custom:Ribbon.ApplicationMenu>
-            <Custom:RibbonApplicationMenu>
-                <Custom:RibbonApplicationMenuItem Header="Settings"/>
-                <Custom:RibbonApplicationMenuItem Header="Check For Update"/>
-                <Custom:RibbonApplicationMenuItem Header="About"/>
-            </Custom:RibbonApplicationMenu>
-        </Custom:Ribbon.ApplicationMenu>
-        <Custom:RibbonTab Header="Home">
-            <Custom:RibbonGroup Header="Characters">
-                <Custom:RibbonButton Label="Add" Click="RibbonButton_Click" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-list-add-user.ico"/>
-                <Custom:RibbonButton Label="Edit" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-user-properties.ico"/>
-                <Custom:RibbonButton Label="Remove" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-list-remove-user.ico"/>
-            </Custom:RibbonGroup>
-            <Custom:RibbonGroup Header="Trigger Groups">
-                <Custom:RibbonSplitButton Label="Add" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-tab-new-background.ico">
-                    <Custom:RibbonSplitMenuItem Header="Add To Selected Group"/>
-                    <Custom:RibbonSplitMenuItem Header="Add Top Level Group"/>
-                </Custom:RibbonSplitButton>
-                <Custom:RibbonButton Label="Edit" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-draw-freehand.ico"/>
-                <Custom:RibbonButton Label="Remove" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-tab-close-other.ico"/>
-            </Custom:RibbonGroup>
-            <Custom:RibbonGroup Header="Triggers">
-                <Custom:RibbonButton Label="Add" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-document-new.ico"/>
-                <Custom:RibbonButton Label="Edit" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-document-edit.ico"/>
-                <Custom:RibbonButton Label="Remove" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-document-close.ico"/>
-            </Custom:RibbonGroup>
-            <Custom:RibbonGroup Header="Misc">
-                <Custom:RibbonSplitButton Label="Commands" LargeImageSource="Oxygen-Icons.org-Oxygen-Apps-utilities-terminal.ico">
-                    <Custom:RibbonSplitMenuItem Header="Stop Alerts">
-                        <Custom:RibbonSplitMenuItem Header="MenuItem"/>
-                    </Custom:RibbonSplitMenuItem>
-                    <Custom:RibbonSplitMenuItem Header="Reset Counters">
-                        <Custom:RibbonSplitMenuItem Header="MenuItem"/>
-                    </Custom:RibbonSplitMenuItem>
-                </Custom:RibbonSplitButton>
-                <Custom:RibbonButton Label="Pronunciations" LargeImageSource="Oxygen-Icons.org-Oxygen-Apps-konversation.ico"/>
-                <Custom:RibbonSplitButton Label="Search" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-edit-find.ico">
-                    <Custom:RibbonSplitMenuItem Header="Log File"/>
-                    <Custom:RibbonSplitMenuItem Header="Triggers"/>
-                </Custom:RibbonSplitButton>
-            </Custom:RibbonGroup>
-        </Custom:RibbonTab>
-        <Custom:RibbonTab Header="Sharing">
-            <Custom:RibbonGroup Header="Library">
-                <Custom:RibbonButton Label="Online Library" LargeImageSource="Itzikgur-My-Seven-Books-1.ico"/>
-                <Custom:RibbonSplitButton Label="Share" LargeImageSource="Oxygen-Icons.org-Oxygen-Apps-preferences-system-network-sharing.ico">
-                    <Custom:RibbonSplitMenuItem Header="Quick Share"/>
-                    <Custom:RibbonSplitMenuItem Header="Submit to Library"/>
-                </Custom:RibbonSplitButton>
-            </Custom:RibbonGroup>
-            <Custom:RibbonGroup Header="Share">
-                <Custom:RibbonSplitButton Label="Import" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-svn-commit.ico">
-                    <Custom:RibbonSplitMenuItem Header="From GINA Package"/>
-                    <Custom:RibbonSplitMenuItem Header="From Everquest"/>
-                    <Custom:RibbonSplitMenuItem Header="From Triggers File"/>
-                    <Custom:RibbonSplitMenuItem Header="From Configuration"/>
-                </Custom:RibbonSplitButton>
-                <Custom:RibbonSplitButton Label="Export" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-svn-update.ico">
-                    <Custom:RibbonSplitMenuItem Header="To Package"/>
-                    <Custom:RibbonSplitMenuItem Header="To Everquest"/>
-                </Custom:RibbonSplitButton>
-            </Custom:RibbonGroup>
-        </Custom:RibbonTab>
-        <Custom:RibbonTab Header="Overlays">
-            <Custom:RibbonGroup Header="Text Overlays">
-                <Custom:RibbonButton Label="Add" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-document-new.ico"/>
-                <Custom:RibbonSplitButton Label="Default" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-document-edit.ico">
-                    <Custom:RibbonSplitMenuItem Header="Properties"/>
-                    <Custom:RibbonSplitMenuItem Header="Save Layout"/>
-                    <Custom:RibbonSplitMenuItem Header="Delete"/>
-                </Custom:RibbonSplitButton>
-            </Custom:RibbonGroup>
-            <Custom:RibbonGroup Header="Timer Overlays">
-                <Custom:RibbonButton Label="Add" LargeImageSource="Google-Noto-Emoji-Travel-Places-42608-stopwatch.ico"/>
-                <Custom:RibbonSplitButton Label="Default" LargeImageSource="Google-Noto-Emoji-Travel-Places-42608-stopwatch.ico">
-                    <Custom:RibbonSplitMenuItem Header="Properties"/>
-                    <Custom:RibbonSplitMenuItem Header="Save Layout"/>
-                    <Custom:RibbonSplitMenuItem Header="Delete"/>
-                </Custom:RibbonSplitButton>
-            </Custom:RibbonGroup>
-        </Custom:RibbonTab>
-        <Custom:RibbonTab Header="Categories" HorizontalAlignment="Right" Width="1158">
-            <Custom:RibbonGroup Header="Actions">
-                <Custom:RibbonButton Label="Add" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-document-new.ico"/>
-                <Custom:RibbonButton Label="Remove" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-document-close.ico"/>
-                <Custom:RibbonButton Label="Set As Default" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-dialog-ok-apply.ico"/>
-            </Custom:RibbonGroup>
-        </Custom:RibbonTab>
-    </Custom:Ribbon>
+        Title="EQ Audio Triggers" Height="812" Width="1170" Icon="Tonev-Windows-7-Windows-7-headphone.ico" WindowStyle="ThreeDBorderWindow" SizeChanged="Window_SizeChanged">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+            <Custom:Ribbon x:Name="ribbonMain" HorizontalAlignment="Left" VerticalAlignment="Top" FontFamily="Global User Interface" RenderTransformOrigin="0.512,1.045" Width="1170">
+                <Custom:Ribbon.ApplicationMenu>
+                    <Custom:RibbonApplicationMenu>
+                        <Custom:RibbonApplicationMenuItem Header="Settings"/>
+                        <Custom:RibbonApplicationMenuItem Header="Check For Update"/>
+                        <Custom:RibbonApplicationMenuItem Header="About"/>
+                    </Custom:RibbonApplicationMenu>
+                </Custom:Ribbon.ApplicationMenu>
+                <Custom:RibbonTab Header="Home">
+                    <Custom:RibbonGroup Header="Characters">
+                        <Custom:RibbonButton Label="Add" Click="RibbonButton_Click" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-list-add-user.ico"/>
+                        <Custom:RibbonButton Label="Edit" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-user-properties.ico"/>
+                        <Custom:RibbonButton Label="Remove" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-list-remove-user.ico"/>
+                    </Custom:RibbonGroup>
+                    <Custom:RibbonGroup Header="Trigger Groups">
+                        <Custom:RibbonSplitButton Label="Add" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-tab-new-background.ico">
+                            <Custom:RibbonSplitMenuItem Header="Add To Selected Group"/>
+                            <Custom:RibbonSplitMenuItem Header="Add Top Level Group"/>
+                        </Custom:RibbonSplitButton>
+                        <Custom:RibbonButton Label="Edit" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-draw-freehand.ico"/>
+                        <Custom:RibbonButton Label="Remove" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-tab-close-other.ico"/>
+                    </Custom:RibbonGroup>
+                    <Custom:RibbonGroup Header="Triggers">
+                        <Custom:RibbonButton Label="Add" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-document-new.ico"/>
+                        <Custom:RibbonButton Label="Edit" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-document-edit.ico"/>
+                        <Custom:RibbonButton Label="Remove" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-document-close.ico"/>
+                    </Custom:RibbonGroup>
+                    <Custom:RibbonGroup Header="Misc">
+                        <Custom:RibbonSplitButton Label="Commands" LargeImageSource="Oxygen-Icons.org-Oxygen-Apps-utilities-terminal.ico">
+                            <Custom:RibbonSplitMenuItem Header="Stop Alerts">
+                                <Custom:RibbonSplitMenuItem Header="MenuItem"/>
+                            </Custom:RibbonSplitMenuItem>
+                            <Custom:RibbonSplitMenuItem Header="Reset Counters">
+                                <Custom:RibbonSplitMenuItem Header="MenuItem"/>
+                            </Custom:RibbonSplitMenuItem>
+                        </Custom:RibbonSplitButton>
+                        <Custom:RibbonButton Label="Pronunciations" LargeImageSource="Oxygen-Icons.org-Oxygen-Apps-konversation.ico"/>
+                        <Custom:RibbonSplitButton Label="Search" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-edit-find.ico">
+                            <Custom:RibbonSplitMenuItem Header="Log File"/>
+                            <Custom:RibbonSplitMenuItem Header="Triggers"/>
+                        </Custom:RibbonSplitButton>
+                    </Custom:RibbonGroup>
+                </Custom:RibbonTab>
+                <Custom:RibbonTab Header="Sharing">
+                    <Custom:RibbonGroup Header="Library">
+                        <Custom:RibbonButton Label="Online Library" LargeImageSource="Itzikgur-My-Seven-Books-1.ico"/>
+                        <Custom:RibbonSplitButton Label="Share" LargeImageSource="Oxygen-Icons.org-Oxygen-Apps-preferences-system-network-sharing.ico">
+                            <Custom:RibbonSplitMenuItem Header="Quick Share"/>
+                            <Custom:RibbonSplitMenuItem Header="Submit to Library"/>
+                        </Custom:RibbonSplitButton>
+                    </Custom:RibbonGroup>
+                    <Custom:RibbonGroup Header="Share">
+                        <Custom:RibbonSplitButton Label="Import" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-svn-commit.ico">
+                            <Custom:RibbonSplitMenuItem Header="From GINA Package"/>
+                            <Custom:RibbonSplitMenuItem Header="From Everquest"/>
+                            <Custom:RibbonSplitMenuItem Header="From Triggers File"/>
+                            <Custom:RibbonSplitMenuItem Header="From Configuration"/>
+                        </Custom:RibbonSplitButton>
+                        <Custom:RibbonSplitButton Label="Export" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-svn-update.ico">
+                            <Custom:RibbonSplitMenuItem Header="To Package"/>
+                            <Custom:RibbonSplitMenuItem Header="To Everquest"/>
+                        </Custom:RibbonSplitButton>
+                    </Custom:RibbonGroup>
+                </Custom:RibbonTab>
+                <Custom:RibbonTab Header="Overlays">
+                    <Custom:RibbonGroup Header="Text Overlays">
+                        <Custom:RibbonButton Label="Add" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-document-new.ico"/>
+                        <Custom:RibbonSplitButton Label="Default" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-document-edit.ico">
+                            <Custom:RibbonSplitMenuItem Header="Properties"/>
+                            <Custom:RibbonSplitMenuItem Header="Save Layout"/>
+                            <Custom:RibbonSplitMenuItem Header="Delete"/>
+                        </Custom:RibbonSplitButton>
+                    </Custom:RibbonGroup>
+                    <Custom:RibbonGroup Header="Timer Overlays">
+                        <Custom:RibbonButton Label="Add" LargeImageSource="Google-Noto-Emoji-Travel-Places-42608-stopwatch.ico"/>
+                        <Custom:RibbonSplitButton Label="Default" LargeImageSource="Google-Noto-Emoji-Travel-Places-42608-stopwatch.ico">
+                            <Custom:RibbonSplitMenuItem Header="Properties"/>
+                            <Custom:RibbonSplitMenuItem Header="Save Layout"/>
+                            <Custom:RibbonSplitMenuItem Header="Delete"/>
+                        </Custom:RibbonSplitButton>
+                    </Custom:RibbonGroup>
+                </Custom:RibbonTab>
+                <Custom:RibbonTab Header="Categories" HorizontalAlignment="Right">
+                    <Custom:RibbonGroup Header="Actions">
+                        <Custom:RibbonButton Label="Add" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-document-new.ico"/>
+                        <Custom:RibbonButton Label="Remove" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-document-close.ico"/>
+                        <Custom:RibbonButton Label="Set As Default" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-dialog-ok-apply.ico"/>
+                    </Custom:RibbonGroup>
+                </Custom:RibbonTab>
+            </Custom:Ribbon>
+        </StackPanel>
+
+        <xcad:DockingManager Grid.Row="1" 
+                           AllowMixedOrientation="True"
+                           BorderBrush="Black"
+                           BorderThickness="5">
+            <xcad:DockingManager.Theme>
+                <xcad:VS2010Theme />
+            </xcad:DockingManager.Theme>
+        </xcad:DockingManager>
+    </Grid>
 </Window>

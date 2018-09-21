@@ -22,11 +22,22 @@ namespace DAR
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
+    public class GlobalVariables
+    {
+        public static string defaultPath = @"C:\EQAudioTriggers";
+        public static string defaultDB = $"{defaultPath}\\eqtriggers.db";
+    }
     public partial class MainWindow : Window
     {
         public MainWindow()
         {
             InitializeComponent();
+            //Check if EQAudioTriggers folder exists, if not create.
+            bool mainPath = System.IO.Directory.Exists(GlobalVariables.defaultPath);
+            if(!mainPath)
+            {
+                System.IO.Directory.CreateDirectory(GlobalVariables.defaultPath);
+            }
             UpdateListView();
         }
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -42,7 +53,7 @@ namespace DAR
         private void UpdateListView()
         {
             listviewCharacters.Items.Clear();
-            using (var db = new LiteDatabase(@"C:\Temp\eqtriggers.db"))
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 var col = db.GetCollection<CharacterProfile>("profiles");
                 foreach (var doc in col.FindAll())
@@ -54,7 +65,7 @@ namespace DAR
         private void RibbonButtonEdit_Click(object sender, RoutedEventArgs e)
         {
             String selectedCharacter = listviewCharacters.SelectedItem.ToString();
-            using (var db = new LiteDatabase(@"C:\Temp\eqtriggers.db"))
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 var col = db.GetCollection<CharacterProfile>("profiles");
                 var result = col.Find(Query.EQ("ProfileName",selectedCharacter));
@@ -64,12 +75,11 @@ namespace DAR
                 CharacterEditor editCharacter = new CharacterEditor(character);
                 editCharacter.ShowDialog();
             }
-            
-            
+            UpdateListView();
         }
         private void RibbonButtonRemove_Click(object sender, RoutedEventArgs e)
         {
-            using (var db = new LiteDatabase(@"C:\Temp\eqtriggers.db"))
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 var col = db.GetCollection<CharacterProfile>("profiles");
                 String selectedCharacter = listviewCharacters.SelectedItem.ToString();
@@ -81,6 +91,12 @@ namespace DAR
                 }
 
             }
+        }
+
+        private void ListviewCharacters_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ribbonCharEdit.IsEnabled = true;
+            ribbonCharRemove.IsEnabled = true;
         }
     }
 }

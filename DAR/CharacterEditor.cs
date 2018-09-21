@@ -8,6 +8,7 @@ using System.Drawing;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Speech.Synthesis;
@@ -65,6 +66,8 @@ namespace DAR
         {
             InitializeComponent();
             InitializeForm();
+            labelVolumeValue.Text = editCharacter.VolumeValue.ToString();
+            labelRateValue.Text = editCharacter.SpeechRate.ToString();
             textBoxCECharacter.Text = editCharacter.Name;
             textBoxCEProfile.Text = editCharacter.ProfileName;
             textBoxCELog.Text = editCharacter.LogFile;
@@ -104,22 +107,43 @@ namespace DAR
 
         private void ButtonSave_Click(object sender, EventArgs e)
         {
-            using (var db = new LiteDatabase(@"C:\Temp\eqtriggers.db"))
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 var col = db.GetCollection<CharacterProfile>("profiles");
 
-                var player = new CharacterProfile
+
+                var recordSearch = col.Find(Query.EQ("ProfileName", textBoxCEProfile.Text));
+                if (recordSearch.Count<CharacterProfile>() > 0)
                 {
-                    Name = textBoxCECharacter.Text,
-                    ProfileName = textBoxCEProfile.Text,
-                    LogFile = textBoxCELog.Text,
-                    SpeechRate = trackBarRate.Value,
-                    VolumeValue = trackBarVolume.Value,
-                    TimerFontColor = comboBoxTimerFont.SelectedItem.ToString(),
-                    TimerBarColor = comboBoxTimerBar.SelectedItem.ToString(),
-                    TextFontColor = comboBoxTimerFont.SelectedItem.ToString()
-                };
-                col.Insert(player);
+                    IEnumerator<CharacterProfile> enumerator = recordSearch.GetEnumerator();
+                    enumerator.MoveNext();
+                    var character = (enumerator.Current);
+                    character.Name = textBoxCECharacter.Text;
+                    character.ProfileName = textBoxCEProfile.Text;
+                    character.LogFile = textBoxCELog.Text;
+                    character.SpeechRate = trackBarRate.Value;
+                    character.VolumeValue = trackBarVolume.Value;
+                    character.TimerBarColor = comboBoxTimerBar.SelectedItem.ToString();
+                    character.TimerFontColor = comboBoxTimerFont.SelectedItem.ToString();
+                    character.TextFontColor = comboBoxTextFont.SelectedItem.ToString();
+                    col.Update(character);
+
+                }
+                else
+                {
+                    var player = new CharacterProfile
+                    {
+                        Name = textBoxCECharacter.Text,
+                        ProfileName = textBoxCEProfile.Text,
+                        LogFile = textBoxCELog.Text,
+                        SpeechRate = trackBarRate.Value,
+                        VolumeValue = trackBarVolume.Value,
+                        TimerFontColor = comboBoxTimerFont.SelectedItem.ToString(),
+                        TimerBarColor = comboBoxTimerBar.SelectedItem.ToString(),
+                        TextFontColor = comboBoxTimerFont.SelectedItem.ToString()
+                    };
+                    col.Insert(player);
+                }
                 col.EnsureIndex(x => x.Name);
             }
             this.Close();
@@ -131,13 +155,20 @@ namespace DAR
                 openLogFile.InitialDirectory = "C:\\";
                 openLogFile.Filter = "Everquest Log Files|eqlog*.txt";
                 openLogFile.RestoreDirectory = true;
+                string filePattern = @"eqlog_(.*)_(.*)\.txt";
+                
                 if (openLogFile.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 {
                     textBoxCELog.Text = openLogFile.FileName;
-                    string[] splitName = textBoxCELog.Text.Split('_');
-                    textBoxCEProfile.Text = splitName[1].ToString() + "(" + splitName[2].ToString() + ")";
-                    textBoxCECharacter.Text = splitName[1].ToString();
-                    textBoxPhonetic.Text = splitName[1].ToString();
+                    Regex regexObj = new Regex(filePattern, RegexOptions.IgnoreCase);
+                    Match fileMatch = regexObj.Match(openLogFile.FileName);
+                    Group characterGroup = fileMatch.Groups[1];
+                    Group serverGroup = fileMatch.Groups[2];
+                    CaptureCollection characterCollection = characterGroup.Captures;
+                    CaptureCollection serverCollection = serverGroup.Captures;
+                    textBoxCEProfile.Text = characterCollection[0].ToString() + "(" + serverCollection[0].ToString() + ")";
+                    textBoxCECharacter.Text = characterCollection[0].ToString();
+                    textBoxPhonetic.Text = characterCollection[0].ToString();
                 }
             }
         }
@@ -169,12 +200,12 @@ namespace DAR
 
         private void ComboBoxTimerFont_SelectedIndexChanged(object sender, EventArgs e)
         {
-            labelTimerFontColor.ForeColor = Color.FromName(comboBoxTextFont.SelectedItem.ToString());
+            labelTimerFontColor.ForeColor = Color.FromName(comboBoxTimerFont.SelectedItem.ToString());
         }
 
         private void ComboBoxTimerBar_SelectedIndexChanged(object sender, EventArgs e)
         {
-            labelTimerBarColor.ForeColor = Color.FromName(comboBoxTextFont.SelectedItem.ToString());
+            labelTimerBarColor.ForeColor = Color.FromName(comboBoxTimerBar.SelectedItem.ToString());
         }
     }
 }

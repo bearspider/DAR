@@ -24,22 +24,22 @@
                 </Custom:Ribbon.ApplicationMenu>
                 <Custom:RibbonTab Header="Home">
                     <Custom:RibbonGroup Header="Characters">
-                        <Custom:RibbonButton Label="Add" Click="RibbonButtonAdd_Click" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-list-add-user.ico"/>
-                        <Custom:RibbonButton Label="Edit" Click="RibbonButtonEdit_Click" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-user-properties.ico"/>
-                        <Custom:RibbonButton Label="Remove" Click="RibbonButtonRemove_Click" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-list-remove-user.ico"/>
+                        <Custom:RibbonButton Name="ribbonCharAdd" Label="Add" IsEnabled="True" Click="RibbonButtonAdd_Click" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-list-add-user.ico"/>
+                        <Custom:RibbonButton Name="ribbonCharEdit" Label="Edit" IsEnabled="False" Click="RibbonButtonEdit_Click" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-user-properties.ico"/>
+                        <Custom:RibbonButton Name="ribbonCharRemove" Label="Remove" IsEnabled="False" Click="RibbonButtonRemove_Click" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-list-remove-user.ico"/>
                     </Custom:RibbonGroup>
                     <Custom:RibbonGroup Header="Trigger Groups">
-                        <Custom:RibbonSplitButton Label="Add" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-tab-new-background.ico">
-                            <Custom:RibbonSplitMenuItem Header="Add To Selected Group"/>
+                        <Custom:RibbonSplitButton Name="triggerGroupsAdd" Label="Add" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-tab-new-background.ico">
+                            <Custom:RibbonSplitMenuItem IsEnabled="False" Header="Add To Selected Group"/>
                             <Custom:RibbonSplitMenuItem Header="Add Top Level Group"/>
                         </Custom:RibbonSplitButton>
-                        <Custom:RibbonButton Label="Edit" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-draw-freehand.ico"/>
-                        <Custom:RibbonButton Label="Remove" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-tab-close-other.ico"/>
+                        <Custom:RibbonButton Name="triggerGroupsEdit" IsEnabled="False" Label="Edit" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-draw-freehand.ico"/>
+                        <Custom:RibbonButton Name="triggerGroupsRemove" IsEnabled="False" Label="Remove" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-tab-close-other.ico"/>
                     </Custom:RibbonGroup>
                     <Custom:RibbonGroup Header="Triggers">
-                        <Custom:RibbonButton Label="Add" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-document-new.ico"/>
-                        <Custom:RibbonButton Label="Edit" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-document-edit.ico"/>
-                        <Custom:RibbonButton Label="Remove" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-document-close.ico"/>
+                        <Custom:RibbonButton Name="triggerAdd" IsEnabled="False" Label="Add" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-document-new.ico"/>
+                        <Custom:RibbonButton Name="triggerEdit" IsEnabled="False" Label="Edit" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-document-edit.ico"/>
+                        <Custom:RibbonButton Name="triggerRemove" IsEnabled="False" Label="Remove" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-document-close.ico"/>
                     </Custom:RibbonGroup>
                     <Custom:RibbonGroup Header="Misc">
                         <Custom:RibbonSplitButton Label="Commands" LargeImageSource="Oxygen-Icons.org-Oxygen-Apps-utilities-terminal.ico">
@@ -119,7 +119,7 @@
                     <xcad:LayoutAnchorablePaneGroup DockWidth="200">
                         <xcad:LayoutAnchorablePane>
                             <xcad:LayoutAnchorable Title="Characters" ContentId="text1">
-                                <ListView Name="listviewCharacters">
+                                <ListView SelectionChanged="ListviewCharacters_SelectionChanged" Name="listviewCharacters">
 
                                 </ListView>
                                           
@@ -130,7 +130,7 @@
                         <xcad:LayoutDocument Title="Triggers" ContentId="doc1">
                             <TextBox AcceptsReturn="True" TextWrapping="Wrap"></TextBox>
                         </xcad:LayoutDocument>
-                        <xcad:LayoutAnchorable Title="Active Triggers" ContentId="doc1">
+                        <xcad:LayoutAnchorable Title="Activated Triggers" ContentId="doc1">
                             <TextBox AcceptsReturn="True" TextWrapping="Wrap"></TextBox>
                         </xcad:LayoutAnchorable>
                     </xcad:LayoutDocumentPane>

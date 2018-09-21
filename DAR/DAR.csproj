@@ -63,7 +63,7 @@
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="Xceed.Wpf.AvalonDock">
-      <HintPath>..\..\Extended WPF Toolkit Binaries .NET 4.x\Xceed.Wpf.AvalonDock.dll</HintPath>
+      <HintPath>..\Extended WPF Toolkit Binaries .NET 4.x\Xceed.Wpf.AvalonDock.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -166,6 +166,10 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Oxygen-Icons.org-Oxygen-Actions-arrow-right.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="LiteDB.dll" />
+    <Content Include="Xceed.Wpf.AvalonDock.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

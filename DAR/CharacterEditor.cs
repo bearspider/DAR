@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LiteDB;
+using System;
 using System.Collections.Generic;
 using System.Collections;
 using System.ComponentModel;
@@ -19,16 +20,21 @@ namespace DAR
         public CharacterEditor()
         {
             InitializeComponent();
+            InitializeForm();
             //CharacterProfile houkaa = new CharacterProfile();
             //houkaa.Speak("Greetings");
+            
+        }
+        private void InitializeForm()
+        {
             labelVolumeValue.Text = trackBarVolume.Value.ToString();
             labelRateValue.Text = trackBarRate.Value.ToString();
-            
-            foreach( System.Speech.Synthesis.InstalledVoice installedVoice in voicesynth.GetInstalledVoices())
+
+            foreach (System.Speech.Synthesis.InstalledVoice installedVoice in voicesynth.GetInstalledVoices())
             {
                 comboBoxVoice.Items.Add(installedVoice.VoiceInfo.Name);
             }
-            if(comboBoxVoice.Items.Count > 0)
+            if (comboBoxVoice.Items.Count > 0)
             {
                 comboBoxVoice.SelectedIndex = 0;
             }
@@ -55,7 +61,20 @@ namespace DAR
             labelTimerBarColor.ForeColor = Color.FromName(comboBoxTimerBar.SelectedItem.ToString());
             labelTimerFontColor.ForeColor = Color.FromName(comboBoxTimerFont.SelectedItem.ToString());
         }
-
+        public CharacterEditor(CharacterProfile editCharacter)
+        {
+            InitializeComponent();
+            InitializeForm();
+            textBoxCECharacter.Text = editCharacter.Name;
+            textBoxCEProfile.Text = editCharacter.ProfileName;
+            textBoxCELog.Text = editCharacter.LogFile;
+            trackBarRate.Value = editCharacter.SpeechRate;
+            trackBarVolume.Value = editCharacter.VolumeValue;
+            textBoxPhonetic.Text = editCharacter.Name;
+            comboBoxTextFont.SelectedItem = editCharacter.TextFontColor;
+            comboBoxTimerFont.SelectedItem = editCharacter.TimerFontColor;
+            comboBoxTimerBar.SelectedItem = editCharacter.TimerBarColor;
+        }
         private void TrackBarVolume_Scroll(object sender, EventArgs e)
         {
             labelVolumeValue.Text = trackBarVolume.Value.ToString();
@@ -85,9 +104,26 @@ namespace DAR
 
         private void ButtonSave_Click(object sender, EventArgs e)
         {
-            //Add new character to Database
-        }
+            using (var db = new LiteDatabase(@"C:\Temp\eqtriggers.db"))
+            {
+                var col = db.GetCollection<CharacterProfile>("profiles");
 
+                var player = new CharacterProfile
+                {
+                    Name = textBoxCECharacter.Text,
+                    ProfileName = textBoxCEProfile.Text,
+                    LogFile = textBoxCELog.Text,
+                    SpeechRate = trackBarRate.Value,
+                    VolumeValue = trackBarVolume.Value,
+                    TimerFontColor = comboBoxTimerFont.SelectedItem.ToString(),
+                    TimerBarColor = comboBoxTimerBar.SelectedItem.ToString(),
+                    TextFontColor = comboBoxTimerFont.SelectedItem.ToString()
+                };
+                col.Insert(player);
+                col.EnsureIndex(x => x.Name);
+            }
+            this.Close();
+        }
         private void ButtonLoadFile_Click(object sender, EventArgs e)
         {
             using (OpenFileDialog openLogFile = new OpenFileDialog())

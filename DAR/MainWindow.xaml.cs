@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -26,39 +27,60 @@ namespace DAR
         public MainWindow()
         {
             InitializeComponent();
-            using (var db = new LiteDatabase(@"C:\Temp\eqtriggers.db"))
-            {
-                var col = db.GetCollection<CharacterProfile>("profiles");
-
-                var player = new CharacterProfile
-                {
-                    Id = 2,
-                    Name = "Houkaa",
-                    ProfileName = "Houkaa(luclin)",
-                    LogFile = @"C:\users\jared.haddix\desktop\eqlog_Dhurgan_luclin_20170917_190951.txt",
-                    SpeechRate = 0,
-                    VolumeValue = 90,
-                    TimerFontColor = "Lime",
-                    TimerBarColor = "Red",
-                    TextFontColor = "Blue"
-                };
-                //col.Insert(player);
-                //col.EnsureIndex(x => x.Name);
-                //var r = col.FindOne(x => x.Name.Contains("Houkaa"));
-                
-            }
+            UpdateListView();
         }
-
-        private void RibbonButton_Click(object sender, RoutedEventArgs e)
-        {
-            CharacterEditor newCharacter = new CharacterEditor();
-            newCharacter.ShowDialog();
-        }
-
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             ribbonMain.Width = ActualWidth;
         }
+        private void RibbonButtonAdd_Click(object sender, RoutedEventArgs e)
+        {
+            CharacterEditor newCharacter = new CharacterEditor();
+            newCharacter.ShowDialog();
+            UpdateListView();
+        }
+        private void UpdateListView()
+        {
+            listviewCharacters.Items.Clear();
+            using (var db = new LiteDatabase(@"C:\Temp\eqtriggers.db"))
+            {
+                var col = db.GetCollection<CharacterProfile>("profiles");
+                foreach (var doc in col.FindAll())
+                {
+                    listviewCharacters.Items.Add(doc.ProfileName);
+                }
+            }
+        }
+        private void RibbonButtonEdit_Click(object sender, RoutedEventArgs e)
+        {
+            String selectedCharacter = listviewCharacters.SelectedItem.ToString();
+            using (var db = new LiteDatabase(@"C:\Temp\eqtriggers.db"))
+            {
+                var col = db.GetCollection<CharacterProfile>("profiles");
+                var result = col.Find(Query.EQ("ProfileName",selectedCharacter));
+                IEnumerator<CharacterProfile> enumerator = result.GetEnumerator();
+                enumerator.MoveNext();
+                var character = (enumerator.Current);
+                CharacterEditor editCharacter = new CharacterEditor(character);
+                editCharacter.ShowDialog();
+            }
+            
+            
+        }
+        private void RibbonButtonRemove_Click(object sender, RoutedEventArgs e)
+        {
+            using (var db = new LiteDatabase(@"C:\Temp\eqtriggers.db"))
+            {
+                var col = db.GetCollection<CharacterProfile>("profiles");
+                String selectedCharacter = listviewCharacters.SelectedItem.ToString();
+                MessageBoxResult result = MessageBox.Show($"Are you sure you want to Delete {selectedCharacter}","Confirmation",MessageBoxButton.YesNo);
+                if(result == MessageBoxResult.Yes)
+                {
+                    var dbdelete = col.Delete(Query.EQ("ProfileName", selectedCharacter));
+                    UpdateListView();
+                }
 
+            }
+        }
     }
 }

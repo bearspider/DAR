@@ -24,9 +24,9 @@
                 </Custom:Ribbon.ApplicationMenu>
                 <Custom:RibbonTab Header="Home">
                     <Custom:RibbonGroup Header="Characters">
-                        <Custom:RibbonButton Label="Add" Click="RibbonButton_Click" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-list-add-user.ico"/>
-                        <Custom:RibbonButton Label="Edit" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-user-properties.ico"/>
-                        <Custom:RibbonButton Label="Remove" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-list-remove-user.ico"/>
+                        <Custom:RibbonButton Label="Add" Click="RibbonButtonAdd_Click" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-list-add-user.ico"/>
+                        <Custom:RibbonButton Label="Edit" Click="RibbonButtonEdit_Click" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-user-properties.ico"/>
+                        <Custom:RibbonButton Label="Remove" Click="RibbonButtonRemove_Click" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-list-remove-user.ico"/>
                     </Custom:RibbonGroup>
                     <Custom:RibbonGroup Header="Trigger Groups">
                         <Custom:RibbonSplitButton Label="Add" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-tab-new-background.ico">
@@ -106,13 +106,36 @@
             </Custom:Ribbon>
         </StackPanel>
 
-        <xcad:DockingManager Grid.Row="1" 
+        <xcad:DockingManager 
                            AllowMixedOrientation="True"
                            BorderBrush="Black"
-                           BorderThickness="5">
+                           BorderThickness="5" Margin="0,137,0,0" Grid.RowSpan="2">
             <xcad:DockingManager.Theme>
                 <xcad:VS2010Theme />
             </xcad:DockingManager.Theme>
+
+            <xcad:LayoutRoot>                
+                <xcad:LayoutPanel>
+                    <xcad:LayoutAnchorablePaneGroup DockWidth="200">
+                        <xcad:LayoutAnchorablePane>
+                            <xcad:LayoutAnchorable Title="Characters" ContentId="text1">
+                                <ListView Name="listviewCharacters">
+
+                                </ListView>
+                                          
+                            </xcad:LayoutAnchorable>
+                        </xcad:LayoutAnchorablePane>
+                    </xcad:LayoutAnchorablePaneGroup>
+                    <xcad:LayoutDocumentPane>
+                        <xcad:LayoutDocument Title="Triggers" ContentId="doc1">
+                            <TextBox AcceptsReturn="True" TextWrapping="Wrap"></TextBox>
+                        </xcad:LayoutDocument>
+                        <xcad:LayoutAnchorable Title="Active Triggers" ContentId="doc1">
+                            <TextBox AcceptsReturn="True" TextWrapping="Wrap"></TextBox>
+                        </xcad:LayoutAnchorable>
+                    </xcad:LayoutDocumentPane>
+                </xcad:LayoutPanel>
+            </xcad:LayoutRoot>
         </xcad:DockingManager>
     </Grid>
 </Window>

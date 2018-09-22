@@ -39,6 +39,19 @@ namespace DAR
                 System.IO.Directory.CreateDirectory(GlobalVariables.defaultPath);
             }
             UpdateListView();
+
+            //root of the Trigger Tree
+            List<TreeViewModel> treeView = new List<TreeViewModel>();
+            TreeViewModel tv = new TreeViewModel("All Triggers");
+            treeView.Add(tv);
+
+            //Add Children Triggers
+            tv.Children.Add(new TreeViewModel("Child1"));
+
+            //Build Tree
+            tv.Initialize();
+
+            treeViewTriggers.ItemsSource = treeView;
         }
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {

@@ -8,6 +8,21 @@
         xmlns:Custom="http://schemas.microsoft.com/winfx/2006/xaml/presentation/ribbon" x:Class="DAR.MainWindow"
         mc:Ignorable="d"
         Title="EQ Audio Triggers" Height="812" Width="1170" Icon="Tonev-Windows-7-Windows-7-headphone.ico" WindowStyle="ThreeDBorderWindow" SizeChanged="Window_SizeChanged">
+    <Window.Resources>
+        <ResourceDictionary>
+            <Style x:Key="TreeViewItemStyle" TargetType="TreeViewItem">
+                <Setter Property="IsExpanded" Value="True" />
+                <Setter Property="IsSelected" Value="{Binding IsInitiallySelected, Mode=OneTime}" />
+                <Setter Property="KeyboardNavigation.AcceptsReturn" Value="True" />
+            </Style>
+            <HierarchicalDataTemplate x:Key="CheckBoxItemTemplate" ItemsSource="{Binding Children, Mode=OneTime}">
+                <StackPanel Orientation="Horizontal">
+                    <CheckBox Focusable="False" IsChecked="{Binding IsChecked}" VerticalAlignment="Center" />
+                    <ContentPresenter Content="{Binding Name, Mode=OneTime}" Margin="2,0" />
+                </StackPanel>
+            </HierarchicalDataTemplate>
+        </ResourceDictionary>
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -119,16 +134,15 @@
                     <xcad:LayoutAnchorablePaneGroup DockWidth="200">
                         <xcad:LayoutAnchorablePane>
                             <xcad:LayoutAnchorable Title="Characters" ContentId="text1">
-                                <ListView SelectionChanged="ListviewCharacters_SelectionChanged" Name="listviewCharacters">
-
-                                </ListView>
-                                          
+                                <ListView SelectionChanged="ListviewCharacters_SelectionChanged" Name="listviewCharacters"></ListView>
                             </xcad:LayoutAnchorable>
                         </xcad:LayoutAnchorablePane>
                     </xcad:LayoutAnchorablePaneGroup>
                     <xcad:LayoutDocumentPane>
                         <xcad:LayoutDocument Title="Triggers" ContentId="doc1">
-                            <TextBox AcceptsReturn="True" TextWrapping="Wrap"></TextBox>
+                            <TreeView HorizontalAlignment="Left" Margin="12,12,0,0" x:Name="treeViewTriggers" VerticalAlignment="Top"
+                  ItemContainerStyle="{StaticResource TreeViewItemStyle}"
+                  ItemTemplate="{StaticResource CheckBoxItemTemplate}" />
                         </xcad:LayoutDocument>
                         <xcad:LayoutAnchorable Title="Activated Triggers" ContentId="doc1">
                             <TextBox AcceptsReturn="True" TextWrapping="Wrap"></TextBox>

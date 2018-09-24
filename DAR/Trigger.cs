@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace DAR
 {
-    class Trigger
+    public class Trigger
     {
         public String name;
         public String regex;

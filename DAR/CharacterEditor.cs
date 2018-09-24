@@ -18,6 +18,7 @@ namespace DAR
     public partial class CharacterEditor : Form
     {
         SpeechSynthesizer voicesynth = new SpeechSynthesizer();
+        private String origProfileName;
         public CharacterEditor()
         {
             InitializeComponent();
@@ -66,6 +67,7 @@ namespace DAR
         {
             InitializeComponent();
             InitializeForm();
+            origProfileName = editCharacter.ProfileName;
             labelVolumeValue.Text = editCharacter.VolumeValue.ToString();
             labelRateValue.Text = editCharacter.SpeechRate.ToString();
             textBoxCECharacter.Text = editCharacter.Name;
@@ -110,9 +112,15 @@ namespace DAR
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 var col = db.GetCollection<CharacterProfile>("profiles");
-
-
-                var recordSearch = col.Find(Query.EQ("ProfileName", textBoxCEProfile.Text));
+                IEnumerable<CharacterProfile> recordSearch;
+                if(textBoxCEProfile.Modified)
+                {
+                    recordSearch = col.Find(Query.EQ("ProfileName", origProfileName));
+                }
+                else
+                {
+                    recordSearch = col.Find(Query.EQ("ProfileName", textBoxCEProfile.Text));
+                }
                 if (recordSearch.Count<CharacterProfile>() > 0)
                 {
                     IEnumerator<CharacterProfile> enumerator = recordSearch.GetEnumerator();
@@ -127,7 +135,6 @@ namespace DAR
                     character.TimerFontColor = comboBoxTimerFont.SelectedItem.ToString();
                     character.TextFontColor = comboBoxTextFont.SelectedItem.ToString();
                     col.Update(character);
-
                 }
                 else
                 {
@@ -144,7 +151,6 @@ namespace DAR
                     };
                     col.Insert(player);
                 }
-                col.EnsureIndex(x => x.Name);
             }
             this.Close();
         }

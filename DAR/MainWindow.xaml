@@ -44,12 +44,12 @@
                         <Custom:RibbonButton Name="ribbonCharRemove" Label="Remove" IsEnabled="False" Click="RibbonButtonRemove_Click" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-list-remove-user.ico"/>
                     </Custom:RibbonGroup>
                     <Custom:RibbonGroup Header="Trigger Groups">
-                        <Custom:RibbonSplitButton Name="triggerGroupsAdd" Label="Add" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-tab-new-background.ico">
-                            <Custom:RibbonSplitMenuItem IsEnabled="False" Header="Add To Selected Group"/>
-                            <Custom:RibbonSplitMenuItem Header="Add Top Level Group"/>
+                        <Custom:RibbonSplitButton Name="triggerGroupsAdd" Click="TriggerGroupsAdd_Click" Label="Add" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-tab-new-background.ico">
+                            <Custom:RibbonSplitMenuItem Name="triggerGroupsAddSelected" IsEnabled="False" Header="Add To Selected Group"/>
+                            <Custom:RibbonSplitMenuItem Name="triggerGroupsAddTopLevel" Click="TriggerGroupsAdd_Click" Header="Add Top Level Group"/>
                         </Custom:RibbonSplitButton>
-                        <Custom:RibbonButton Name="triggerGroupsEdit" IsEnabled="False" Label="Edit" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-draw-freehand.ico"/>
-                        <Custom:RibbonButton Name="triggerGroupsRemove" IsEnabled="False" Label="Remove" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-tab-close-other.ico"/>
+                        <Custom:RibbonButton Name="triggerGroupsEdit" Click="TriggerGroupsEdit_Click" IsEnabled="False" Label="Edit" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-draw-freehand.ico"/>
+                        <Custom:RibbonButton Name="triggerGroupsRemove" Click="TriggerGroupsRemove_Click" IsEnabled="False" Label="Remove" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-tab-close-other.ico"/>
                     </Custom:RibbonGroup>
                     <Custom:RibbonGroup Header="Triggers">
                         <Custom:RibbonButton Name="triggerAdd" IsEnabled="False" Label="Add" Click="TriggerAdd_Click" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-document-new.ico"/>
@@ -140,7 +140,7 @@
                     </xcad:LayoutAnchorablePaneGroup>
                     <xcad:LayoutDocumentPane>
                         <xcad:LayoutDocument Title="Triggers" ContentId="doc1">
-                            <TreeView HorizontalAlignment="Left" Margin="12,12,0,0" x:Name="treeViewTriggers" VerticalAlignment="Top"
+                            <TreeView SelectedItemChanged="TreeViewTriggers_SelectedItemChanged" HorizontalAlignment="Left" Margin="12,12,0,0" x:Name="treeViewTriggers" VerticalAlignment="Top"
                   ItemContainerStyle="{StaticResource TreeViewItemStyle}"
                   ItemTemplate="{StaticResource CheckBoxItemTemplate}" />
                         </xcad:LayoutDocument>

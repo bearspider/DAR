@@ -34,7 +34,7 @@ namespace DAR
             get { return parent; }
             set { parent = value; }
         }
-        public String[] Child
+        public ArrayList Child
         {
             get { return child; }
             set { child = value; }

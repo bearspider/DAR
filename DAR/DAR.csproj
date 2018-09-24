@@ -86,6 +86,12 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="AddTrigger.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="AddTrigger.Designer.cs">
+      <DependentUpon>AddTrigger.cs</DependentUpon>
+    </Compile>
     <Compile Include="TreeViewModel.cs" />
     <Compile Include="Trigger.cs" />
     <Page Include="MainWindow.xaml">
@@ -122,6 +128,9 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <EmbeddedResource Include="AddTrigger.resx">
+      <DependentUpon>AddTrigger.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="CharacterEditor.resx">
       <DependentUpon>CharacterEditor.cs</DependentUpon>
     </EmbeddedResource>

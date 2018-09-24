@@ -46,7 +46,10 @@ namespace DAR
             treeView.Add(tv);
 
             //Add Children Triggers
-            tv.Children.Add(new TreeViewModel("Child1"));
+            TreeViewModel buff = new TreeViewModel("Buff Related");
+            buff.Children.Add(new TreeViewModel("Bard Epic"));
+            tv.Children.Add(buff);
+
 
             //Build Tree
             tv.Initialize();
@@ -110,6 +113,17 @@ namespace DAR
         {
             ribbonCharEdit.IsEnabled = true;
             ribbonCharRemove.IsEnabled = true;
+        }
+
+        private void TriggerAdd_Click(object sender, RoutedEventArgs e)
+        {
+            //Build new Trigger
+            AddTrigger newTrigger = new AddTrigger();
+            newTrigger.ShowDialog();
+            //Write trigger to database
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+            }
         }
     }
 }

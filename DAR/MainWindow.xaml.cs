@@ -30,7 +30,7 @@ namespace DAR
     public partial class MainWindow : Window
     {
         private TreeViewModel tv;
-
+        private List<TreeViewModel> treeView;
         public MainWindow()
         {
             InitializeComponent();
@@ -85,7 +85,7 @@ namespace DAR
         private void UpdateTriggerView()
         {
             //root of the Trigger Tree
-            List<TreeViewModel> treeView = new List<TreeViewModel>();
+            treeView = new List<TreeViewModel>();
             tv = new TreeViewModel("All Triggers");
             treeView.Add(tv);
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))

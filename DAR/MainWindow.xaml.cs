@@ -216,9 +216,11 @@ namespace DAR
                 triggerGroupsEdit.IsEnabled = true;
                 triggerGroupsRemove.IsEnabled = true;
                 triggerGroupsAddSelected.IsEnabled = true;
+                triggerAdd.IsEnabled = true;
             }
             else
             {
+                triggerAdd.IsEnabled = false;
                 triggerGroupsEdit.IsEnabled = false;
                 triggerGroupsRemove.IsEnabled = false;
                 triggerGroupsAddSelected.IsEnabled = false;
@@ -239,7 +241,6 @@ namespace DAR
             }
             UpdateTriggerView();
         }
-
         private void TriggerGroupsAddTopLevel_Click(object sender, RoutedEventArgs e)
         {
             TriggerGroupEditor triggerDialog = new TriggerGroupEditor();

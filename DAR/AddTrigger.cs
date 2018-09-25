@@ -15,21 +15,9 @@ namespace DAR
         public AddTrigger()
         {
             InitializeComponent();
-        }
-
-        private void checkBoxClipboard_CheckedChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void label1_Click(object sender, EventArgs e)
-        {
-
+            (tabControl1.TabPages[2] as TabPage).Enabled = false;
+            (tabControl1.TabPages[3] as TabPage).Enabled = false;
+            comboBoxTimerType.SelectedIndex = 1;
         }
     }
 }

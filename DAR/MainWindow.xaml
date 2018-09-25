@@ -45,7 +45,7 @@
                     </Custom:RibbonGroup>
                     <Custom:RibbonGroup Header="Trigger Groups">
                         <Custom:RibbonSplitButton Name="triggerGroupsAdd" Click="TriggerGroupsAdd_Click" Label="Add" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-tab-new-background.ico">
-                            <Custom:RibbonSplitMenuItem Name="triggerGroupsAddSelected" IsEnabled="False" Header="Add To Selected Group"/>
+                            <Custom:RibbonSplitMenuItem Name="triggerGroupsAddSelected" Click="TriggerGroupsAddSelected_Click" IsEnabled="False" Header="Add To Selected Group"/>
                             <Custom:RibbonSplitMenuItem Name="triggerGroupsAddTopLevel" Click="TriggerGroupsAdd_Click" Header="Add Top Level Group"/>
                         </Custom:RibbonSplitButton>
                         <Custom:RibbonButton Name="triggerGroupsEdit" Click="TriggerGroupsEdit_Click" IsEnabled="False" Label="Edit" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-draw-freehand.ico"/>

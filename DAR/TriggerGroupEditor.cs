@@ -14,15 +14,13 @@ namespace DAR
     public partial class TriggerGroupEditor : Form
     {
         private string origGroupName;
-        private String function;
-        private TriggerGroup parent;
-        private BsonValue newChild;
+        private TreeViewModel parentTree;
+        private Boolean addChild;
 
         public TriggerGroupEditor()
         {
             InitializeComponent();
         }
-
         public TriggerGroupEditor(TriggerGroup editTrigger)
         {
             InitializeComponent();
@@ -31,17 +29,17 @@ namespace DAR
             textBoxComments.Text = editTrigger.Comments;
             checkBoxEnable.Checked = editTrigger.DefaultEnabled;
         }
-
-        public TriggerGroupEditor(TriggerGroup parentGroup, String function)
+        public TriggerGroupEditor(TreeViewModel parentObject)
         {
             InitializeComponent();
-            parent = parentGroup;
+            addChild = true;
+            parentTree = parentObject;
         }
-
-        private void AddTriggerGroup()
+        private void AddTriggerGroup(TreeViewModel parentObject)
         {
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
+                BsonValue newChild = new BsonValue();
                 var col = db.GetCollection<TriggerGroup>("triggergroups");
                 IEnumerable<TriggerGroup> recordSearch;
                 if (textBoxName.Modified)
@@ -56,15 +54,8 @@ namespace DAR
                 IEnumerator<TriggerGroup> enumerator = recordSearch.GetEnumerator();
                 enumerator.MoveNext();
                 var editTrigger = (enumerator.Current);
-
-                //If we changed the name of the trigger, Delete the trigger Group and then recreate it.
-                //if (textBoxName.Text != editTrigger.TriggerGroupName)
-                //{
-                //    var dbdelete = col.Delete(Query.EQ("TriggerGroupName", editTrigger.TriggerGroupName));
-                //}
                 if (recordSearch.Count<TriggerGroup>() > 0)
                 {
-
                     //Update Record instead
                     editTrigger.TriggerGroupName = textBoxName.Text;
                     editTrigger.Comments = textBoxComments.Text;
@@ -83,26 +74,64 @@ namespace DAR
                     };
                     newChild = col.Insert(triggerGroup);
                 }
+                //Add new trigger group to it's parent list
+                
+                var record = col.FindOne(Query.EQ("TriggerGroupName", parentObject.Name));
+                var newrecord = col.FindById(newChild.AsDecimal);
+                record.Children.Add(newrecord.Id);
+                col.Update(record);
             }
         }
-        private void AddChild()
+        private void AddTriggerGroup()
         {
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 var col = db.GetCollection<TriggerGroup>("triggergroups");
-                var parentGroup = col.FindById(parent.Id);
-                parentGroup.AddChild(newChild);
-                col.Update(parentGroup);
+                IEnumerable<TriggerGroup> recordSearch;
+                if (textBoxName.Modified)
+                {
+                    recordSearch = col.Find(Query.EQ("TriggerGroupName", origGroupName));
+                }
+                else
+                {
+                    recordSearch = col.Find(Query.EQ("TriggerGroupName", textBoxName.Text));
+                }
+
+                IEnumerator<TriggerGroup> enumerator = recordSearch.GetEnumerator();
+                enumerator.MoveNext();
+                var editTrigger = (enumerator.Current);
+                if (recordSearch.Count<TriggerGroup>() > 0)
+                {
+                    //Update Record instead
+                    editTrigger.TriggerGroupName = textBoxName.Text;
+                    editTrigger.Comments = textBoxComments.Text;
+                    editTrigger.DefaultEnabled = checkBoxEnable.Checked;
+                    col.Update(editTrigger);
+                }
+                else
+                {
+                    //Insert new record
+                    //No Children since new Trigger Group
+                    var triggerGroup = new TriggerGroup
+                    {
+                        TriggerGroupName = textBoxName.Text,
+                        Comments = textBoxComments.Text,
+                        DefaultEnabled = checkBoxEnable.Checked
+                    };
+                    col.Insert(triggerGroup);
+                }
             }
         }
         private void ButtonSave_Click(object sender, EventArgs e)
         {
-            AddTriggerGroup();
-            if (function == "AddChild")
+            if(addChild)
             {
-                AddChild();
+                AddTriggerGroup(parentTree);
             }
-            
+            else
+            {
+                AddTriggerGroup();
+            }      
             this.Close();
         }
     }

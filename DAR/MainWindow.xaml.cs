@@ -62,24 +62,36 @@ namespace DAR
             newCharacter.ShowDialog();
             UpdateListView();
         }
-
         private void BuildTree(TriggerGroup branch)
         {
-            if(branch.Children.Count > 0)
+            if (branch != null)
             {
-                foreach (TriggerGroup leaf in branch.Children)
+                if (branch.Children.Count > 0 && branch != null)
                 {
-                    BuildTree(leaf);
+                    foreach (int leaf in branch.Children)
+                    {
+                        TriggerGroup leafGroup = GetTriggerGroup(leaf);
+                        BuildTree(leafGroup);
+                    }
+                }
+                tv.Children.Add(new TreeViewModel(branch.TriggerGroupName));
+                if (branch.triggers.Count > 0)
+                {
+                    foreach (Trigger item in branch.triggers)
+                    {
+                        tv.Children.Add(new TreeViewModel(item.Name));
+                    }
+
                 }
             }
-            tv.Children.Add(new TreeViewModel(branch.TriggerGroupName));
-            if(branch.triggers.Count > 0)
+        }
+        private TriggerGroup GetTriggerGroup(int id)
+        {
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                foreach (Trigger item in branch.triggers)
-                {
-                    tv.Children.Add(new TreeViewModel(item.Name));
-                }
-
+                var col = db.GetCollection<TriggerGroup>("triggergroups");
+                var record = col.FindById(id);
+                return record;
             }
         }
         private void UpdateTriggerView()
@@ -141,31 +153,24 @@ namespace DAR
                 }
             }
         }
-
         private void ListviewCharacters_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             ribbonCharEdit.IsEnabled = true;
             ribbonCharRemove.IsEnabled = true;
         }
-
         private void TriggerAdd_Click(object sender, RoutedEventArgs e)
         {
             //Build new Trigger
             AddTrigger newTrigger = new AddTrigger();
             newTrigger.ShowDialog();
-            //Write trigger to database
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-            }
         }
-
         private void TriggerGroupsAdd_Click(object sender, RoutedEventArgs e)
         {
             TriggerGroupEditor triggerDialog = new TriggerGroupEditor();
             triggerDialog.ShowDialog();
             UpdateTriggerView();
+            e.Handled = true;
         }
-
         private void TriggerGroupsRemove_Click(object sender, RoutedEventArgs e)
         {
             TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
@@ -179,8 +184,15 @@ namespace DAR
                     UpdateTriggerView();
                 }
             }
+            e.Handled = true;
         }
-
+        private void TriggerGroupsAddSelected_Click(object sender, RoutedEventArgs e)
+        {
+            TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
+            TriggerGroupEditor triggerDialog = new TriggerGroupEditor(root);
+            triggerDialog.Show();
+            e.Handled = true;
+        }
         private void TreeViewTriggers_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
             TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
@@ -197,7 +209,6 @@ namespace DAR
                 triggerGroupsAddSelected.IsEnabled = false;
             }
         }
-
         private void TriggerGroupsEdit_Click(object sender, RoutedEventArgs e)
         {
             TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
@@ -213,5 +224,7 @@ namespace DAR
             }
             UpdateTriggerView();
         }
+
+
     }
 }

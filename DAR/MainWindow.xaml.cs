@@ -62,28 +62,25 @@ namespace DAR
             newCharacter.ShowDialog();
             UpdateListView();
         }
-        private void BuildTree(TriggerGroup branch)
+        private TreeViewModel BuildTree(TriggerGroup branch)
         {
-            if (branch != null)
+            TreeViewModel rTree = new TreeViewModel(branch.TriggerGroupName);
+            if (branch.Children.Count > 0)
             {
-                if (branch.Children.Count > 0 && branch != null)
+                foreach (int leaf in branch.Children)
                 {
-                    foreach (int leaf in branch.Children)
-                    {
-                        TriggerGroup leafGroup = GetTriggerGroup(leaf);
-                        BuildTree(leafGroup);
-                    }
-                }
-                tv.Children.Add(new TreeViewModel(branch.TriggerGroupName));
-                if (branch.triggers.Count > 0)
-                {
-                    foreach (Trigger item in branch.triggers)
-                    {
-                        tv.Children.Add(new TreeViewModel(item.Name));
-                    }
-
+                    TriggerGroup leafGroup = GetTriggerGroup(leaf);
+                    rTree.Children.Add(BuildTree(leafGroup));
                 }
             }
+            if (branch.triggers.Count > 0)
+            {
+                foreach (Trigger item in branch.triggers)
+                {
+                    rTree.Children.Add(new TreeViewModel(item.Name));
+                }
+            }
+            return rTree;
         }
         private TriggerGroup GetTriggerGroup(int id)
         {
@@ -105,7 +102,17 @@ namespace DAR
                 var col = db.GetCollection<TriggerGroup>("triggergroups");
                 foreach (var doc in col.FindAll())
                 {
-                    BuildTree(doc);
+                    if (doc.Parent == 0)
+                    {
+                        if(doc.Children.Count > 0)
+                        {
+                            tv.Children.Add(BuildTree(doc));
+                        }
+                        else
+                        {
+                            tv.Children.Add(new TreeViewModel(doc.TriggerGroupName));
+                        }
+                    }                  
                 }
             }
             //Build Tree
@@ -168,8 +175,8 @@ namespace DAR
         {
             TriggerGroupEditor triggerDialog = new TriggerGroupEditor();
             triggerDialog.ShowDialog();
-            UpdateTriggerView();
             e.Handled = true;
+            UpdateTriggerView();
         }
         private void TriggerGroupsRemove_Click(object sender, RoutedEventArgs e)
         {
@@ -180,7 +187,14 @@ namespace DAR
                 MessageBoxResult result = MessageBox.Show($"Are you sure you want to Delete {root.Name}", "Confirmation", MessageBoxButton.YesNo);
                 if (result == MessageBoxResult.Yes)
                 {
-                    var dbdelete = col.Delete(Query.EQ("TriggerGroupName", root.Name));
+                    var dbid = (col.FindOne(x => x.TriggerGroupName.Contains(root.Name))).Id;
+                    var childContains = col.FindAll().Where(x => x.children.Contains(dbid));
+                    foreach(var child in childContains)
+                    {
+                        child.Children.Remove(dbid);
+                        col.Update(child);
+                    }
+                    col.Delete(dbid);
                     UpdateTriggerView();
                 }
             }
@@ -190,8 +204,9 @@ namespace DAR
         {
             TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
             TriggerGroupEditor triggerDialog = new TriggerGroupEditor(root);
-            triggerDialog.Show();
+            triggerDialog.ShowDialog();
             e.Handled = true;
+            UpdateTriggerView();
         }
         private void TreeViewTriggers_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
@@ -225,6 +240,12 @@ namespace DAR
             UpdateTriggerView();
         }
 
-
+        private void TriggerGroupsAddTopLevel_Click(object sender, RoutedEventArgs e)
+        {
+            TriggerGroupEditor triggerDialog = new TriggerGroupEditor();
+            triggerDialog.ShowDialog();
+            e.Handled = true;
+            UpdateTriggerView();
+        }
     }
 }

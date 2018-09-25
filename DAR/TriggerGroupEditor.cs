@@ -1,5 +1,6 @@
 ﻿using LiteDB;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -20,10 +21,12 @@ namespace DAR
         public TriggerGroupEditor()
         {
             InitializeComponent();
+            addChild = false;
         }
         public TriggerGroupEditor(TriggerGroup editTrigger)
         {
             InitializeComponent();
+            addChild = false;
             origGroupName = editTrigger.TriggerGroupName;
             textBoxName.Text = editTrigger.TriggerGroupName;
             textBoxComments.Text = editTrigger.Comments;
@@ -41,6 +44,7 @@ namespace DAR
             {
                 BsonValue newChild = new BsonValue();
                 var col = db.GetCollection<TriggerGroup>("triggergroups");
+                var record = col.FindOne(Query.EQ("TriggerGroupName", parentObject.Name));
                 IEnumerable<TriggerGroup> recordSearch;
                 if (textBoxName.Modified)
                 {
@@ -65,18 +69,18 @@ namespace DAR
                 else
                 {
                     //Insert new record
-                    //No Children since new Trigger Group
                     var triggerGroup = new TriggerGroup
                     {
                         TriggerGroupName = textBoxName.Text,
                         Comments = textBoxComments.Text,
-                        DefaultEnabled = checkBoxEnable.Checked
+                        DefaultEnabled = checkBoxEnable.Checked,
+                        parent = record.Id
                     };
                     newChild = col.Insert(triggerGroup);
                 }
                 //Add new trigger group to it's parent list
                 
-                var record = col.FindOne(Query.EQ("TriggerGroupName", parentObject.Name));
+               
                 var newrecord = col.FindById(newChild.AsDecimal);
                 record.Children.Add(newrecord.Id);
                 col.Update(record);

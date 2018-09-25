@@ -16,9 +16,11 @@ namespace DAR
         public Boolean defaultEnabled;
         public ArrayList children;
         public ArrayList triggers;
+        public int parent;
 
         public TriggerGroup()
         {
+            parent = 0;
             triggerGroupName = "New Group";
             comments = "";
             defaultEnabled = true;
@@ -44,6 +46,11 @@ namespace DAR
         {
             get { return children; }
             set { children = value; }
+        }
+        public int Parent
+        {
+            get { return parent; }
+            set { parent = value; }
         }
         public void AddChild( int Id )
         {

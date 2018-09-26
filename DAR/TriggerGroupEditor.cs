@@ -74,13 +74,12 @@ namespace DAR
                         TriggerGroupName = textBoxName.Text,
                         Comments = textBoxComments.Text,
                         DefaultEnabled = checkBoxEnable.Checked,
-                        parent = record.Id
+                        Parent = record.Id,
+                        Children = new ArrayList()
                     };
                     newChild = col.Insert(triggerGroup);
                 }
                 //Add new trigger group to it's parent list
-                
-               
                 var newrecord = col.FindById(newChild.AsDecimal);
                 record.Children.Add(newrecord.Id);
                 col.Update(record);

@@ -19,7 +19,7 @@ namespace DAR
         public string Name { get; private set; }
         public List<TreeViewModel> Children { get; private set; }
         public bool IsInitiallySelected { get; private set; }
-
+        public string Type { get; set; }
         bool? _isChecked = false;
         TreeViewModel _parent;
         

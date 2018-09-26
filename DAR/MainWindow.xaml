@@ -54,7 +54,7 @@
                     <Custom:RibbonGroup Header="Triggers">
                         <Custom:RibbonButton Name="triggerAdd" IsEnabled="False" Label="Add" Click="TriggerAdd_Click" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-document-new.ico"/>
                         <Custom:RibbonButton Name="triggerEdit" IsEnabled="False" Label="Edit" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-document-edit.ico"/>
-                        <Custom:RibbonButton Name="triggerRemove" IsEnabled="False" Label="Remove" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-document-close.ico"/>
+                        <Custom:RibbonButton Name="triggerRemove" IsEnabled="False" Label="Remove" Click="TriggerRemove_Click" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-document-close.ico"/>
                     </Custom:RibbonGroup>
                     <Custom:RibbonGroup Header="Misc">
                         <Custom:RibbonSplitButton Label="Commands" LargeImageSource="Oxygen-Icons.org-Oxygen-Apps-utilities-terminal.ico">

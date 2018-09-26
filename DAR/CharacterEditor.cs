@@ -22,10 +22,7 @@ namespace DAR
         public CharacterEditor()
         {
             InitializeComponent();
-            InitializeForm();
-            //CharacterProfile houkaa = new CharacterProfile();
-            //houkaa.Speak("Greetings");
-            
+            InitializeForm(); 
         }
         private void InitializeForm()
         {

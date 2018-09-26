@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -20,6 +21,7 @@ namespace DAR
         public int volumeValue;
         public int speechRate;
         public string voice;
+        public ArrayList triggers;
         private SpeechSynthesizer synth;
         //Constructor
         public CharacterProfile()
@@ -37,11 +39,17 @@ namespace DAR
             synth.Rate = speechRate;
             synth.Volume = volumeValue;
             synth.SelectVoice(voice);
+            triggers = new ArrayList();
         }
         public int Id
         {
             get { return id; }
             set { id = value; }
+        }
+        public ArrayList Triggers
+        {
+            get { return triggers; }
+            set { triggers = value; }
         }
         public string Name
         {
@@ -97,7 +105,10 @@ namespace DAR
         {
             synth.Speak(output);
         }
-
+        public void AddTrigger(int triggerId)
+        {
+            triggers.Add(triggerId);
+        }
     }
 
 

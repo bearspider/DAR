@@ -1,5 +1,6 @@
 ﻿using LiteDB;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -31,6 +32,7 @@ namespace DAR
     {
         private TreeViewModel tv;
         private List<TreeViewModel> treeView;
+        private ArrayList activeTriggers;
         public MainWindow()
         {
             InitializeComponent();
@@ -45,11 +47,19 @@ namespace DAR
             {
                 LiteCollection<CharacterProfile> characterProfiles = db.GetCollection<CharacterProfile>("profiles");
                 LiteCollection<TriggerGroup> triggerGroups = db.GetCollection<TriggerGroup>("triggergroups");
+                LiteCollection<Category> categories = db.GetCollection<Category>("categories");
+                LiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
                 characterProfiles.EnsureIndex((CharacterProfile x) => x.Id, true);
                 triggerGroups.EnsureIndex((TriggerGroup y) => y.Id, true);
+                categories.EnsureIndex((Category z) => z.Id, true);
+                triggers.EnsureIndex((Trigger w) => w.Id, true);
             }
             UpdateListView();
             UpdateTriggerView();
+
+            //Select Index 0 for CharacterProfiles
+
+            //Start Monitoring Enabled Profiles
 
         }
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -64,7 +74,35 @@ namespace DAR
         }
         private TreeViewModel BuildTree(TriggerGroup branch)
         {
-            TreeViewModel rTree = new TreeViewModel(branch.TriggerGroupName);
+            TreeViewModel rTree = new TreeViewModel(branch.TriggerGroupName)
+            {
+                Type = "triggergroup"
+            };
+            if (branch.triggers.Count > 0)
+            {
+                foreach (Int32 item in branch.triggers)
+                {
+                    using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                    {
+                        var col = db.GetCollection<Trigger>("triggers");
+                        var getTrigger = col.FindById(item);
+                        String selectedCharacter = listviewCharacters.SelectedItem.ToString();
+                        var profiles = db.GetCollection<CharacterProfile>("profiles");
+                        CharacterProfile profile = profiles.FindOne(Query.EQ("ProfileName", selectedCharacter));
+                        Boolean isChecked = false;
+                        if (profile.Triggers.Contains(item))
+                        {
+                            isChecked = true;
+                        }
+                        TreeViewModel newChildBranch = new TreeViewModel(getTrigger.Name)
+                        {
+                            Type = "trigger"
+                        };
+                        newChildBranch.IsChecked = isChecked; 
+                        rTree.Children.Add(newChildBranch);
+                    }
+                }
+            }
             if (branch.Children.Count > 0)
             {
                 foreach (int leaf in branch.Children)
@@ -73,32 +111,26 @@ namespace DAR
                     rTree.Children.Add(BuildTree(leafGroup));
                 }
             }
-            if (branch.triggers.Count > 0)
-            {
-                foreach (Trigger item in branch.triggers)
-                {
-                    rTree.Children.Add(new TreeViewModel(item.Name));
-                }
-            }
             return rTree;
         }
         private TriggerGroup GetTriggerGroup(int id)
         {
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                var col = db.GetCollection<TriggerGroup>("triggergroups");
-                var record = col.FindById(id);
-                return record;
+                    var col = db.GetCollection<TriggerGroup>("triggergroups");
+                    var record = col.FindById(id);
+                    return record;
             }
         }
         private void UpdateTriggerView()
-        {
+        {                
             //root of the Trigger Tree
             treeView = new List<TreeViewModel>();
             tv = new TreeViewModel("All Triggers");
             treeView.Add(tv);
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
+                //Get Activated Triggers
                 var col = db.GetCollection<TriggerGroup>("triggergroups");
                 foreach (var doc in col.FindAll())
                 {
@@ -110,7 +142,11 @@ namespace DAR
                         }
                         else
                         {
-                            tv.Children.Add(new TreeViewModel(doc.TriggerGroupName));
+                            TreeViewModel rTree = new TreeViewModel(doc.TriggerGroupName)
+                            {
+                                Type = "triggergroup"
+                            };
+                            tv.Children.Add(rTree);
                         }
                     }                  
                 }
@@ -164,12 +200,25 @@ namespace DAR
         {
             ribbonCharEdit.IsEnabled = true;
             ribbonCharRemove.IsEnabled = true;
+            //Update TriggerView with selected triggers from profile
+            String selectedCharacter = listviewCharacters.SelectedItem.ToString();
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                var col = db.GetCollection<CharacterProfile>("profiles");
+                var result = col.FindOne(Query.EQ("ProfileName", selectedCharacter));
+                foreach(int checkedTrigger in result.Triggers)
+                {
+                    activeTriggers.Add(checkedTrigger);
+                }
+            }
         }
         private void TriggerAdd_Click(object sender, RoutedEventArgs e)
         {
             //Build new Trigger
-            AddTrigger newTrigger = new AddTrigger();
+            String selectedGroup = ((TreeViewModel)treeViewTriggers.SelectedItem).Name;
+            AddTrigger newTrigger = new AddTrigger(selectedGroup);
             newTrigger.ShowDialog();
+            UpdateTriggerView();
         }
         private void TriggerGroupsAdd_Click(object sender, RoutedEventArgs e)
         {
@@ -213,17 +262,37 @@ namespace DAR
             TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
             if (root.Name != "All Triggers")
             {
-                triggerGroupsEdit.IsEnabled = true;
-                triggerGroupsRemove.IsEnabled = true;
-                triggerGroupsAddSelected.IsEnabled = true;
-                triggerAdd.IsEnabled = true;
+                if (root.Type == "triggergroup")
+                {
+                    triggerGroupsAdd.IsEnabled = true;
+                    triggerGroupsEdit.IsEnabled = true;
+                    triggerGroupsRemove.IsEnabled = true;
+                    triggerGroupsAddSelected.IsEnabled = true;
+                    triggerAdd.IsEnabled = true;
+                    triggerEdit.IsEnabled = false;
+                    triggerRemove.IsEnabled = false;
+                }
+                else
+                {
+                    triggerGroupsAdd.IsEnabled = false;
+                    triggerGroupsEdit.IsEnabled = false;
+                    triggerGroupsRemove.IsEnabled = false;
+                    triggerGroupsAddSelected.IsEnabled = false;
+                    triggerAdd.IsEnabled = false;
+                    triggerEdit.IsEnabled = true;
+                    triggerRemove.IsEnabled = true;
+                }
             }
             else
             {
+                triggerGroupsAdd.IsEnabled = true;
                 triggerAdd.IsEnabled = false;
                 triggerGroupsEdit.IsEnabled = false;
                 triggerGroupsRemove.IsEnabled = false;
                 triggerGroupsAddSelected.IsEnabled = false;
+                triggerAdd.IsEnabled = false;
+                triggerEdit.IsEnabled = false;
+                triggerRemove.IsEnabled = false;
             }
         }
         private void TriggerGroupsEdit_Click(object sender, RoutedEventArgs e)
@@ -246,6 +315,25 @@ namespace DAR
             TriggerGroupEditor triggerDialog = new TriggerGroupEditor();
             triggerDialog.ShowDialog();
             e.Handled = true;
+            UpdateTriggerView();
+        }
+        private void TriggerRemove_Click(object sender, RoutedEventArgs e)
+        {
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
+                var col = db.GetCollection<Trigger>("triggers");
+                var triggergroup = db.GetCollection<TriggerGroup>("triggergroups");
+                var getTrigger = col.FindOne(Query.EQ("Name",root.Name));
+                var getGroup = triggergroup.FindById(getTrigger.Parent);
+                MessageBoxResult result = MessageBox.Show($"Are you sure you want to Delete {root.Name}", "Confirmation", MessageBoxButton.YesNo);
+                if (result == MessageBoxResult.Yes)
+                {
+                    getGroup.RemoveTrigger(getTrigger.Id);
+                    triggergroup.Update(getGroup);
+                    col.Delete(getTrigger.Id);
+                }
+            }
             UpdateTriggerView();
         }
     }

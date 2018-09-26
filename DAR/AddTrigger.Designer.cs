@@ -49,15 +49,15 @@
             this.buttonTestSound = new System.Windows.Forms.Button();
             this.buttonSelectSound = new System.Windows.Forms.Button();
             this.textBoxSoundFile = new System.Windows.Forms.TextBox();
-            this.textBox3 = new System.Windows.Forms.TextBox();
-            this.comboBox1 = new System.Windows.Forms.ComboBox();
+            this.textBoxBasicTTS = new System.Windows.Forms.TextBox();
+            this.comboBoxBasicTest = new System.Windows.Forms.ComboBox();
             this.checkBoxInterrupt = new System.Windows.Forms.CheckBox();
             this.radioButtonPlaySound = new System.Windows.Forms.RadioButton();
             this.radioButtonTTS = new System.Windows.Forms.RadioButton();
             this.radioButtonNoSound = new System.Windows.Forms.RadioButton();
             this.groupBoxBText = new System.Windows.Forms.GroupBox();
-            this.textBox2 = new System.Windows.Forms.TextBox();
-            this.textBox1 = new System.Windows.Forms.TextBox();
+            this.textBoxBasicClipboard = new System.Windows.Forms.TextBox();
+            this.textBoxBasicDisplay = new System.Windows.Forms.TextBox();
             this.checkBoxClipboard = new System.Windows.Forms.CheckBox();
             this.checkBoxDisplayText = new System.Windows.Forms.CheckBox();
             this.tabPage2 = new System.Windows.Forms.TabPage();
@@ -79,12 +79,12 @@
             this.comboBoxTimerType = new System.Windows.Forms.ComboBox();
             this.labelTimerType = new System.Windows.Forms.Label();
             this.tabPage3 = new System.Windows.Forms.TabPage();
-            this.label4 = new System.Windows.Forms.Label();
-            this.textBox7 = new System.Windows.Forms.TextBox();
-            this.label5 = new System.Windows.Forms.Label();
-            this.textBox8 = new System.Windows.Forms.TextBox();
-            this.label6 = new System.Windows.Forms.Label();
-            this.textBox9 = new System.Windows.Forms.TextBox();
+            this.labelEndingSeconds = new System.Windows.Forms.Label();
+            this.textBoxEndingSeconds = new System.Windows.Forms.TextBox();
+            this.labelEndingMinutes = new System.Windows.Forms.Label();
+            this.textBoxEndingMinutes = new System.Windows.Forms.TextBox();
+            this.labelEndingHours = new System.Windows.Forms.Label();
+            this.textBoxEndingHours = new System.Windows.Forms.TextBox();
             this.checkBoxNotify = new System.Windows.Forms.CheckBox();
             this.groupBoxEndingAS = new System.Windows.Forms.GroupBox();
             this.labelEndingSoundFile = new System.Windows.Forms.Label();
@@ -105,12 +105,12 @@
             this.checkBoxEndingClipboard = new System.Windows.Forms.CheckBox();
             this.checkBoxEndingDisplay = new System.Windows.Forms.CheckBox();
             this.tabPage4 = new System.Windows.Forms.TabPage();
-            this.label1 = new System.Windows.Forms.Label();
-            this.textBox4 = new System.Windows.Forms.TextBox();
-            this.label2 = new System.Windows.Forms.Label();
-            this.textBox5 = new System.Windows.Forms.TextBox();
-            this.label3 = new System.Windows.Forms.Label();
-            this.textBox6 = new System.Windows.Forms.TextBox();
+            this.labelEndedSeconds = new System.Windows.Forms.Label();
+            this.textBoxEndedSeconds = new System.Windows.Forms.TextBox();
+            this.labelEndedMinutes = new System.Windows.Forms.Label();
+            this.textBoxEndedMinutes = new System.Windows.Forms.TextBox();
+            this.labelEndedHours = new System.Windows.Forms.Label();
+            this.textBoxEndedHours = new System.Windows.Forms.TextBox();
             this.checkBoxEndedNotify = new System.Windows.Forms.CheckBox();
             this.groupBoxEndedAudio = new System.Windows.Forms.GroupBox();
             this.labelEndedSoundFile = new System.Windows.Forms.Label();
@@ -247,6 +247,7 @@
             this.checkBoxRegex.TabIndex = 2;
             this.checkBoxRegex.Text = "Use Regular Expressions";
             this.checkBoxRegex.UseVisualStyleBackColor = true;
+            this.checkBoxRegex.CheckedChanged += new System.EventHandler(this.CheckBoxRegex_CheckedChanged);
             // 
             // textBoxSearchText
             // 
@@ -295,8 +296,8 @@
             this.groupBoxAudioSettings.Controls.Add(this.buttonTestSound);
             this.groupBoxAudioSettings.Controls.Add(this.buttonSelectSound);
             this.groupBoxAudioSettings.Controls.Add(this.textBoxSoundFile);
-            this.groupBoxAudioSettings.Controls.Add(this.textBox3);
-            this.groupBoxAudioSettings.Controls.Add(this.comboBox1);
+            this.groupBoxAudioSettings.Controls.Add(this.textBoxBasicTTS);
+            this.groupBoxAudioSettings.Controls.Add(this.comboBoxBasicTest);
             this.groupBoxAudioSettings.Controls.Add(this.checkBoxInterrupt);
             this.groupBoxAudioSettings.Controls.Add(this.radioButtonPlaySound);
             this.groupBoxAudioSettings.Controls.Add(this.radioButtonTTS);
@@ -321,7 +322,7 @@
             // labelTest
             // 
             this.labelTest.AutoSize = true;
-            this.labelTest.Location = new System.Drawing.Point(19, 248);
+            this.labelTest.Location = new System.Drawing.Point(83, 248);
             this.labelTest.Name = "labelTest";
             this.labelTest.Size = new System.Drawing.Size(28, 13);
             this.labelTest.TabIndex = 10;
@@ -339,12 +340,14 @@
             // 
             // buttonTestSound
             // 
-            this.buttonTestSound.Location = new System.Drawing.Point(229, 245);
+            this.buttonTestSound.Enabled = false;
+            this.buttonTestSound.Location = new System.Drawing.Point(293, 245);
             this.buttonTestSound.Name = "buttonTestSound";
             this.buttonTestSound.Size = new System.Drawing.Size(77, 21);
             this.buttonTestSound.TabIndex = 8;
             this.buttonTestSound.Text = "Play";
             this.buttonTestSound.UseVisualStyleBackColor = true;
+            this.buttonTestSound.Click += new System.EventHandler(this.ButtonTestSound_Click);
             // 
             // buttonSelectSound
             // 
@@ -365,21 +368,22 @@
             this.textBoxSoundFile.Size = new System.Drawing.Size(356, 20);
             this.textBoxSoundFile.TabIndex = 6;
             // 
-            // textBox3
+            // textBoxBasicTTS
             // 
-            this.textBox3.Enabled = false;
-            this.textBox3.Location = new System.Drawing.Point(117, 65);
-            this.textBox3.Name = "textBox3";
-            this.textBox3.Size = new System.Drawing.Size(450, 20);
-            this.textBox3.TabIndex = 5;
+            this.textBoxBasicTTS.Enabled = false;
+            this.textBoxBasicTTS.Location = new System.Drawing.Point(117, 65);
+            this.textBoxBasicTTS.Name = "textBoxBasicTTS";
+            this.textBoxBasicTTS.Size = new System.Drawing.Size(450, 20);
+            this.textBoxBasicTTS.TabIndex = 5;
+            this.textBoxBasicTTS.TextChanged += new System.EventHandler(this.TextBoxBasicTTS_TextChanged);
             // 
-            // comboBox1
+            // comboBoxBasicTest
             // 
-            this.comboBox1.FormattingEnabled = true;
-            this.comboBox1.Location = new System.Drawing.Point(53, 245);
-            this.comboBox1.Name = "comboBox1";
-            this.comboBox1.Size = new System.Drawing.Size(170, 21);
-            this.comboBox1.TabIndex = 4;
+            this.comboBoxBasicTest.FormattingEnabled = true;
+            this.comboBoxBasicTest.Location = new System.Drawing.Point(117, 245);
+            this.comboBoxBasicTest.Name = "comboBoxBasicTest";
+            this.comboBoxBasicTest.Size = new System.Drawing.Size(170, 21);
+            this.comboBoxBasicTest.TabIndex = 4;
             // 
             // checkBoxInterrupt
             // 
@@ -401,6 +405,7 @@
             this.radioButtonPlaySound.TabIndex = 2;
             this.radioButtonPlaySound.Text = "Play Sound File";
             this.radioButtonPlaySound.UseVisualStyleBackColor = true;
+            this.radioButtonPlaySound.CheckedChanged += new System.EventHandler(this.RadioButtonPlaySound_CheckedChanged);
             // 
             // radioButtonTTS
             // 
@@ -411,6 +416,7 @@
             this.radioButtonTTS.TabIndex = 1;
             this.radioButtonTTS.Text = "Use Text To Speech";
             this.radioButtonTTS.UseVisualStyleBackColor = true;
+            this.radioButtonTTS.CheckedChanged += new System.EventHandler(this.RadioButtonTTS_CheckedChanged);
             // 
             // radioButtonNoSound
             // 
@@ -423,11 +429,12 @@
             this.radioButtonNoSound.TabStop = true;
             this.radioButtonNoSound.Text = "No Sound";
             this.radioButtonNoSound.UseVisualStyleBackColor = true;
+            this.radioButtonNoSound.CheckedChanged += new System.EventHandler(this.RadioButtonNoSound_CheckedChanged);
             // 
             // groupBoxBText
             // 
-            this.groupBoxBText.Controls.Add(this.textBox2);
-            this.groupBoxBText.Controls.Add(this.textBox1);
+            this.groupBoxBText.Controls.Add(this.textBoxBasicClipboard);
+            this.groupBoxBText.Controls.Add(this.textBoxBasicDisplay);
             this.groupBoxBText.Controls.Add(this.checkBoxClipboard);
             this.groupBoxBText.Controls.Add(this.checkBoxDisplayText);
             this.groupBoxBText.Location = new System.Drawing.Point(6, 6);
@@ -437,21 +444,21 @@
             this.groupBoxBText.TabStop = false;
             this.groupBoxBText.Text = "Text Settings";
             // 
-            // textBox2
+            // textBoxBasicClipboard
             // 
-            this.textBox2.Enabled = false;
-            this.textBox2.Location = new System.Drawing.Point(117, 45);
-            this.textBox2.Name = "textBox2";
-            this.textBox2.Size = new System.Drawing.Size(450, 20);
-            this.textBox2.TabIndex = 3;
+            this.textBoxBasicClipboard.Enabled = false;
+            this.textBoxBasicClipboard.Location = new System.Drawing.Point(117, 45);
+            this.textBoxBasicClipboard.Name = "textBoxBasicClipboard";
+            this.textBoxBasicClipboard.Size = new System.Drawing.Size(450, 20);
+            this.textBoxBasicClipboard.TabIndex = 3;
             // 
-            // textBox1
+            // textBoxBasicDisplay
             // 
-            this.textBox1.Enabled = false;
-            this.textBox1.Location = new System.Drawing.Point(117, 19);
-            this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(450, 20);
-            this.textBox1.TabIndex = 2;
+            this.textBoxBasicDisplay.Enabled = false;
+            this.textBoxBasicDisplay.Location = new System.Drawing.Point(117, 19);
+            this.textBoxBasicDisplay.Name = "textBoxBasicDisplay";
+            this.textBoxBasicDisplay.Size = new System.Drawing.Size(450, 20);
+            this.textBoxBasicDisplay.TabIndex = 2;
             // 
             // checkBoxClipboard
             // 
@@ -462,6 +469,7 @@
             this.checkBoxClipboard.TabIndex = 1;
             this.checkBoxClipboard.Text = "Clipboard Text";
             this.checkBoxClipboard.UseVisualStyleBackColor = true;
+            this.checkBoxClipboard.CheckedChanged += new System.EventHandler(this.CheckBoxClipboard_CheckedChanged);
             // 
             // checkBoxDisplayText
             // 
@@ -472,6 +480,7 @@
             this.checkBoxDisplayText.TabIndex = 0;
             this.checkBoxDisplayText.Text = "Display Text";
             this.checkBoxDisplayText.UseVisualStyleBackColor = true;
+            this.checkBoxDisplayText.CheckedChanged += new System.EventHandler(this.CheckBoxDisplayText_CheckedChanged);
             // 
             // tabPage2
             // 
@@ -585,7 +594,7 @@
             // labelTriggered
             // 
             this.labelTriggered.AutoSize = true;
-            this.labelTriggered.Location = new System.Drawing.Point(8, 251);
+            this.labelTriggered.Location = new System.Drawing.Point(69, 251);
             this.labelTriggered.Name = "labelTriggered";
             this.labelTriggered.Size = new System.Drawing.Size(228, 13);
             this.labelTriggered.TabIndex = 8;
@@ -598,7 +607,7 @@
             "Start a new timer",
             "Restart Current timer",
             "Do nothing"});
-            this.comboBoxTriggered.Location = new System.Drawing.Point(238, 248);
+            this.comboBoxTriggered.Location = new System.Drawing.Point(303, 248);
             this.comboBoxTriggered.Name = "comboBoxTriggered";
             this.comboBoxTriggered.Size = new System.Drawing.Size(259, 21);
             this.comboBoxTriggered.TabIndex = 7;
@@ -652,12 +661,12 @@
             // 
             // tabPage3
             // 
-            this.tabPage3.Controls.Add(this.label4);
-            this.tabPage3.Controls.Add(this.textBox7);
-            this.tabPage3.Controls.Add(this.label5);
-            this.tabPage3.Controls.Add(this.textBox8);
-            this.tabPage3.Controls.Add(this.label6);
-            this.tabPage3.Controls.Add(this.textBox9);
+            this.tabPage3.Controls.Add(this.labelEndingSeconds);
+            this.tabPage3.Controls.Add(this.textBoxEndingSeconds);
+            this.tabPage3.Controls.Add(this.labelEndingMinutes);
+            this.tabPage3.Controls.Add(this.textBoxEndingMinutes);
+            this.tabPage3.Controls.Add(this.labelEndingHours);
+            this.tabPage3.Controls.Add(this.textBoxEndingHours);
             this.tabPage3.Controls.Add(this.checkBoxNotify);
             this.tabPage3.Controls.Add(this.groupBoxEndingAS);
             this.tabPage3.Controls.Add(this.groupBoxEndingTS);
@@ -668,56 +677,56 @@
             this.tabPage3.Text = "Timer Ending";
             this.tabPage3.UseVisualStyleBackColor = true;
             // 
-            // label4
+            // labelEndingSeconds
             // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(395, 17);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(49, 13);
-            this.label4.TabIndex = 22;
-            this.label4.Text = "Seconds";
+            this.labelEndingSeconds.AutoSize = true;
+            this.labelEndingSeconds.Location = new System.Drawing.Point(395, 17);
+            this.labelEndingSeconds.Name = "labelEndingSeconds";
+            this.labelEndingSeconds.Size = new System.Drawing.Size(49, 13);
+            this.labelEndingSeconds.TabIndex = 22;
+            this.labelEndingSeconds.Text = "Seconds";
             // 
-            // textBox7
+            // textBoxEndingSeconds
             // 
-            this.textBox7.Location = new System.Drawing.Point(352, 14);
-            this.textBox7.Name = "textBox7";
-            this.textBox7.Size = new System.Drawing.Size(37, 20);
-            this.textBox7.TabIndex = 21;
-            this.textBox7.Text = "0";
+            this.textBoxEndingSeconds.Location = new System.Drawing.Point(352, 14);
+            this.textBoxEndingSeconds.Name = "textBoxEndingSeconds";
+            this.textBoxEndingSeconds.Size = new System.Drawing.Size(37, 20);
+            this.textBoxEndingSeconds.TabIndex = 21;
+            this.textBoxEndingSeconds.Text = "0";
             // 
-            // label5
+            // labelEndingMinutes
             // 
-            this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(302, 17);
-            this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(44, 13);
-            this.label5.TabIndex = 20;
-            this.label5.Text = "Minutes";
+            this.labelEndingMinutes.AutoSize = true;
+            this.labelEndingMinutes.Location = new System.Drawing.Point(302, 17);
+            this.labelEndingMinutes.Name = "labelEndingMinutes";
+            this.labelEndingMinutes.Size = new System.Drawing.Size(44, 13);
+            this.labelEndingMinutes.TabIndex = 20;
+            this.labelEndingMinutes.Text = "Minutes";
             // 
-            // textBox8
+            // textBoxEndingMinutes
             // 
-            this.textBox8.Location = new System.Drawing.Point(259, 14);
-            this.textBox8.Name = "textBox8";
-            this.textBox8.Size = new System.Drawing.Size(37, 20);
-            this.textBox8.TabIndex = 19;
-            this.textBox8.Text = "15";
+            this.textBoxEndingMinutes.Location = new System.Drawing.Point(259, 14);
+            this.textBoxEndingMinutes.Name = "textBoxEndingMinutes";
+            this.textBoxEndingMinutes.Size = new System.Drawing.Size(37, 20);
+            this.textBoxEndingMinutes.TabIndex = 19;
+            this.textBoxEndingMinutes.Text = "15";
             // 
-            // label6
+            // labelEndingHours
             // 
-            this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(218, 17);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(35, 13);
-            this.label6.TabIndex = 18;
-            this.label6.Text = "Hours";
+            this.labelEndingHours.AutoSize = true;
+            this.labelEndingHours.Location = new System.Drawing.Point(218, 17);
+            this.labelEndingHours.Name = "labelEndingHours";
+            this.labelEndingHours.Size = new System.Drawing.Size(35, 13);
+            this.labelEndingHours.TabIndex = 18;
+            this.labelEndingHours.Text = "Hours";
             // 
-            // textBox9
+            // textBoxEndingHours
             // 
-            this.textBox9.Location = new System.Drawing.Point(175, 14);
-            this.textBox9.Name = "textBox9";
-            this.textBox9.Size = new System.Drawing.Size(37, 20);
-            this.textBox9.TabIndex = 17;
-            this.textBox9.Text = "0";
+            this.textBoxEndingHours.Location = new System.Drawing.Point(175, 14);
+            this.textBoxEndingHours.Name = "textBoxEndingHours";
+            this.textBoxEndingHours.Size = new System.Drawing.Size(37, 20);
+            this.textBoxEndingHours.TabIndex = 17;
+            this.textBoxEndingHours.Text = "0";
             // 
             // checkBoxNotify
             // 
@@ -917,12 +926,12 @@
             // 
             // tabPage4
             // 
-            this.tabPage4.Controls.Add(this.label1);
-            this.tabPage4.Controls.Add(this.textBox4);
-            this.tabPage4.Controls.Add(this.label2);
-            this.tabPage4.Controls.Add(this.textBox5);
-            this.tabPage4.Controls.Add(this.label3);
-            this.tabPage4.Controls.Add(this.textBox6);
+            this.tabPage4.Controls.Add(this.labelEndedSeconds);
+            this.tabPage4.Controls.Add(this.textBoxEndedSeconds);
+            this.tabPage4.Controls.Add(this.labelEndedMinutes);
+            this.tabPage4.Controls.Add(this.textBoxEndedMinutes);
+            this.tabPage4.Controls.Add(this.labelEndedHours);
+            this.tabPage4.Controls.Add(this.textBoxEndedHours);
             this.tabPage4.Controls.Add(this.checkBoxEndedNotify);
             this.tabPage4.Controls.Add(this.groupBoxEndedAudio);
             this.tabPage4.Controls.Add(this.groupBoxEndedText);
@@ -933,56 +942,56 @@
             this.tabPage4.Text = "Timer Ended";
             this.tabPage4.UseVisualStyleBackColor = true;
             // 
-            // label1
+            // labelEndedSeconds
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(377, 20);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(49, 13);
-            this.label1.TabIndex = 15;
-            this.label1.Text = "Seconds";
+            this.labelEndedSeconds.AutoSize = true;
+            this.labelEndedSeconds.Location = new System.Drawing.Point(377, 20);
+            this.labelEndedSeconds.Name = "labelEndedSeconds";
+            this.labelEndedSeconds.Size = new System.Drawing.Size(49, 13);
+            this.labelEndedSeconds.TabIndex = 15;
+            this.labelEndedSeconds.Text = "Seconds";
             // 
-            // textBox4
+            // textBoxEndedSeconds
             // 
-            this.textBox4.Location = new System.Drawing.Point(334, 17);
-            this.textBox4.Name = "textBox4";
-            this.textBox4.Size = new System.Drawing.Size(37, 20);
-            this.textBox4.TabIndex = 14;
-            this.textBox4.Text = "0";
+            this.textBoxEndedSeconds.Location = new System.Drawing.Point(334, 17);
+            this.textBoxEndedSeconds.Name = "textBoxEndedSeconds";
+            this.textBoxEndedSeconds.Size = new System.Drawing.Size(37, 20);
+            this.textBoxEndedSeconds.TabIndex = 14;
+            this.textBoxEndedSeconds.Text = "0";
             // 
-            // label2
+            // labelEndedMinutes
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(284, 20);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(44, 13);
-            this.label2.TabIndex = 13;
-            this.label2.Text = "Minutes";
+            this.labelEndedMinutes.AutoSize = true;
+            this.labelEndedMinutes.Location = new System.Drawing.Point(284, 20);
+            this.labelEndedMinutes.Name = "labelEndedMinutes";
+            this.labelEndedMinutes.Size = new System.Drawing.Size(44, 13);
+            this.labelEndedMinutes.TabIndex = 13;
+            this.labelEndedMinutes.Text = "Minutes";
             // 
-            // textBox5
+            // textBoxEndedMinutes
             // 
-            this.textBox5.Location = new System.Drawing.Point(241, 17);
-            this.textBox5.Name = "textBox5";
-            this.textBox5.Size = new System.Drawing.Size(37, 20);
-            this.textBox5.TabIndex = 12;
-            this.textBox5.Text = "15";
+            this.textBoxEndedMinutes.Location = new System.Drawing.Point(241, 17);
+            this.textBoxEndedMinutes.Name = "textBoxEndedMinutes";
+            this.textBoxEndedMinutes.Size = new System.Drawing.Size(37, 20);
+            this.textBoxEndedMinutes.TabIndex = 12;
+            this.textBoxEndedMinutes.Text = "15";
             // 
-            // label3
+            // labelEndedHours
             // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(200, 20);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(35, 13);
-            this.label3.TabIndex = 11;
-            this.label3.Text = "Hours";
+            this.labelEndedHours.AutoSize = true;
+            this.labelEndedHours.Location = new System.Drawing.Point(200, 20);
+            this.labelEndedHours.Name = "labelEndedHours";
+            this.labelEndedHours.Size = new System.Drawing.Size(35, 13);
+            this.labelEndedHours.TabIndex = 11;
+            this.labelEndedHours.Text = "Hours";
             // 
-            // textBox6
+            // textBoxEndedHours
             // 
-            this.textBox6.Location = new System.Drawing.Point(157, 17);
-            this.textBox6.Name = "textBox6";
-            this.textBox6.Size = new System.Drawing.Size(37, 20);
-            this.textBox6.TabIndex = 10;
-            this.textBox6.Text = "0";
+            this.textBoxEndedHours.Location = new System.Drawing.Point(157, 17);
+            this.textBoxEndedHours.Name = "textBoxEndedHours";
+            this.textBoxEndedHours.Size = new System.Drawing.Size(37, 20);
+            this.textBoxEndedHours.TabIndex = 10;
+            this.textBoxEndedHours.Text = "0";
             // 
             // checkBoxEndedNotify
             // 
@@ -1275,6 +1284,7 @@
             this.buttonSave.TabIndex = 3;
             this.buttonSave.Text = "Save";
             this.buttonSave.UseVisualStyleBackColor = true;
+            this.buttonSave.Click += new System.EventHandler(this.ButtonSave_Click);
             // 
             // AddTrigger
             // 
@@ -1328,15 +1338,15 @@
         private System.Windows.Forms.Button buttonTestSound;
         private System.Windows.Forms.Button buttonSelectSound;
         private System.Windows.Forms.TextBox textBoxSoundFile;
-        private System.Windows.Forms.TextBox textBox3;
-        private System.Windows.Forms.ComboBox comboBox1;
+        private System.Windows.Forms.TextBox textBoxBasicTTS;
+        private System.Windows.Forms.ComboBox comboBoxBasicTest;
         private System.Windows.Forms.CheckBox checkBoxInterrupt;
         private System.Windows.Forms.RadioButton radioButtonPlaySound;
         private System.Windows.Forms.RadioButton radioButtonTTS;
         private System.Windows.Forms.RadioButton radioButtonNoSound;
         private System.Windows.Forms.GroupBox groupBoxBText;
-        private System.Windows.Forms.TextBox textBox2;
-        private System.Windows.Forms.TextBox textBox1;
+        private System.Windows.Forms.TextBox textBoxBasicClipboard;
+        private System.Windows.Forms.TextBox textBoxBasicDisplay;
         private System.Windows.Forms.CheckBox checkBoxClipboard;
         private System.Windows.Forms.CheckBox checkBoxDisplayText;
         private System.Windows.Forms.TabPage tabPage2;
@@ -1418,17 +1428,17 @@
         private System.Windows.Forms.TextBox textBoxTimerMinutes;
         private System.Windows.Forms.Label labelTimerHours;
         private System.Windows.Forms.TextBox textBoxTimerHours;
-        private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.TextBox textBox7;
-        private System.Windows.Forms.Label label5;
-        private System.Windows.Forms.TextBox textBox8;
-        private System.Windows.Forms.Label label6;
-        private System.Windows.Forms.TextBox textBox9;
-        private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.TextBox textBox4;
-        private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.TextBox textBox5;
-        private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.TextBox textBox6;
+        private System.Windows.Forms.Label labelEndingSeconds;
+        private System.Windows.Forms.TextBox textBoxEndingSeconds;
+        private System.Windows.Forms.Label labelEndingMinutes;
+        private System.Windows.Forms.TextBox textBoxEndingMinutes;
+        private System.Windows.Forms.Label labelEndingHours;
+        private System.Windows.Forms.TextBox textBoxEndingHours;
+        private System.Windows.Forms.Label labelEndedSeconds;
+        private System.Windows.Forms.TextBox textBoxEndedSeconds;
+        private System.Windows.Forms.Label labelEndedMinutes;
+        private System.Windows.Forms.TextBox textBoxEndedMinutes;
+        private System.Windows.Forms.Label labelEndedHours;
+        private System.Windows.Forms.TextBox textBoxEndedHours;
     }
 }

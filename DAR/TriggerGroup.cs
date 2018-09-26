@@ -47,6 +47,11 @@ namespace DAR
             get { return children; }
             set { children = value; }
         }
+        public ArrayList Triggers
+        {
+            get { return triggers; }
+            set { triggers = value; }
+        }
         public int Parent
         {
             get { return parent; }
@@ -56,9 +61,13 @@ namespace DAR
         {
             children.Add(Id);
         }
-        public void AddTriggers(Trigger newTrigger)
+        public void AddTriggers(Int32 newTrigger)
         {
             triggers.Add(newTrigger);
+        }
+        public void RemoveTrigger(Int32 removeTrigger)
+        {
+            triggers.Remove(removeTrigger);
         }
         public int Id
         {

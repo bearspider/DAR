@@ -32,7 +32,8 @@ namespace DAR
     {
         private TreeViewModel tv;
         private List<TreeViewModel> treeView;
-        private ArrayList activeTriggers;
+        private int activeTriggers;
+        private String currentSelection;
         public MainWindow()
         {
             InitializeComponent();
@@ -84,15 +85,18 @@ namespace DAR
                 {
                     using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                     {
+                        Boolean isChecked = false;
                         var col = db.GetCollection<Trigger>("triggers");
                         var getTrigger = col.FindById(item);
-                        String selectedCharacter = listviewCharacters.SelectedItem.ToString();
-                        var profiles = db.GetCollection<CharacterProfile>("profiles");
-                        CharacterProfile profile = profiles.FindOne(Query.EQ("ProfileName", selectedCharacter));
-                        Boolean isChecked = false;
-                        if (profile.Triggers.Contains(item))
+                        if (currentSelection != null)
                         {
-                            isChecked = true;
+                            String selectedCharacter = listviewCharacters.SelectedItem.ToString();
+                            var profiles = db.GetCollection<CharacterProfile>("profiles");
+                            CharacterProfile profile = profiles.FindOne(Query.EQ("ProfileName", selectedCharacter));
+                            if (profile.Triggers.Contains(item))
+                            {
+                                isChecked = true;
+                            }
                         }
                         TreeViewModel newChildBranch = new TreeViewModel(getTrigger.Name)
                         {
@@ -136,16 +140,41 @@ namespace DAR
                 {
                     if (doc.Parent == 0)
                     {
-                        if(doc.Children.Count > 0)
+                        TreeViewModel rTree = new TreeViewModel(doc.TriggerGroupName)
+                        {
+                            Type = "triggergroup"
+                        };
+                        if (doc.triggers.Count > 0)
+                        {
+                            foreach (Int32 item in doc.triggers)
+                            {
+                                Boolean isChecked = false;
+                                var collection = db.GetCollection<Trigger>("triggers");
+                                var getTrigger = collection.FindById(item);
+                                if (currentSelection != null)
+                                {
+                                    String selectedCharacter = listviewCharacters.SelectedItem.ToString();
+                                    var profiles = db.GetCollection<CharacterProfile>("profiles");
+                                    CharacterProfile profile = profiles.FindOne(Query.EQ("ProfileName", selectedCharacter));
+                                    if (profile.Triggers.Contains(item))
+                                    {
+                                        isChecked = true;
+                                    }
+                                }
+                                TreeViewModel newChildBranch = new TreeViewModel(getTrigger.Name)
+                                {
+                                    Type = "trigger"
+                                };
+                                newChildBranch.IsChecked = isChecked;
+                                rTree.Children.Add(newChildBranch);
+                            }
+                        }
+                        if (doc.Children.Count > 0)
                         {
                             tv.Children.Add(BuildTree(doc));
                         }
                         else
                         {
-                            TreeViewModel rTree = new TreeViewModel(doc.TriggerGroupName)
-                            {
-                                Type = "triggergroup"
-                            };
                             tv.Children.Add(rTree);
                         }
                     }                  
@@ -165,6 +194,11 @@ namespace DAR
                 {
                     listviewCharacters.Items.Add(doc.ProfileName);
                 }
+            }
+            if (listviewCharacters.SelectedItem == null && listviewCharacters.Items.Count > 0)
+            {
+                listviewCharacters.SelectedIndex = 0;
+                currentSelection = listviewCharacters.SelectedItem.ToString();
             }
         }
         private void RibbonButtonEdit_Click(object sender, RoutedEventArgs e)
@@ -208,7 +242,7 @@ namespace DAR
                 var result = col.FindOne(Query.EQ("ProfileName", selectedCharacter));
                 foreach(int checkedTrigger in result.Triggers)
                 {
-                    activeTriggers.Add(checkedTrigger);
+                    activeTriggers = checkedTrigger;
                 }
             }
         }
@@ -335,6 +369,14 @@ namespace DAR
                 }
             }
             UpdateTriggerView();
+        }
+
+        private void CheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+        }
+
+        private void CheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
         }
     }
 }

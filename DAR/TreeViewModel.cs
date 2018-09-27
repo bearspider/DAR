@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -22,7 +23,7 @@ namespace DAR
         public string Type { get; set; }
         bool? _isChecked = false;
         TreeViewModel _parent;
-        
+        #endregion
         #region IsChecked
 
         public bool? IsChecked
@@ -66,9 +67,7 @@ namespace DAR
         }
 
         #endregion
-
-        #endregion
-
+        
         public void Initialize()
         {
             foreach (TreeViewModel child in Children)
@@ -113,7 +112,7 @@ namespace DAR
             return treeView;
         }
 
-        public static List<string> GetTree()
+        public List<string> GetTree()
         {
             List<string> selected = new List<string>();
 

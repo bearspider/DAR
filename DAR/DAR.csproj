@@ -209,6 +209,8 @@
     <Resource Include="Oxygen-Icons.org-Oxygen-Actions-arrow-right.ico" />
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="Knob-Remove-icon.png" />
+    <Resource Include="Knob-Remove-Red-icon.png" />
     <Content Include="LiteDB.dll" />
     <Content Include="Xceed.Wpf.AvalonDock.dll" />
   </ItemGroup>

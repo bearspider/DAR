@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
@@ -23,6 +24,7 @@ namespace DAR
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
+    
     public class GlobalVariables
     {
         public static string defaultPath = @"C:\EQAudioTriggers";
@@ -32,7 +34,7 @@ namespace DAR
     {
         private TreeViewModel tv;
         private List<TreeViewModel> treeView;
-        private int activeTriggers;
+        private Hashtable characterProfiles = new Hashtable();
         private String currentSelection;
         public MainWindow()
         {
@@ -58,10 +60,47 @@ namespace DAR
             UpdateListView();
             UpdateTriggerView();
 
-            //Select Index 0 for CharacterProfiles
-
             //Start Monitoring Enabled Profiles
+        }
 
+        private void TriggerRemoved_TreeViewModel(object sender, PropertyChangedEventArgs e)
+        {
+            RemoveTrigger(e.PropertyName);
+        }
+        private void TriggerAdded_TreeViewModel(object sender, PropertyChangedEventArgs e)
+        {
+            AddTrigger(e.PropertyName);
+        }
+
+        public void RemoveTrigger(String triggerName)
+        {
+            CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                var colProfiles = db.GetCollection<CharacterProfile>("profiles");
+                var colTriggers = db.GetCollection<Trigger>("triggers");
+                var currentProfile = colProfiles.FindById(selectedCharacter.Id);
+                var currentTrigger = colTriggers.FindOne(Query.EQ("Name", triggerName));
+                currentProfile.Triggers.Remove(currentTrigger.id);
+                colProfiles.Update(currentProfile);
+            }
+            UpdateView();
+            
+        }
+        public void AddTrigger(String triggerName)
+        {
+            CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                var colProfiles = db.GetCollection<CharacterProfile>("profiles");
+                var colTriggers = db.GetCollection<Trigger>("triggers");
+                var currentProfile = colProfiles.FindById(selectedCharacter.Id);
+                var currentTrigger = colTriggers.FindOne(Query.EQ("Name", triggerName));
+                currentProfile.Triggers.Add(currentTrigger.id);
+                colProfiles.Update(currentProfile);
+            }
+            UpdateView();
+            
         }
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
@@ -71,7 +110,7 @@ namespace DAR
         {
             CharacterEditor newCharacter = new CharacterEditor();
             newCharacter.ShowDialog();
-            UpdateListView();
+            UpdateView();
         }
         private TreeViewModel BuildTree(TriggerGroup branch)
         {
@@ -90,10 +129,8 @@ namespace DAR
                         var getTrigger = col.FindById(item);
                         if (currentSelection != null)
                         {
-                            String selectedCharacter = listviewCharacters.SelectedItem.ToString();
-                            var profiles = db.GetCollection<CharacterProfile>("profiles");
-                            CharacterProfile profile = profiles.FindOne(Query.EQ("ProfileName", selectedCharacter));
-                            if (profile.Triggers.Contains(item))
+                            CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
+                            if (selectedCharacter.Triggers.Contains(item))
                             {
                                 isChecked = true;
                             }
@@ -102,7 +139,9 @@ namespace DAR
                         {
                             Type = "trigger"
                         };
-                        newChildBranch.IsChecked = isChecked; 
+                        newChildBranch.IsChecked = isChecked;
+                        newChildBranch.TriggerAdded += TriggerAdded_TreeViewModel;
+                        newChildBranch.TriggerRemoved += TriggerRemoved_TreeViewModel;
                         rTree.Children.Add(newChildBranch);
                     }
                 }
@@ -125,6 +164,13 @@ namespace DAR
                     var record = col.FindById(id);
                     return record;
             }
+        }
+        private void UpdateView()
+        {
+            CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
+            currentSelection = selectedCharacter.ProfileName;
+            UpdateListView();
+            UpdateTriggerView();
         }
         private void UpdateTriggerView()
         {                
@@ -153,10 +199,8 @@ namespace DAR
                                 var getTrigger = collection.FindById(item);
                                 if (currentSelection != null)
                                 {
-                                    String selectedCharacter = listviewCharacters.SelectedItem.ToString();
-                                    var profiles = db.GetCollection<CharacterProfile>("profiles");
-                                    CharacterProfile profile = profiles.FindOne(Query.EQ("ProfileName", selectedCharacter));
-                                    if (profile.Triggers.Contains(item))
+                                    CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
+                                    if (selectedCharacter.Triggers.Contains(item))
                                     {
                                         isChecked = true;
                                     }
@@ -166,6 +210,8 @@ namespace DAR
                                     Type = "trigger"
                                 };
                                 newChildBranch.IsChecked = isChecked;
+                                newChildBranch.TriggerAdded += TriggerAdded_TreeViewModel;
+                                newChildBranch.TriggerRemoved += TriggerRemoved_TreeViewModel;
                                 rTree.Children.Add(newChildBranch);
                             }
                         }
@@ -192,13 +238,32 @@ namespace DAR
                 var col = db.GetCollection<CharacterProfile>("profiles");
                 foreach (var doc in col.FindAll())
                 {
-                    listviewCharacters.Items.Add(doc.ProfileName);
+                    listviewCharacters.Items.Add(doc);
+                    characterProfiles.Add(doc, doc.Monitor);
                 }
             }
             if (listviewCharacters.SelectedItem == null && listviewCharacters.Items.Count > 0)
             {
-                listviewCharacters.SelectedIndex = 0;
-                currentSelection = listviewCharacters.SelectedItem.ToString();
+                if(currentSelection == null)
+                {
+                    listviewCharacters.SelectedIndex = 0;
+                    currentSelection = ((CharacterProfile)listviewCharacters.Items[0]).ProfileName;
+                }
+                else
+                {
+                    int count = listviewCharacters.Items.Count;
+                    while (count > 0)
+                    {
+                        CharacterProfile foo = (CharacterProfile)listviewCharacters.Items[count - 1];
+                        if (foo.ProfileName == currentSelection)
+                        {
+                            listviewCharacters.SelectedIndex = (count - 1);
+                            currentSelection = ((CharacterProfile)listviewCharacters.SelectedItem).ProfileName;
+                            break;
+                        }
+                        --count;
+                    }
+                }
             }
         }
         private void RibbonButtonEdit_Click(object sender, RoutedEventArgs e)
@@ -214,19 +279,19 @@ namespace DAR
                 CharacterEditor editCharacter = new CharacterEditor(character);
                 editCharacter.ShowDialog();
             }
-            UpdateListView();
+            UpdateView();
         }
         private void RibbonButtonRemove_Click(object sender, RoutedEventArgs e)
         {
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 var col = db.GetCollection<CharacterProfile>("profiles");
-                String selectedCharacter = listviewCharacters.SelectedItem.ToString();
+                String selectedCharacter = ((CharacterProfile)listviewCharacters.SelectedItem).ProfileName;
                 MessageBoxResult result = MessageBox.Show($"Are you sure you want to Delete {selectedCharacter}","Confirmation",MessageBoxButton.YesNo);
                 if(result == MessageBoxResult.Yes)
                 {
                     var dbdelete = col.Delete(Query.EQ("ProfileName", selectedCharacter));
-                    UpdateListView();
+                    UpdateView();
                 }
             }
         }
@@ -235,16 +300,14 @@ namespace DAR
             ribbonCharEdit.IsEnabled = true;
             ribbonCharRemove.IsEnabled = true;
             //Update TriggerView with selected triggers from profile
-            String selectedCharacter = listviewCharacters.SelectedItem.ToString();
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
+
+            if (currentSelection != null && selectedCharacter != null)
             {
-                var col = db.GetCollection<CharacterProfile>("profiles");
-                var result = col.FindOne(Query.EQ("ProfileName", selectedCharacter));
-                foreach(int checkedTrigger in result.Triggers)
-                {
-                    activeTriggers = checkedTrigger;
-                }
+                currentSelection = selectedCharacter.ProfileName;
+                UpdateTriggerView();
             }
+            
         }
         private void TriggerAdd_Click(object sender, RoutedEventArgs e)
         {
@@ -252,14 +315,14 @@ namespace DAR
             String selectedGroup = ((TreeViewModel)treeViewTriggers.SelectedItem).Name;
             AddTrigger newTrigger = new AddTrigger(selectedGroup);
             newTrigger.ShowDialog();
-            UpdateTriggerView();
+            UpdateView();
         }
         private void TriggerGroupsAdd_Click(object sender, RoutedEventArgs e)
         {
             TriggerGroupEditor triggerDialog = new TriggerGroupEditor();
             triggerDialog.ShowDialog();
             e.Handled = true;
-            UpdateTriggerView();
+            UpdateView();
         }
         private void TriggerGroupsRemove_Click(object sender, RoutedEventArgs e)
         {
@@ -278,7 +341,7 @@ namespace DAR
                         col.Update(child);
                     }
                     col.Delete(dbid);
-                    UpdateTriggerView();
+                    UpdateView();
                 }
             }
             e.Handled = true;
@@ -289,7 +352,7 @@ namespace DAR
             TriggerGroupEditor triggerDialog = new TriggerGroupEditor(root);
             triggerDialog.ShowDialog();
             e.Handled = true;
-            UpdateTriggerView();
+            UpdateView();
         }
         private void TreeViewTriggers_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
@@ -342,14 +405,14 @@ namespace DAR
                 TriggerGroupEditor triggerDialog = new TriggerGroupEditor(selectedGroup);
                 triggerDialog.ShowDialog();
             }
-            UpdateTriggerView();
+            UpdateView();
         }
         private void TriggerGroupsAddTopLevel_Click(object sender, RoutedEventArgs e)
         {
             TriggerGroupEditor triggerDialog = new TriggerGroupEditor();
             triggerDialog.ShowDialog();
             e.Handled = true;
-            UpdateTriggerView();
+            UpdateView();
         }
         private void TriggerRemove_Click(object sender, RoutedEventArgs e)
         {
@@ -368,15 +431,12 @@ namespace DAR
                     col.Delete(getTrigger.Id);
                 }
             }
-            UpdateTriggerView();
+            UpdateView();
         }
-
-        private void CheckBox_Checked(object sender, RoutedEventArgs e)
+        private void ListviewCharacters_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-        }
-
-        private void CheckBox_Unchecked(object sender, RoutedEventArgs e)
-        {
+            CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
+            characterProfiles[selectedCharacter] = !(Boolean)characterProfiles[selectedCharacter];
         }
     }
 }

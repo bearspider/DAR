@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.ComponentModel;
+using System.Windows.Forms;
 
 namespace DAR
 {
@@ -34,8 +35,19 @@ namespace DAR
 
         void SetIsChecked(bool? value, bool updateChildren, bool updateParent)
         {
-            if (value == _isChecked) return;
-
+            if (value == _isChecked)
+            {
+                return;
+            }
+            if(_isChecked == false)
+            {
+                NotifyTriggerAdded(Name);
+            }
+            else
+            {
+                //Notify Trigger Added
+                NotifyTriggerRemoved(Name);
+            }
             _isChecked = value;
 
             if (updateChildren && _isChecked.HasValue) Children.ForEach(c => c.SetIsChecked(_isChecked, true, false));
@@ -43,6 +55,7 @@ namespace DAR
             if (updateParent && _parent != null) _parent.VerifyCheckedState();
 
             NotifyPropertyChanged("IsChecked");
+            
         }
 
         void VerifyCheckedState()
@@ -111,11 +124,9 @@ namespace DAR
 
             return treeView;
         }
-
         public List<string> GetTree()
         {
             List<string> selected = new List<string>();
-
             //select = recursive method to check each tree view item for selection (if required)
 
             return selected;
@@ -127,7 +138,20 @@ namespace DAR
         }
 
         #region INotifyPropertyChanged Members
-
+        void NotifyTriggerRemoved(string info)
+        {
+            if(TriggerRemoved != null)
+            {
+                TriggerRemoved(this, new PropertyChangedEventArgs(info));
+            }
+        }
+        void NotifyTriggerAdded(string info)
+        {
+            if (TriggerAdded != null)
+            {
+                TriggerAdded(this, new PropertyChangedEventArgs(info));
+            }
+        }
         void NotifyPropertyChanged(string info)
         {
             if (PropertyChanged != null)
@@ -137,6 +161,8 @@ namespace DAR
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler TriggerAdded;
+        public event PropertyChangedEventHandler TriggerRemoved;
 
         #endregion
     }

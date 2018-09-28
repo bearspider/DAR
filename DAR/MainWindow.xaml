@@ -17,7 +17,7 @@
             </Style>
             <HierarchicalDataTemplate x:Key="CheckBoxItemTemplate" ItemsSource="{Binding Children, Mode=OneTime}">
                 <StackPanel Orientation="Horizontal">
-                    <CheckBox Focusable="False" IsChecked="{Binding IsChecked}" VerticalAlignment="Center" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked" />
+                    <CheckBox Focusable="True" IsChecked="{Binding IsChecked}" VerticalAlignment="Center" />
                     <ContentPresenter Content="{Binding Name, Mode=OneTime}" Margin="2,0" />
                 </StackPanel>
             </HierarchicalDataTemplate>
@@ -134,7 +134,17 @@
                     <xcad:LayoutAnchorablePaneGroup DockWidth="200">
                         <xcad:LayoutAnchorablePane>
                             <xcad:LayoutAnchorable Title="Characters" ContentId="text1">
-                                <ListView SelectionChanged="ListviewCharacters_SelectionChanged" Name="listviewCharacters"></ListView>
+                                <ListView MouseDoubleClick="ListviewCharacters_MouseDoubleClick" SelectionChanged="ListviewCharacters_SelectionChanged" Name="listviewCharacters">
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate>
+                                            <WrapPanel>
+                                            <Image Source="Knob-Remove-icon.png" />
+                                                <TextBlock Text="    " />
+                                                <TextBlock Text="{Binding ProfileName}" />
+                                            </WrapPanel>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
                             </xcad:LayoutAnchorable>
                         </xcad:LayoutAnchorablePane>
                     </xcad:LayoutAnchorablePaneGroup>

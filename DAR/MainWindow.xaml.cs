@@ -2,8 +2,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
@@ -24,17 +26,37 @@ namespace DAR
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    
     public class GlobalVariables
     {
         public static string defaultPath = @"C:\EQAudioTriggers";
         public static string defaultDB = $"{defaultPath}\\eqtriggers.db";
     }
+    public class MonitoringStatusConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            String rString = "";
+            if((Boolean)value)
+            {
+                rString = "Knob-Remove-icon.png";
+            }
+            else
+            {
+                rString = "Knob-Remove-Red-icon.png";
+            }
+            return rString;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
     public partial class MainWindow : Window
     {
         private TreeViewModel tv;
         private List<TreeViewModel> treeView;
-        private Hashtable characterProfiles = new Hashtable();
+        private ObservableCollection<CharacterProfile> characterProfiles = new ObservableCollection<CharacterProfile>();
         private String currentSelection;
         public MainWindow()
         {
@@ -71,7 +93,6 @@ namespace DAR
         {
             AddTrigger(e.PropertyName);
         }
-
         public void RemoveTrigger(String triggerName)
         {
             CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
@@ -116,7 +137,7 @@ namespace DAR
         {
             TreeViewModel rTree = new TreeViewModel(branch.TriggerGroupName)
             {
-                Type = "triggergroup"
+                Type = "triggergroup",
             };
             if (branch.triggers.Count > 0)
             {
@@ -154,6 +175,7 @@ namespace DAR
                     rTree.Children.Add(BuildTree(leafGroup));
                 }
             }
+            rTree.VerifyCheckedState();
             return rTree;
         }
         private TriggerGroup GetTriggerGroup(int id)
@@ -213,6 +235,7 @@ namespace DAR
                                 newChildBranch.TriggerAdded += TriggerAdded_TreeViewModel;
                                 newChildBranch.TriggerRemoved += TriggerRemoved_TreeViewModel;
                                 rTree.Children.Add(newChildBranch);
+                                rTree.VerifyCheckedState();
                             }
                         }
                         if (doc.Children.Count > 0)
@@ -228,20 +251,21 @@ namespace DAR
             }
             //Build Tree
             tv.Initialize();
+            tv.VerifyCheckedState();
             treeViewTriggers.ItemsSource = treeView;
         }
         private void UpdateListView()
         {
-            listviewCharacters.Items.Clear();
+            characterProfiles.Clear();
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 var col = db.GetCollection<CharacterProfile>("profiles");
                 foreach (var doc in col.FindAll())
                 {
-                    listviewCharacters.Items.Add(doc);
-                    characterProfiles.Add(doc, doc.Monitor);
+                    characterProfiles.Add(doc);
                 }
             }
+            listviewCharacters.ItemsSource = characterProfiles;
             if (listviewCharacters.SelectedItem == null && listviewCharacters.Items.Count > 0)
             {
                 if(currentSelection == null)
@@ -265,6 +289,7 @@ namespace DAR
                     }
                 }
             }
+            
         }
         private void RibbonButtonEdit_Click(object sender, RoutedEventArgs e)
         {
@@ -300,14 +325,12 @@ namespace DAR
             ribbonCharEdit.IsEnabled = true;
             ribbonCharRemove.IsEnabled = true;
             //Update TriggerView with selected triggers from profile
-            CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
-
-            if (currentSelection != null && selectedCharacter != null)
+            if(listviewCharacters.Items.Count > 0)
             {
+                CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
                 currentSelection = selectedCharacter.ProfileName;
                 UpdateTriggerView();
             }
-            
         }
         private void TriggerAdd_Click(object sender, RoutedEventArgs e)
         {
@@ -435,8 +458,21 @@ namespace DAR
         }
         private void ListviewCharacters_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
-            characterProfiles[selectedCharacter] = !(Boolean)characterProfiles[selectedCharacter];
+            CharacterProfile selected = ((ListView)sender).SelectedItem as CharacterProfile;
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                var colProfiles = db.GetCollection<CharacterProfile>("profiles");
+                var currentProfile = colProfiles.FindById(selected.Id);
+                ((CharacterProfile)currentProfile).Monitor = !(Boolean)((CharacterProfile)currentProfile).Monitor;
+            }
+            selected.Monitor = !selected.Monitor;
+            
+
+
+        }
+        private void MainWindow_Closing(object sender, EventArgs e)
+        {
+            MessageBox.Show("Clsoing");
         }
     }
 }

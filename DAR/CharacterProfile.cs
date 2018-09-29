@@ -15,6 +15,7 @@ namespace DAR
         public string logFile;
         public string profileName;
         public bool monitor;
+        public bool monitorAtStartup;
         public string textFontColor;
         public string timerFontColor;
         public string timerBarColor;
@@ -29,6 +30,7 @@ namespace DAR
             id = 0;
             characterName = "Beastmaster";
             monitor = true;
+            monitorAtStartup = true;
             textFontColor = "Black";
             timerFontColor = "Blue";
             timerBarColor = "Lime";
@@ -70,6 +72,11 @@ namespace DAR
         {
             get { return monitor; }
             set { monitor = value; }
+        }
+        public bool MonitorAtStartup
+        {
+            get { return monitorAtStartup; }
+            set { monitorAtStartup = value; }
         }
         public int VolumeValue
         {

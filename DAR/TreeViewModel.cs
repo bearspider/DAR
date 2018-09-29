@@ -32,7 +32,6 @@ namespace DAR
             get { return _isChecked; }
             set { SetIsChecked(value, true, true); }
         }
-
         void SetIsChecked(bool? value, bool updateChildren, bool updateParent)
         {
             if (value == _isChecked)
@@ -58,7 +57,7 @@ namespace DAR
             
         }
 
-        void VerifyCheckedState()
+        public void VerifyCheckedState()
         {
             bool? state = null;
 
@@ -88,6 +87,7 @@ namespace DAR
                 child._parent = this;
                 child.Initialize();
             }
+            
         }
 
         public static List<TreeViewModel> SetTree(string topLevelName)

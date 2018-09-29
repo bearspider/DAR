@@ -10,6 +10,7 @@
         Title="EQ Audio Triggers" Height="812" Width="1170" Icon="Tonev-Windows-7-Windows-7-headphone.ico" WindowStyle="ThreeDBorderWindow" SizeChanged="Window_SizeChanged">
     <Window.Resources>
         <ResourceDictionary>
+            <local:MonitoringStatusConverter x:Key="converter" />
             <Style x:Key="TreeViewItemStyle" TargetType="TreeViewItem">
                 <Setter Property="IsExpanded" Value="True" />
                 <Setter Property="IsSelected" Value="{Binding IsInitiallySelected, Mode=OneTime}" />
@@ -134,11 +135,11 @@
                     <xcad:LayoutAnchorablePaneGroup DockWidth="200">
                         <xcad:LayoutAnchorablePane>
                             <xcad:LayoutAnchorable Title="Characters" ContentId="text1">
-                                <ListView MouseDoubleClick="ListviewCharacters_MouseDoubleClick" SelectionChanged="ListviewCharacters_SelectionChanged" Name="listviewCharacters">
+                                <ListView MouseDoubleClick="ListviewCharacters_MouseDoubleClick" SelectionChanged="ListviewCharacters_SelectionChanged" Name="listviewCharacters" IsSynchronizedWithCurrentItem="True">
                                     <ListView.ItemTemplate>
                                         <DataTemplate>
                                             <WrapPanel>
-                                            <Image Source="Knob-Remove-icon.png" />
+                                            <Image Source="{Binding Monitor, Converter={StaticResource converter}}" />
                                                 <TextBlock Text="    " />
                                                 <TextBlock Text="{Binding ProfileName}" />
                                             </WrapPanel>

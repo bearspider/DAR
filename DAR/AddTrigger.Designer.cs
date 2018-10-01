@@ -641,7 +641,7 @@
             // 
             this.comboBoxTimerType.FormattingEnabled = true;
             this.comboBoxTimerType.Items.AddRange(new object[] {
-            "Timer (Cound Down)",
+            "Timer (Count Down)",
             "No Timer",
             "Stopwatch(Count Up)",
             "Repeating Timer"});

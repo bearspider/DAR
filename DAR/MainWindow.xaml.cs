@@ -6,9 +6,12 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -30,6 +33,8 @@ namespace DAR
     {
         public static string defaultPath = @"C:\EQAudioTriggers";
         public static string defaultDB = $"{defaultPath}\\eqtriggers.db";
+        public static string eqRegex = @"\[(?<eqtime>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\](?<stringToMatch>.*)";
+        public static string pathRegex = @"(?<logdir>.*\\)(?<logname>eqlog_.*\.txt)";
     }
     public class MonitoringStatusConverter : IValueConverter
     {
@@ -58,12 +63,15 @@ namespace DAR
         private List<TreeViewModel> treeView;
         private ObservableCollection<CharacterProfile> characterProfiles = new ObservableCollection<CharacterProfile>();
         private String currentSelection;
+        private Dictionary<String, FileSystemWatcher> watchers = new Dictionary<String, FileSystemWatcher>();
+        //private Dictionary<CharacterProfile, Trigger> activeTriggers = new Dictionary<CharacterProfile, Trigger>();
+        private Dictionary<Trigger,ArrayList> activeTriggers = new Dictionary<Trigger,ArrayList>();
         public MainWindow()
         {
             InitializeComponent();
             //Check if EQAudioTriggers folder exists, if not create.
             bool mainPath = System.IO.Directory.Exists(GlobalVariables.defaultPath);
-            if(!mainPath)
+            if (!mainPath)
             {
                 System.IO.Directory.CreateDirectory(GlobalVariables.defaultPath);
             }
@@ -81,17 +89,82 @@ namespace DAR
             }
             UpdateListView();
             UpdateTriggerView();
-
             //Start Monitoring Enabled Profiles
-        }
+            foreach(CharacterProfile character in characterProfiles)
+            {
+                MonitorCharacter(character);
+            }
+            /* Match Groups             
+            String inputTest = "[Sun Nov 23 15:27:39 2014] You must purchase a Trader's Satchel before you can sell items.";
+            MatchCollection matches = Regex.Matches(inputTest, GlobalVariables.eqRegex, RegexOptions.IgnoreCase);
+            foreach(Match match in matches)
+            {
+                MessageBox.Show(match.Groups["stringToMatch"].Value);
+            }
+            */
 
+        }
+        private void MonitorCharacter(CharacterProfile character)
+        {
+            if (character.Monitor)
+            {
+                Thread t = new Thread(() =>
+                {
+                    using (FileStream filestream = File.Open(character.LogFile, System.IO.FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    {
+                        filestream.Seek(0, SeekOrigin.End);
+                        using (StreamReader streamReader = new StreamReader(filestream))
+                        {
+                            for (; ; )
+                            {
+                                Thread.Sleep(TimeSpan.FromMilliseconds(100));
+                                String capturedLine = streamReader.ReadToEnd();
+                                if(capturedLine.Length > 0)
+                                {
+                                    MessageBox.Show(capturedLine);
+                                    //MessageBox.Show(streamReader.ReadToEnd());
+                                }
+                                if (characterProfiles.Any(x => x.Monitor == false && x.ProfileName == character.ProfileName))
+                                {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                });
+                t.Start();
+            }
+        }
+        private void Changed(object sender, FileSystemEventArgs e)
+        {
+            //Check line with trigger and then speak.
+            CharacterProfile fromLog = characterProfiles.Single<CharacterProfile>(i => i.LogFile == e.FullPath);
+            String lastline = File.ReadLines(e.FullPath).Last();            
+            foreach(KeyValuePair<Trigger,ArrayList> entry in activeTriggers)
+            {
+                Trigger toCompare = entry.Key;
+                MatchCollection matches = Regex.Matches(lastline, toCompare.SearchText, RegexOptions.IgnoreCase);
+                if(matches.Count > 0)
+                {
+                    foreach(CharacterProfile character in entry.Value)
+                    {
+                        if(character.Monitor)
+                        {
+                            character.Speak(lastline);
+                        }
+                    }
+                }
+            }            
+        }
         private void TriggerRemoved_TreeViewModel(object sender, PropertyChangedEventArgs e)
         {
             RemoveTrigger(e.PropertyName);
+            UpdateView();
         }
         private void TriggerAdded_TreeViewModel(object sender, PropertyChangedEventArgs e)
         {
             AddTrigger(e.PropertyName);
+            UpdateView();
         }
         public void RemoveTrigger(String triggerName)
         {
@@ -105,8 +178,6 @@ namespace DAR
                 currentProfile.Triggers.Remove(currentTrigger.id);
                 colProfiles.Update(currentProfile);
             }
-            UpdateView();
-            
         }
         public void AddTrigger(String triggerName)
         {
@@ -118,10 +189,10 @@ namespace DAR
                 var currentProfile = colProfiles.FindById(selectedCharacter.Id);
                 var currentTrigger = colTriggers.FindOne(Query.EQ("Name", triggerName));
                 currentProfile.Triggers.Add(currentTrigger.id);
+                currentTrigger.profiles.Add(selectedCharacter.Id);
+                colTriggers.Update(currentTrigger);
                 colProfiles.Update(currentProfile);
-            }
-            UpdateView();
-            
+            }            
         }
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
@@ -257,12 +328,35 @@ namespace DAR
         private void UpdateListView()
         {
             characterProfiles.Clear();
+            activeTriggers.Clear();
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 var col = db.GetCollection<CharacterProfile>("profiles");
                 foreach (var doc in col.FindAll())
                 {
                     characterProfiles.Add(doc);
+                    foreach (int triggerID in doc.Triggers)
+                    {
+                        var triggerCollection = db.GetCollection<Trigger>("triggers");
+                        Trigger addedTrigger = (triggerCollection.FindById(triggerID));
+                        Boolean keyExists = false;
+                        foreach (KeyValuePair<Trigger, ArrayList> entry in activeTriggers)
+                        {
+                            if (entry.Key.Name == addedTrigger.Name)
+                            {
+                                entry.Value.Add(doc);
+                                keyExists = true;
+                            }
+                        }
+                        if (!keyExists)
+                        {
+                            ArrayList newList = new ArrayList
+                            {
+                                doc
+                            };
+                            activeTriggers.Add(addedTrigger,newList);
+                        }
+                    }
                 }
             }
             listviewCharacters.ItemsSource = characterProfiles;
@@ -449,11 +543,13 @@ namespace DAR
                 MessageBoxResult result = MessageBox.Show($"Are you sure you want to Delete {root.Name}", "Confirmation", MessageBoxButton.YesNo);
                 if (result == MessageBoxResult.Yes)
                 {
+                    RemoveTrigger(root.Name);
                     getGroup.RemoveTrigger(getTrigger.Id);
                     triggergroup.Update(getGroup);
                     col.Delete(getTrigger.Id);
                 }
-            }
+                
+            }            
             UpdateView();
         }
         private void ListviewCharacters_MouseDoubleClick(object sender, MouseButtonEventArgs e)
@@ -462,17 +558,32 @@ namespace DAR
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 var colProfiles = db.GetCollection<CharacterProfile>("profiles");
-                var currentProfile = colProfiles.FindById(selected.Id);
-                ((CharacterProfile)currentProfile).Monitor = !(Boolean)((CharacterProfile)currentProfile).Monitor;
+                CharacterProfile currentProfile = colProfiles.FindById(selected.Id);
+                currentProfile.Monitor = !currentProfile.Monitor;
+                colProfiles.Update(currentProfile);
+                if(currentProfile.Monitor)
+                {
+                    MonitorCharacter(currentProfile);
+                }
             }
-            selected.Monitor = !selected.Monitor;
-            
 
-
+            UpdateListView();
         }
-        private void MainWindow_Closing(object sender, EventArgs e)
+        private void Window_Closing(object sender, CancelEventArgs e)
         {
-            MessageBox.Show("Clsoing");
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                var colProfiles = db.GetCollection<CharacterProfile>("profiles");
+                foreach (CharacterProfile doc in colProfiles.FindAll())
+                {
+                    if(doc.MonitorAtStartup != doc.Monitor)
+                    {
+                        doc.Monitor = doc.MonitorAtStartup;
+                        colProfiles.Update(doc);
+                    }
+                }
+            }
+            Environment.Exit(Environment.ExitCode);
         }
     }
 }

@@ -7,7 +7,7 @@
         xmlns:local="clr-namespace:DAR"
         xmlns:Custom="http://schemas.microsoft.com/winfx/2006/xaml/presentation/ribbon" x:Class="DAR.MainWindow"
         mc:Ignorable="d"
-        Title="EQ Audio Triggers" Height="812" Width="1170" Icon="Tonev-Windows-7-Windows-7-headphone.ico" WindowStyle="ThreeDBorderWindow" SizeChanged="Window_SizeChanged">
+        Title="EQ Audio Triggers" Height="812" Width="1170" Icon="Tonev-Windows-7-Windows-7-headphone.ico" WindowStyle="ThreeDBorderWindow" SizeChanged="Window_SizeChanged" Closing="Window_Closing">
     <Window.Resources>
         <ResourceDictionary>
             <local:MonitoringStatusConverter x:Key="converter" />

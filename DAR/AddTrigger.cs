@@ -18,12 +18,32 @@ namespace DAR
         private CharacterProfile selectedCharacter;
         private Category selectedCategory;
         private int selectedGroupId;
+        private List<SearchText> endEarlyCases = new List<SearchText>();
+        private DataTable dt = new DataTable();
+        private Audio basicAudioSettings = new Audio();
+        private Audio endedEarlyAudioSettings = new Audio();
+        private Audio endingEarlyAudioSettings = new Audio();
         public AddTrigger(String selectedGroup)
         {
             InitializeComponent();
             (tabControl1.TabPages[2] as TabPage).Enabled = false;
             (tabControl1.TabPages[3] as TabPage).Enabled = false;
-            comboBoxTimerType.SelectedIndex = 1;
+            comboBoxTimerType.SelectedIndex = 0;
+            comboBoxTriggered.SelectedIndex = 2;
+            DataColumn column = new DataColumn
+            {
+                DataType = typeof(String),
+                ColumnName = "Search Text"
+            };
+            dt.Columns.Add(column);
+            column = new DataColumn
+            {
+                DataType = typeof(Boolean),
+                ColumnName = "Regex"
+            };
+            dt.Columns.Add(column);
+            dataGridViewEndEarly.DataSource = dt;
+            dataGridViewEndEarly.Columns[0].Width = 400;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 LiteCollection<CharacterProfile> characterProfilesCol = db.GetCollection<CharacterProfile>("profiles");
@@ -152,6 +172,68 @@ namespace DAR
         private void ButtonSave_Click(object sender, EventArgs e)
         {
             BsonValue newTriggerId = new BsonValue();
+            /* Code to create EndEarlyText Dictionary*/
+            foreach(DataRow drow in dt.Rows)
+            {
+                if (drow.ItemArray[0].ToString() != null)
+                {
+                    SearchText st = new SearchText
+                    {
+                        Searchtext = drow.ItemArray[0].ToString(),
+                        regexEnabled = (Boolean)(drow.ItemArray[1])
+                    };
+                    endEarlyCases.Add(st);
+                }
+            }
+            /* Add Code to determine Sound File Id and AudioType Radio Button */
+            //Basic Audio Settings
+            if(radioButtonNoSound.Checked)
+            {
+                basicAudioSettings.AudioType = "radioButtonNoSound";
+            }
+            if(radioButtonPlaySound.Checked)
+            {
+                basicAudioSettings.AudioType = "radioButtonPlaySound";
+                basicAudioSettings.SoundFileId = 0;
+            }
+            if(radioButtonTTS.Checked)
+            {
+                basicAudioSettings.AudioType = "radioButtonTTS";
+                basicAudioSettings.TTS = textBoxBasicTTS.Text;
+                basicAudioSettings.Interrupt = checkBoxInterrupt.Checked;
+            }
+            //Timer Ending Audio Settings
+            if (radioButtonEndingNoSound.Checked)
+            {
+                endingEarlyAudioSettings.AudioType = "radioButtonEndingNoSound";
+            }
+            if (radioButtonEndingPlaySound.Checked)
+            {
+                endingEarlyAudioSettings.AudioType = "radioButtonEndingPlaySound";
+                endingEarlyAudioSettings.SoundFileId = 0;
+            }
+            if (radioButtonEndingTTS.Checked)
+            {
+                endingEarlyAudioSettings.AudioType = "radioButtonEndingTTS";
+                endingEarlyAudioSettings.TTS = textBoxEndingTTS.Text;
+                endingEarlyAudioSettings.Interrupt = checkBoxEndingInterrupt.Checked;
+            }
+            //Timer Ended Audio Settings
+            if (radioButtonEndedNoSound.Checked)
+            {
+                endedEarlyAudioSettings.AudioType = "radioButtonEndedNoSound";
+            }
+            if (radioButtonEndedPlay.Checked)
+            {
+                endedEarlyAudioSettings.AudioType = "radioButtonEndedPlay";
+                endedEarlyAudioSettings.SoundFileId = 0;
+            }
+            if (radioButtonEndedTTS.Checked)
+            {
+                endedEarlyAudioSettings.AudioType = "radioButtonTTS";
+                endedEarlyAudioSettings.TTS = textBoxEndingTTS.Text;
+                endedEarlyAudioSettings.Interrupt = checkBoxEndingInterrupt.Checked;
+            }
             var newTrigger = new Trigger
             {
                 Name = textBoxTriggerName.Text,
@@ -160,24 +242,24 @@ namespace DAR
                 Regex = checkBoxRegex.Checked,
                 Fastcheck = checkBoxFastCheck.Checked,
                 Parent = selectedGroupId,
-                //TriggerCategory = comboBoxCategories.SelectedItem.ToString(),
+                TriggerCategory = (Category)comboBoxCategories.SelectedItem,
                 Displaytext = textBoxBasicDisplay.Text,
                 Clipboardtext = textBoxBasicClipboard.Text,
-                //Audio = new Hashtable(),
+                AudioSettings = basicAudioSettings,
                 TimerType = comboBoxTimerType.Text,
                 TimerName = textBoxTimerName.Text,
                 TimerDuration = GetDuration(textBoxTimerHours.Text, textBoxTimerMinutes.Text, textBoxTimerSeconds.Text),
-                //TriggeredAgain = comboBoxTriggered.SelectedItem.ToString(),
-                //EndEarlyText = new ArrayList(),
+                TriggeredAgain = comboBoxTriggered.SelectedIndex,
+                EndEarlyText = endEarlyCases,
                 TimerEndingDuration = GetDuration(textBoxEndingHours.Text, textBoxEndingMinutes.Text, textBoxEndingSeconds.Text),
                 TimerEndingDisplayText = textBoxEndingDisplay.Text,
                 TimerEndingClipboardText = textBoxEndingClipboard.Text,
-                //TimerEndingAudio = new Hashtable(),
+                TimerEndingAudio = endingEarlyAudioSettings,
                 TimerEnding = checkBoxNotify.Checked,
                 TimerEndedClipboardText = textBoxEndedClipboard.Text,
                 TimerEndedDisplayText = textBoxEndedDisplay.Text,
                 TimerEnded = checkBoxEndedNotify.Checked,
-                //TimerEndedAudio = new Hashtable(),
+                TimerEndedAudio = endedEarlyAudioSettings,
                 ResetCounter = checkBoxUnmatched.Checked,
                 ResetCounterDuration = GetDuration(textBoxCounterHours.Text, textBoxCounterMinutes.Text, textBoxCounterSeconds.Text)
             };
@@ -204,6 +286,27 @@ namespace DAR
                 triggergroups.Update(getTriggerGroup);
             }
             this.Close();
+        }
+
+        private void ComboBoxTimerType_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if(comboBoxTimerType.SelectedIndex == 0)
+            {
+                (tabControl1.TabPages[2] as TabPage).Enabled = false;
+                (tabControl1.TabPages[3] as TabPage).Enabled = false;
+                //Clear not needed fieldsif they were populated
+            }
+            if (comboBoxTimerType.SelectedIndex == 1)
+            {
+                (tabControl1.TabPages[2] as TabPage).Enabled = true;
+                (tabControl1.TabPages[3] as TabPage).Enabled = true;
+            }
+            if(comboBoxTimerType.SelectedIndex == 2)
+            {
+                (tabControl1.TabPages[2] as TabPage).Enabled = false;
+                (tabControl1.TabPages[3] as TabPage).Enabled = true;
+                //Clear Not needed fields if they were populated
+            }
         }
     }
 }

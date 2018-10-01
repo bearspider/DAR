@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data;
 using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
@@ -17,24 +18,25 @@ namespace DAR
         public Boolean regex;
         public Boolean fastcheck;
         public int parent;
-        public String triggerCategory;
+        public Category triggerCategory;
         public String displaytext;
         public String clipboardtext;
-        public String audio;
+        public Audio audioSettings;
         public String timerType;
         public String timerName;
         public int timerDuration;
-        public String triggeredAgain;
-        public String endEarlyText;
+        public int triggeredAgain;
+        public List<SearchText> endEarlyText;
+        //public String endEarlyText;
         public int timerEndingDuration;
         public String timerEndingDisplayText;
         public String timerEndingClipboardText;
-        public String timerEndingAudio;
+        public Audio timerEndingAudio;
         public Boolean timerEnding;
         public String timerEndedDisplayText;
         public String timerEndedClipboardText;
         public Boolean timerEnded;
-        public String timerEndedAudio;
+        public Audio timerEndedAudio;
         public Boolean resetCounter;
         public int resetCounterDuration;
 
@@ -54,24 +56,25 @@ namespace DAR
             regex = false;
             fastcheck = false;
             parent = 0;
-            triggerCategory = "";
+            triggerCategory = new Category();
             displaytext = "";
             clipboardtext = "";
-            audio = "{}";
+            audioSettings = new Audio();
             timerType = "";
             timerName = "";
             timerDuration = 0;
-            triggeredAgain = "";
-            endEarlyText = "{}";
+            triggeredAgain = 2;
+            endEarlyText = new List<SearchText>();
+            //endEarlyText = "";
             timerEndingDuration = 0;
             timerEndingDisplayText = "";
             timerEndingClipboardText = "";
-            timerEndingAudio = "{}";
+            timerEndingAudio = new Audio();
             timerEnding = false;
             timerEndedClipboardText = "";
             timerEndedDisplayText = "";
             timerEnded = false;
-            timerEndedAudio = "{}";
+            timerEndedAudio = new Audio();
             resetCounter = false;
             resetCounterDuration = 0;
         }
@@ -120,15 +123,15 @@ namespace DAR
             get { return parent; }
             set { parent = value; }
         }
-        public String TriggerCategory
+        public Category TriggerCategory
         {
             get { return triggerCategory; }
             set { triggerCategory = value; }
         }
-        public String Audio
+        public Audio AudioSettings
         {
-            get { return audio; }
-            set { audio = value; }
+            get { return audioSettings; }
+            set { audioSettings = value; }
         }
         public String TimerType
         {
@@ -145,16 +148,21 @@ namespace DAR
             get { return timerDuration; }
             set { timerDuration = value; }
         }
-        public String TriggeredAgain
+        public int TriggeredAgain
         {
             get { return triggeredAgain; }
             set { triggeredAgain = value; }
         }
-        public String EndEarlyText
+        public List<SearchText> EndEarlyText
         {
             get { return endEarlyText; }
             set { endEarlyText = value; }
         }
+        /*public String EndEarlyText
+        {
+            get { return endEarlyText; }
+            set { endEarlyText = value; }
+        }*/
         public int TimerEndingDuration
         {
             get { return timerEndingDuration; }
@@ -171,7 +179,7 @@ namespace DAR
             get { return timerEndingClipboardText; }
             set { timerEndingClipboardText = value; }
         }
-        public String TimerEndingAudio
+        public Audio TimerEndingAudio
         {
             get { return timerEndingAudio; }
             set { timerEndingAudio = value; }
@@ -196,7 +204,7 @@ namespace DAR
             get { return timerEnded; }
             set { timerEnded = value; }
         }
-        public String TimerEndedAudio
+        public Audio TimerEndedAudio
         {
             get { return timerEndedAudio; }
             set { timerEndedAudio = value; }

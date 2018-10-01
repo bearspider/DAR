@@ -68,8 +68,6 @@
             this.labelTimerHours = new System.Windows.Forms.Label();
             this.textBoxTimerHours = new System.Windows.Forms.TextBox();
             this.dataGridViewEndEarly = new System.Windows.Forms.DataGridView();
-            this.ColumnSearch = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.ColumnRegex = new System.Windows.Forms.DataGridViewCheckBoxColumn();
             this.labelEndEarly = new System.Windows.Forms.Label();
             this.labelTriggered = new System.Windows.Forms.Label();
             this.comboBoxTriggered = new System.Windows.Forms.ComboBox();
@@ -105,12 +103,6 @@
             this.checkBoxEndingClipboard = new System.Windows.Forms.CheckBox();
             this.checkBoxEndingDisplay = new System.Windows.Forms.CheckBox();
             this.tabPage4 = new System.Windows.Forms.TabPage();
-            this.labelEndedSeconds = new System.Windows.Forms.Label();
-            this.textBoxEndedSeconds = new System.Windows.Forms.TextBox();
-            this.labelEndedMinutes = new System.Windows.Forms.Label();
-            this.textBoxEndedMinutes = new System.Windows.Forms.TextBox();
-            this.labelEndedHours = new System.Windows.Forms.Label();
-            this.textBoxEndedHours = new System.Windows.Forms.TextBox();
             this.checkBoxEndedNotify = new System.Windows.Forms.CheckBox();
             this.groupBoxEndedAudio = new System.Windows.Forms.GroupBox();
             this.labelEndedSoundFile = new System.Windows.Forms.Label();
@@ -562,25 +554,10 @@
             // 
             this.dataGridViewEndEarly.BackgroundColor = System.Drawing.SystemColors.Control;
             this.dataGridViewEndEarly.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dataGridViewEndEarly.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
-            this.ColumnSearch,
-            this.ColumnRegex});
             this.dataGridViewEndEarly.Location = new System.Drawing.Point(11, 300);
             this.dataGridViewEndEarly.Name = "dataGridViewEndEarly";
             this.dataGridViewEndEarly.Size = new System.Drawing.Size(551, 172);
             this.dataGridViewEndEarly.TabIndex = 10;
-            // 
-            // ColumnSearch
-            // 
-            this.ColumnSearch.HeaderText = "Search Text";
-            this.ColumnSearch.Name = "ColumnSearch";
-            this.ColumnSearch.Width = 410;
-            // 
-            // ColumnRegex
-            // 
-            this.ColumnRegex.HeaderText = "Use Regex";
-            this.ColumnRegex.Name = "ColumnRegex";
-            this.ColumnRegex.Width = 95;
             // 
             // labelEndEarly
             // 
@@ -594,7 +571,7 @@
             // labelTriggered
             // 
             this.labelTriggered.AutoSize = true;
-            this.labelTriggered.Location = new System.Drawing.Point(69, 251);
+            this.labelTriggered.Location = new System.Drawing.Point(41, 251);
             this.labelTriggered.Name = "labelTriggered";
             this.labelTriggered.Size = new System.Drawing.Size(228, 13);
             this.labelTriggered.TabIndex = 8;
@@ -641,14 +618,15 @@
             // 
             this.comboBoxTimerType.FormattingEnabled = true;
             this.comboBoxTimerType.Items.AddRange(new object[] {
-            "Timer (Count Down)",
             "No Timer",
+            "Timer (Count Down)",
             "Stopwatch(Count Up)",
             "Repeating Timer"});
             this.comboBoxTimerType.Location = new System.Drawing.Point(92, 24);
             this.comboBoxTimerType.Name = "comboBoxTimerType";
             this.comboBoxTimerType.Size = new System.Drawing.Size(177, 21);
             this.comboBoxTimerType.TabIndex = 1;
+            this.comboBoxTimerType.SelectedIndexChanged += new System.EventHandler(this.ComboBoxTimerType_SelectedIndexChanged);
             // 
             // labelTimerType
             // 
@@ -752,7 +730,7 @@
             this.groupBoxEndingAS.Controls.Add(this.radioButtonEndingPlaySound);
             this.groupBoxEndingAS.Controls.Add(this.radioButtonEndingTTS);
             this.groupBoxEndingAS.Controls.Add(this.radioButtonEndingNoSound);
-            this.groupBoxEndingAS.Location = new System.Drawing.Point(5, 203);
+            this.groupBoxEndingAS.Location = new System.Drawing.Point(11, 137);
             this.groupBoxEndingAS.Name = "groupBoxEndingAS";
             this.groupBoxEndingAS.Size = new System.Drawing.Size(573, 272);
             this.groupBoxEndingAS.TabIndex = 2;
@@ -881,7 +859,7 @@
             this.groupBoxEndingTS.Controls.Add(this.textBoxEndingDisplay);
             this.groupBoxEndingTS.Controls.Add(this.checkBoxEndingClipboard);
             this.groupBoxEndingTS.Controls.Add(this.checkBoxEndingDisplay);
-            this.groupBoxEndingTS.Location = new System.Drawing.Point(5, 106);
+            this.groupBoxEndingTS.Location = new System.Drawing.Point(11, 40);
             this.groupBoxEndingTS.Name = "groupBoxEndingTS";
             this.groupBoxEndingTS.Size = new System.Drawing.Size(573, 91);
             this.groupBoxEndingTS.TabIndex = 1;
@@ -926,12 +904,6 @@
             // 
             // tabPage4
             // 
-            this.tabPage4.Controls.Add(this.labelEndedSeconds);
-            this.tabPage4.Controls.Add(this.textBoxEndedSeconds);
-            this.tabPage4.Controls.Add(this.labelEndedMinutes);
-            this.tabPage4.Controls.Add(this.textBoxEndedMinutes);
-            this.tabPage4.Controls.Add(this.labelEndedHours);
-            this.tabPage4.Controls.Add(this.textBoxEndedHours);
             this.tabPage4.Controls.Add(this.checkBoxEndedNotify);
             this.tabPage4.Controls.Add(this.groupBoxEndedAudio);
             this.tabPage4.Controls.Add(this.groupBoxEndedText);
@@ -942,61 +914,10 @@
             this.tabPage4.Text = "Timer Ended";
             this.tabPage4.UseVisualStyleBackColor = true;
             // 
-            // labelEndedSeconds
-            // 
-            this.labelEndedSeconds.AutoSize = true;
-            this.labelEndedSeconds.Location = new System.Drawing.Point(377, 20);
-            this.labelEndedSeconds.Name = "labelEndedSeconds";
-            this.labelEndedSeconds.Size = new System.Drawing.Size(49, 13);
-            this.labelEndedSeconds.TabIndex = 15;
-            this.labelEndedSeconds.Text = "Seconds";
-            // 
-            // textBoxEndedSeconds
-            // 
-            this.textBoxEndedSeconds.Location = new System.Drawing.Point(334, 17);
-            this.textBoxEndedSeconds.Name = "textBoxEndedSeconds";
-            this.textBoxEndedSeconds.Size = new System.Drawing.Size(37, 20);
-            this.textBoxEndedSeconds.TabIndex = 14;
-            this.textBoxEndedSeconds.Text = "0";
-            // 
-            // labelEndedMinutes
-            // 
-            this.labelEndedMinutes.AutoSize = true;
-            this.labelEndedMinutes.Location = new System.Drawing.Point(284, 20);
-            this.labelEndedMinutes.Name = "labelEndedMinutes";
-            this.labelEndedMinutes.Size = new System.Drawing.Size(44, 13);
-            this.labelEndedMinutes.TabIndex = 13;
-            this.labelEndedMinutes.Text = "Minutes";
-            // 
-            // textBoxEndedMinutes
-            // 
-            this.textBoxEndedMinutes.Location = new System.Drawing.Point(241, 17);
-            this.textBoxEndedMinutes.Name = "textBoxEndedMinutes";
-            this.textBoxEndedMinutes.Size = new System.Drawing.Size(37, 20);
-            this.textBoxEndedMinutes.TabIndex = 12;
-            this.textBoxEndedMinutes.Text = "15";
-            // 
-            // labelEndedHours
-            // 
-            this.labelEndedHours.AutoSize = true;
-            this.labelEndedHours.Location = new System.Drawing.Point(200, 20);
-            this.labelEndedHours.Name = "labelEndedHours";
-            this.labelEndedHours.Size = new System.Drawing.Size(35, 13);
-            this.labelEndedHours.TabIndex = 11;
-            this.labelEndedHours.Text = "Hours";
-            // 
-            // textBoxEndedHours
-            // 
-            this.textBoxEndedHours.Location = new System.Drawing.Point(157, 17);
-            this.textBoxEndedHours.Name = "textBoxEndedHours";
-            this.textBoxEndedHours.Size = new System.Drawing.Size(37, 20);
-            this.textBoxEndedHours.TabIndex = 10;
-            this.textBoxEndedHours.Text = "0";
-            // 
             // checkBoxEndedNotify
             // 
             this.checkBoxEndedNotify.AutoSize = true;
-            this.checkBoxEndedNotify.Location = new System.Drawing.Point(17, 20);
+            this.checkBoxEndedNotify.Location = new System.Drawing.Point(11, 20);
             this.checkBoxEndedNotify.Name = "checkBoxEndedNotify";
             this.checkBoxEndedNotify.Size = new System.Drawing.Size(133, 17);
             this.checkBoxEndedNotify.TabIndex = 6;
@@ -1017,7 +938,7 @@
             this.groupBoxEndedAudio.Controls.Add(this.radioButtonEndedPlay);
             this.groupBoxEndedAudio.Controls.Add(this.radioButtonEndedTTS);
             this.groupBoxEndedAudio.Controls.Add(this.radioButtonEndedNoSound);
-            this.groupBoxEndedAudio.Location = new System.Drawing.Point(11, 203);
+            this.groupBoxEndedAudio.Location = new System.Drawing.Point(11, 140);
             this.groupBoxEndedAudio.Name = "groupBoxEndedAudio";
             this.groupBoxEndedAudio.Size = new System.Drawing.Size(573, 272);
             this.groupBoxEndedAudio.TabIndex = 5;
@@ -1146,7 +1067,7 @@
             this.groupBoxEndedText.Controls.Add(this.textBoxEndedDisplay);
             this.groupBoxEndedText.Controls.Add(this.checkBoxEndedClipboard);
             this.groupBoxEndedText.Controls.Add(this.checkBoxEndedDisplay);
-            this.groupBoxEndedText.Location = new System.Drawing.Point(11, 106);
+            this.groupBoxEndedText.Location = new System.Drawing.Point(11, 43);
             this.groupBoxEndedText.Name = "groupBoxEndedText";
             this.groupBoxEndedText.Size = new System.Drawing.Size(573, 91);
             this.groupBoxEndedText.TabIndex = 4;
@@ -1365,8 +1286,6 @@
         private System.Windows.Forms.TextBox textBoxSearchText;
         private System.Windows.Forms.TextBox textBoxTriggerName;
         private System.Windows.Forms.DataGridView dataGridViewEndEarly;
-        private System.Windows.Forms.DataGridViewTextBoxColumn ColumnSearch;
-        private System.Windows.Forms.DataGridViewCheckBoxColumn ColumnRegex;
         private System.Windows.Forms.Label labelEndEarly;
         private System.Windows.Forms.Label labelTriggered;
         private System.Windows.Forms.ComboBox comboBoxTriggered;
@@ -1434,11 +1353,5 @@
         private System.Windows.Forms.TextBox textBoxEndingMinutes;
         private System.Windows.Forms.Label labelEndingHours;
         private System.Windows.Forms.TextBox textBoxEndingHours;
-        private System.Windows.Forms.Label labelEndedSeconds;
-        private System.Windows.Forms.TextBox textBoxEndedSeconds;
-        private System.Windows.Forms.Label labelEndedMinutes;
-        private System.Windows.Forms.TextBox textBoxEndedMinutes;
-        private System.Windows.Forms.Label labelEndedHours;
-        private System.Windows.Forms.TextBox textBoxEndedHours;
     }
 }

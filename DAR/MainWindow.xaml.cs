@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
+using System.Drawing.Text;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -584,6 +585,17 @@ namespace DAR
                 }
             }
             Environment.Exit(Environment.ExitCode);
+        }
+
+        private void TextOverlayAddRibbonButton_Click(object sender, RoutedEventArgs e)
+        {
+            Thread t = new Thread(() =>
+            {
+                Overlay newOverlay = new Overlay();
+                newOverlay.ShowDialog();
+            });
+            t.Start();
+           
         }
     }
 }

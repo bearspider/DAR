@@ -96,7 +96,7 @@
                 </Custom:RibbonTab>
                 <Custom:RibbonTab Header="Overlays">
                     <Custom:RibbonGroup Header="Text Overlays">
-                        <Custom:RibbonButton Label="Add" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-document-new.ico"/>
+                        <Custom:RibbonButton Label="Add" Click="TextOverlayAddRibbonButton_Click" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-document-new.ico"/>
                         <Custom:RibbonSplitButton Label="Default" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-document-edit.ico">
                             <Custom:RibbonSplitMenuItem Header="Properties"/>
                             <Custom:RibbonSplitMenuItem Header="Save Layout"/>
@@ -134,7 +134,7 @@
                 <xcad:LayoutPanel>
                     <xcad:LayoutAnchorablePaneGroup DockWidth="200">
                         <xcad:LayoutAnchorablePane>
-                            <xcad:LayoutAnchorable Title="Characters" ContentId="text1">
+                            <xcad:LayoutAnchorable Title="Characters" ContentId="text1" CanHide="False">
                                 <ListView MouseDoubleClick="ListviewCharacters_MouseDoubleClick" SelectionChanged="ListviewCharacters_SelectionChanged" Name="listviewCharacters" IsSynchronizedWithCurrentItem="True">
                                     <ListView.ItemTemplate>
                                         <DataTemplate>
@@ -150,7 +150,7 @@
                         </xcad:LayoutAnchorablePane>
                     </xcad:LayoutAnchorablePaneGroup>
                     <xcad:LayoutDocumentPane>
-                        <xcad:LayoutDocument Title="Triggers" ContentId="doc1">
+                        <xcad:LayoutDocument CanClose="False" Title="Triggers" ContentId="doc1">
                             <TreeView SelectedItemChanged="TreeViewTriggers_SelectedItemChanged" HorizontalAlignment="Left" Margin="12,12,0,0" x:Name="treeViewTriggers" VerticalAlignment="Top"
                   ItemContainerStyle="{StaticResource TreeViewItemStyle}"
                   ItemTemplate="{StaticResource CheckBoxItemTemplate}" />

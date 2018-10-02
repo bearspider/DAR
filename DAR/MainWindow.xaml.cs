@@ -10,6 +10,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -65,7 +66,6 @@ namespace DAR
         private ObservableCollection<CharacterProfile> characterProfiles = new ObservableCollection<CharacterProfile>();
         private String currentSelection;
         private Dictionary<String, FileSystemWatcher> watchers = new Dictionary<String, FileSystemWatcher>();
-        //private Dictionary<CharacterProfile, Trigger> activeTriggers = new Dictionary<CharacterProfile, Trigger>();
         private Dictionary<Trigger,ArrayList> activeTriggers = new Dictionary<Trigger,ArrayList>();
         public MainWindow()
         {
@@ -118,17 +118,21 @@ namespace DAR
                         {
                             for (; ; )
                             {
-                                Thread.Sleep(TimeSpan.FromMilliseconds(100));
+                                Thread.Sleep(TimeSpan.FromMilliseconds(500));
                                 String capturedLine = streamReader.ReadToEnd();
-                                if(capturedLine.Length > 0)
+                                if (capturedLine.Length > 0)
                                 {
-                                    MessageBox.Show(capturedLine);
-                                    //MessageBox.Show(streamReader.ReadToEnd());
+                                    MatchCollection matches = Regex.Matches(capturedLine,@"Attack is on" , RegexOptions.IgnoreCase);
+                                    if (matches.Count > 0)
+                                    {
+                                        Debug.WriteLine(capturedLine);
+                                        character.Speak("Attack on");
+                                    }
                                 }
                                 if (characterProfiles.Any(x => x.Monitor == false && x.ProfileName == character.ProfileName))
                                 {
                                     break;
-                                }
+                               }
                             }
                         }
                     }

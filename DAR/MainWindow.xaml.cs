@@ -595,9 +595,10 @@ namespace DAR
         {
             Thread t = new Thread(() =>
             {
-                Overlay newOverlay = new Overlay();
+                OverlayTimers newOverlay = new OverlayTimers();
                 newOverlay.ShowDialog();
             });
+            t.SetApartmentState(ApartmentState.STA);
             t.Start();
            
         }

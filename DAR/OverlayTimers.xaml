@@ -1,0 +1,26 @@
+﻿<Window x:Class="DAR.OverlayTimers"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:DAR"
+        mc:Ignorable="d"
+        Title="OverlayTimers" Height="450" Width="800" AllowsTransparency="True" WindowStyle="None" MouseDown="Window_MouseDown" Opacity="0.05" MouseUp="Window_MouseUp">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <ListBox HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Name="listviewTimers">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <WrapPanel>                        
+                        <ProgressBar Width="500" HorizontalContentAlignment="Stretch" Name="pb" Value="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Maximum="{Binding Maximum}" Minimum="{Binding Minimum}" />
+                        <TextBlock VerticalAlignment="Center" HorizontalAlignment="Center" Text="{Binding ElementName=pb, Path=Value, StringFormat={}{0:0}%}"/>
+                    </WrapPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </Grid>
+</Window>

@@ -103,6 +103,9 @@
     <Compile Include="Overlay.Designer.cs">
       <DependentUpon>Overlay.cs</DependentUpon>
     </Compile>
+    <Compile Include="OverlayTimers.xaml.cs">
+      <DependentUpon>OverlayTimers.xaml</DependentUpon>
+    </Compile>
     <Compile Include="SearchText.cs" />
     <Compile Include="TriggerGroupEditor.cs">
       <SubType>Form</SubType>
@@ -132,6 +135,10 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="OverlayTimers.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">

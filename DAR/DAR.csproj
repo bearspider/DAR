@@ -97,16 +97,11 @@
     </Compile>
     <Compile Include="Audio.cs" />
     <Compile Include="Category.cs" />
-    <Compile Include="Overlay.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Overlay.Designer.cs">
-      <DependentUpon>Overlay.cs</DependentUpon>
-    </Compile>
     <Compile Include="OverlayTimers.xaml.cs">
       <DependentUpon>OverlayTimers.xaml</DependentUpon>
     </Compile>
     <Compile Include="SearchText.cs" />
+    <Compile Include="TriggerTimer.cs" />
     <Compile Include="TriggerGroupEditor.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -156,9 +151,6 @@
     </Compile>
     <EmbeddedResource Include="AddTrigger.resx">
       <DependentUpon>AddTrigger.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Overlay.resx">
-      <DependentUpon>Overlay.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="TriggerGroupEditor.resx">
       <DependentUpon>TriggerGroupEditor.cs</DependentUpon>

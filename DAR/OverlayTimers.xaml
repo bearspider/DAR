@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DAR"
         mc:Ignorable="d"
-        Title="OverlayTimers" Height="450" Width="800" AllowsTransparency="True" WindowStyle="None" MouseDown="Window_MouseDown" Opacity="0.05" MouseUp="Window_MouseUp">
+        Title="OverlayTimers" Height="450" Width="800" AllowsTransparency="True" WindowStyle="None" MouseDown="Window_MouseDown" Opacity="1" MouseUp="Window_MouseUp">
 
     <Grid Margin="20">
         <Grid.RowDefinitions>
@@ -15,9 +15,10 @@
         <ListBox HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Name="listviewTimers">
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <WrapPanel>                        
-                        <ProgressBar Width="500" HorizontalContentAlignment="Stretch" Name="pb" Value="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Maximum="{Binding Maximum}" Minimum="{Binding Minimum}" />
+                    <WrapPanel>
+                        <ProgressBar Width="500" HorizontalContentAlignment="Stretch" Name="pb" Value="{Binding Progress}" Minimum="{Binding Minimum}" Maximum="{Binding Maximum}"/>
                         <TextBlock VerticalAlignment="Center" HorizontalAlignment="Center" Text="{Binding ElementName=pb, Path=Value, StringFormat={}{0:0}%}"/>
+                        <TextBlock Text="{Binding TimerDescription}" />
                     </WrapPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>

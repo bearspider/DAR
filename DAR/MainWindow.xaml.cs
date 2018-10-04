@@ -122,12 +122,24 @@ namespace DAR
                                 String capturedLine = streamReader.ReadToEnd();
                                 if (capturedLine.Length > 0)
                                 {
-                                    MatchCollection matches = Regex.Matches(capturedLine,@"Attack is on" , RegexOptions.IgnoreCase);
-                                    if (matches.Count > 0)
+                                    using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                                     {
-                                        Debug.WriteLine(capturedLine);
-                                        character.Speak("Attack on");
+                                        var triggerCollection = db.GetCollection<Trigger>("triggers");
+                                        foreach(var doc in triggerCollection.FindAll())
+                                        {
+                                            MatchCollection matches = Regex.Matches(capturedLine,doc.SearchText, RegexOptions.IgnoreCase);
+                                            if (matches.Count > 0)
+                                            {
+                                                foreach (int profile in doc.Profiles)
+                                                {
+                                                    var characters = db.GetCollection<CharacterProfile>("profiles");
+                                                    var currentProfile = characters.FindById(profile);
+                                                    currentProfile.Speak(doc.SearchText);
+                                                }
+                                            }
+                                        }
                                     }
+
                                 }
                                 if (characterProfiles.Any(x => x.Monitor == false && x.ProfileName == character.ProfileName))
                                 {
@@ -181,7 +193,9 @@ namespace DAR
                 var currentProfile = colProfiles.FindById(selectedCharacter.Id);
                 var currentTrigger = colTriggers.FindOne(Query.EQ("Name", triggerName));
                 currentProfile.Triggers.Remove(currentTrigger.id);
+                currentTrigger.Profiles.Remove(selectedCharacter.Id);
                 colProfiles.Update(currentProfile);
+                colTriggers.Update(currentTrigger);
             }
         }
         public void AddTrigger(String triggerName)
@@ -193,8 +207,11 @@ namespace DAR
                 var colTriggers = db.GetCollection<Trigger>("triggers");
                 var currentProfile = colProfiles.FindById(selectedCharacter.Id);
                 var currentTrigger = colTriggers.FindOne(Query.EQ("Name", triggerName));
-                currentProfile.Triggers.Add(currentTrigger.id);
-                currentTrigger.profiles.Add(selectedCharacter.Id);
+                if (!(currentTrigger.Profiles.Contains(selectedCharacter.Id)))
+                {
+                    currentProfile.Triggers.Add(currentTrigger.id);
+                    currentTrigger.profiles.Add(selectedCharacter.Id);
+                }
                 colTriggers.Update(currentTrigger);
                 colProfiles.Update(currentProfile);
             }            

@@ -6,22 +6,29 @@
         xmlns:local="clr-namespace:DAR"
         mc:Ignorable="d"
         Title="OverlayTimers" Height="450" Width="800" AllowsTransparency="True" WindowStyle="None" MouseDown="Window_MouseDown" Opacity="1" MouseUp="Window_MouseUp">
+    <Window.Resources>
+        <ResourceDictionary>
+            <local:TimeConverter x:Key="converter" />
+        </ResourceDictionary>
+    </Window.Resources>
 
-    <Grid Margin="20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-        <ListBox HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Name="listviewTimers">
+
+    <ListBox HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Name="listviewTimers">
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <WrapPanel>
-                        <ProgressBar Width="500" HorizontalContentAlignment="Stretch" Name="pb" Value="{Binding Progress}" Minimum="{Binding Minimum}" Maximum="{Binding Maximum}"/>
-                        <TextBlock VerticalAlignment="Center" HorizontalAlignment="Center" Text="{Binding ElementName=pb, Path=Value, StringFormat={}{0:0}%}"/>
-                        <TextBlock Text="{Binding TimerDescription}" />
-                    </WrapPanel>
+                    <Grid Margin="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <ProgressBar Foreground="AliceBlue" Width="500" HorizontalContentAlignment="Stretch" Name="pb"  Value="{Binding Progress.Value}" Minimum="{Binding Minimum}" Maximum="{Binding Maximum}"/>
+                        <TextBlock VerticalAlignment="Center" HorizontalAlignment="Right" Text="{Binding ElementName=pb, Path=Value, Converter={StaticResource converter}}" FontSize="30" Foreground="DarkMagenta"/>
+                        <TextBlock Text="{Binding TimerDescription}" FontSize="30" Foreground="DarkMagenta" HorizontalAlignment="Left"/>
+                    </Grid>
+                </WrapPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
-    </Grid>
+   
 </Window>

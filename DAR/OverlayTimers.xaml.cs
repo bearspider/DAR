@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Timers;
 using System.Threading;
@@ -16,48 +17,62 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Collections.ObjectModel;
+using System.Globalization;
 
 namespace DAR
 {
     /// <summary>
     /// Interaction logic for OverlayTimers.xaml
     /// </summary>
+    public class TimeConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            TimeSpan t = TimeSpan.FromSeconds(System.Convert.ToInt32(value.ToString()));
+            return t.ToString();
+        }
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
     public partial class OverlayTimers : Window
     {
         public ObservableCollection<TriggerTimer> timerBars = new ObservableCollection<TriggerTimer>();
+        public double fSize;
         public OverlayTimers()
         {
             InitializeComponent();
             var listener = OcPropertyChangedListener.Create(timerBars);
             listener.PropertyChanged += Listener_PropertyChanged;
-            TriggerTimer newTimer = new TriggerTimer();
-            newTimer.SetProgress(1, 60);
-            newTimer.SetTimer("This is a new timer", 60, true);
-            newTimer.StartTimer();
-            timerBars.Add(newTimer);
-            TriggerTimer newTimer1 = new TriggerTimer();
-            newTimer1.SetProgress(1, 60);
-            newTimer1.SetTimer("This is a new timer1", 60, true);
-            newTimer1.StartTimer();
-            timerBars.Add(newTimer1);
+            AddTimer("Timer2", 5, true);
+            AddTimer("Timer1", 6, true);
+            AddTimer("Timer3", 3, true);
             listviewTimers.ItemsSource = timerBars;
         }
-
+        public void AddTimer(String description, int duration, Boolean type)
+        {
+            TriggerTimer newTimer = new TriggerTimer();
+            newTimer.SetProgress(1, duration);
+            newTimer.SetTimer(description, duration, type);
+            newTimer.StartTimer();
+            timerBars.Add(newTimer);
+        }
         private void Listener_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if(((TriggerTimer)sender).ProgressValue == ((TriggerTimer)sender).Maximum)
+            TriggerTimer s = (TriggerTimer)sender;
+            
+            if ((s.Direction && (s.Progress.Value == s.TimerDuration)) || (!(s.Direction) && (s.Progress.Value == 0)))
             {
-                timerBars.Remove((TriggerTimer)sender);
-            }
-
-
+                s.StopTimer();
+                timerBars.Remove(s);
+            }              
         }
 
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
         {
             if(e.ChangedButton == MouseButton.Left)
             {
-                this.Opacity = 1.0;
                 this.DragMove();
             }
         }
@@ -65,11 +80,12 @@ namespace DAR
         {
             if(e.ChangedButton == MouseButton.Left)
             {
-                this.Opacity = .4;
+              
             }
         }
 
     }
+    #region ObservableCollectionListener
     public class OcPropertyChangedListener<T> : INotifyPropertyChanged where T : INotifyPropertyChanged
     {
         private readonly ObservableCollection<T> _collection;
@@ -114,6 +130,7 @@ namespace DAR
             {
                 if (_items.ContainsKey(item))
                 {
+                    
                     _items[item]++;
                 }
                 else
@@ -131,6 +148,7 @@ namespace DAR
                 _items[item]--;
                 if (_items[item] == 0)
                 {
+                    
                     _items.Remove(item);
                     PropertyChangedEventManager.RemoveHandler(item, ChildPropertyChanged, _propertyName);
                 }
@@ -176,4 +194,5 @@ namespace DAR
             return new OcPropertyChangedListener<T>(collection, propertyName);
         }
     }
+    #endregion
 }

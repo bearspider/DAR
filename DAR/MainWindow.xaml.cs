@@ -59,14 +59,37 @@ namespace DAR
             throw new NotImplementedException();
         }
     }
+    public class FileStatusConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            String rString = "";
+            if ((Boolean)value)
+            {
+                rString = "";
+            }
+            else
+            {
+                rString = "Oxygen-Icons.org-Oxygen-Status-image-missing.ico";
+            }
+            return rString;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
     public partial class MainWindow : Window
     {
+        #region Properties
         private TreeViewModel tv;
         private List<TreeViewModel> treeView;
         private ObservableCollection<CharacterProfile> characterProfiles = new ObservableCollection<CharacterProfile>();
         private String currentSelection;
         private Dictionary<String, FileSystemWatcher> watchers = new Dictionary<String, FileSystemWatcher>();
         private Dictionary<Trigger,ArrayList> activeTriggers = new Dictionary<Trigger,ArrayList>();
+        #endregion
         public MainWindow()
         {
             InitializeComponent();
@@ -93,18 +116,105 @@ namespace DAR
             //Start Monitoring Enabled Profiles
             foreach(CharacterProfile character in characterProfiles)
             {
-                MonitorCharacter(character);
+                if(System.IO.Directory.Exists(character.LogFile))
+                {                    
+                    MonitorCharacter(character);
+                }
+                else
+                {
+                    //Don't monitor character
+                }
             }
-            /* Match Groups             
-            String inputTest = "[Sun Nov 23 15:27:39 2014] You must purchase a Trader's Satchel before you can sell items.";
-            MatchCollection matches = Regex.Matches(inputTest, GlobalVariables.eqRegex, RegexOptions.IgnoreCase);
-            foreach(Match match in matches)
-            {
-                MessageBox.Show(match.Groups["stringToMatch"].Value);
-            }
-            */
-
         }
+        #region Form Functions
+        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            ribbonMain.Width = ActualWidth;
+        }
+        private void Window_Closing(object sender, CancelEventArgs e)
+        {
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                var colProfiles = db.GetCollection<CharacterProfile>("profiles");
+                foreach (CharacterProfile doc in colProfiles.FindAll())
+                {
+                    if (doc.MonitorAtStartup != doc.Monitor)
+                    {
+                        doc.Monitor = doc.MonitorAtStartup;
+                        colProfiles.Update(doc);
+                    }
+                }
+            }
+            Environment.Exit(Environment.ExitCode);
+        }
+        #endregion
+        #region Character Profiles
+        private void RibbonButtonEdit_Click(object sender, RoutedEventArgs e)
+        {
+            String selectedCharacter = listviewCharacters.SelectedItem.ToString();
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                var col = db.GetCollection<CharacterProfile>("profiles");
+                var result = col.Find(Query.EQ("ProfileName", selectedCharacter));
+                IEnumerator<CharacterProfile> enumerator = result.GetEnumerator();
+                enumerator.MoveNext();
+                var character = (enumerator.Current);
+                CharacterEditor editCharacter = new CharacterEditor(character);
+                editCharacter.ShowDialog();
+            }
+            UpdateView();
+        }
+        private void RibbonButtonRemove_Click(object sender, RoutedEventArgs e)
+        {
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                var col = db.GetCollection<CharacterProfile>("profiles");
+                String selectedCharacter = ((CharacterProfile)listviewCharacters.SelectedItem).ProfileName;
+                MessageBoxResult result = MessageBox.Show($"Are you sure you want to Delete {selectedCharacter}", "Confirmation", MessageBoxButton.YesNo);
+                if (result == MessageBoxResult.Yes)
+                {
+                    var dbdelete = col.Delete(Query.EQ("ProfileName", selectedCharacter));
+                    UpdateView();
+                }
+            }
+        }
+        private void RibbonButtonAdd_Click(object sender, RoutedEventArgs e)
+        {
+            CharacterEditor newCharacter = new CharacterEditor();
+            newCharacter.ShowDialog();
+            UpdateView();
+        }
+        private void ListviewCharacters_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ribbonCharEdit.IsEnabled = true;
+            ribbonCharRemove.IsEnabled = true;
+            //Update TriggerView with selected triggers from profile
+            if (listviewCharacters.Items.Count > 0)
+            {
+                CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
+                currentSelection = selectedCharacter.ProfileName;
+                UpdateTriggerView();
+            }
+        }
+        private void ListviewCharacters_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            CharacterProfile selected = ((ListView)sender).SelectedItem as CharacterProfile;
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                var colProfiles = db.GetCollection<CharacterProfile>("profiles");
+                CharacterProfile currentProfile = colProfiles.FindById(selected.Id);
+                currentProfile.Monitor = !currentProfile.Monitor;
+                colProfiles.Update(currentProfile);
+                if (currentProfile.Monitor)
+                {
+                    MonitorCharacter(currentProfile);
+                }
+            }
+
+            UpdateListView();
+        }
+        #endregion
+        #region Monitoring
         private void MonitorCharacter(CharacterProfile character)
         {
             if (character.Monitor)
@@ -134,7 +244,12 @@ namespace DAR
                                                 {
                                                     var characters = db.GetCollection<CharacterProfile>("profiles");
                                                     var currentProfile = characters.FindById(profile);
-                                                    currentProfile.Speak(doc.SearchText);
+                                                    foreach(Match tMatch in matches)
+                                                    {
+                                                        currentProfile.Speak(doc.SearchText);
+                                                        //Add Timer code
+                                                        
+                                                    }
                                                 }
                                             }
                                         }
@@ -172,6 +287,16 @@ namespace DAR
                     }
                 }
             }            
+        }
+        #endregion
+        #region Triggers
+        private void TriggerAdd_Click(object sender, RoutedEventArgs e)
+        {
+            //Build new Trigger
+            String selectedGroup = ((TreeViewModel)treeViewTriggers.SelectedItem).Name;
+            AddTrigger newTrigger = new AddTrigger(selectedGroup);
+            newTrigger.ShowDialog();
+            UpdateView();
         }
         private void TriggerRemoved_TreeViewModel(object sender, PropertyChangedEventArgs e)
         {
@@ -216,16 +341,101 @@ namespace DAR
                 colProfiles.Update(currentProfile);
             }            
         }
-        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+        private void TriggerRemove_Click(object sender, RoutedEventArgs e)
         {
-            ribbonMain.Width = ActualWidth;
-        }
-        private void RibbonButtonAdd_Click(object sender, RoutedEventArgs e)
-        {
-            CharacterEditor newCharacter = new CharacterEditor();
-            newCharacter.ShowDialog();
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
+                var col = db.GetCollection<Trigger>("triggers");
+                var triggergroup = db.GetCollection<TriggerGroup>("triggergroups");
+                var getTrigger = col.FindOne(Query.EQ("Name", root.Name));
+                var getGroup = triggergroup.FindById(getTrigger.Parent);
+                MessageBoxResult result = MessageBox.Show($"Are you sure you want to Delete {root.Name}", "Confirmation", MessageBoxButton.YesNo);
+                if (result == MessageBoxResult.Yes)
+                {
+                    RemoveTrigger(root.Name);
+                    getGroup.RemoveTrigger(getTrigger.Id);
+                    triggergroup.Update(getGroup);
+                    col.Delete(getTrigger.Id);
+                }
+
+            }
             UpdateView();
         }
+        private void TriggerEdit_Click(object sender, RoutedEventArgs e)
+        {
+            TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                var triggerCollection = db.GetCollection<Trigger>("triggers");
+                var currentTrigger = triggerCollection.FindOne(Query.EQ("Name", root.Name));
+                AddTrigger triggerDialog = new AddTrigger(currentTrigger.Id);
+                triggerDialog.ShowDialog();
+            }
+        }
+        #endregion
+        #region Trigger Groups
+        private void TriggerGroupsAdd_Click(object sender, RoutedEventArgs e)
+        {
+            TriggerGroupEditor triggerDialog = new TriggerGroupEditor();
+            triggerDialog.ShowDialog();
+            e.Handled = true;
+            UpdateView();
+        }
+        private void TriggerGroupsRemove_Click(object sender, RoutedEventArgs e)
+        {
+            TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                var col = db.GetCollection<TriggerGroup>("triggergroups");
+                MessageBoxResult result = MessageBox.Show($"Are you sure you want to Delete {root.Name}", "Confirmation", MessageBoxButton.YesNo);
+                if (result == MessageBoxResult.Yes)
+                {
+                    var dbid = (col.FindOne(x => x.TriggerGroupName.Contains(root.Name))).Id;
+                    var childContains = col.FindAll().Where(x => x.children.Contains(dbid));
+                    foreach (var child in childContains)
+                    {
+                        child.Children.Remove(dbid);
+                        col.Update(child);
+                    }
+                    col.Delete(dbid);
+                    UpdateView();
+                }
+            }
+            e.Handled = true;
+        }
+        private void TriggerGroupsAddSelected_Click(object sender, RoutedEventArgs e)
+        {
+            TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
+            TriggerGroupEditor triggerDialog = new TriggerGroupEditor(root);
+            triggerDialog.ShowDialog();
+            e.Handled = true;
+            UpdateView();
+        }
+        private void TriggerGroupsEdit_Click(object sender, RoutedEventArgs e)
+        {
+            TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                var col = db.GetCollection<TriggerGroup>("triggergroups");
+                var result = col.Find(Query.EQ("TriggerGroupName", root.Name));
+                IEnumerator<TriggerGroup> enumerator = result.GetEnumerator();
+                enumerator.MoveNext();
+                var selectedGroup = (enumerator.Current);
+                TriggerGroupEditor triggerDialog = new TriggerGroupEditor(selectedGroup);
+                triggerDialog.ShowDialog();
+            }
+            UpdateView();
+        }
+        private void TriggerGroupsAddTopLevel_Click(object sender, RoutedEventArgs e)
+        {
+            TriggerGroupEditor triggerDialog = new TriggerGroupEditor();
+            triggerDialog.ShowDialog();
+            e.Handled = true;
+            UpdateView();
+        }
+        #endregion
+        #region Tree
         private TreeViewModel BuildTree(TriggerGroup branch)
         {
             TreeViewModel rTree = new TreeViewModel(branch.TriggerGroupName)
@@ -280,6 +490,46 @@ namespace DAR
                     return record;
             }
         }
+        private void TreeViewTriggers_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
+            if (root.Name != "All Triggers")
+            {
+                if (root.Type == "triggergroup")
+                {
+                    triggerGroupsAdd.IsEnabled = true;
+                    triggerGroupsEdit.IsEnabled = true;
+                    triggerGroupsRemove.IsEnabled = true;
+                    triggerGroupsAddSelected.IsEnabled = true;
+                    triggerAdd.IsEnabled = true;
+                    triggerEdit.IsEnabled = false;
+                    triggerRemove.IsEnabled = false;
+                }
+                else
+                {
+                    triggerGroupsAdd.IsEnabled = false;
+                    triggerGroupsEdit.IsEnabled = false;
+                    triggerGroupsRemove.IsEnabled = false;
+                    triggerGroupsAddSelected.IsEnabled = false;
+                    triggerAdd.IsEnabled = false;
+                    triggerEdit.IsEnabled = true;
+                    triggerRemove.IsEnabled = true;
+                }
+            }
+            else
+            {
+                triggerGroupsAdd.IsEnabled = true;
+                triggerAdd.IsEnabled = false;
+                triggerGroupsEdit.IsEnabled = false;
+                triggerGroupsRemove.IsEnabled = false;
+                triggerGroupsAddSelected.IsEnabled = false;
+                triggerAdd.IsEnabled = false;
+                triggerEdit.IsEnabled = false;
+                triggerRemove.IsEnabled = false;
+            }
+        }
+        #endregion
+        #region Functions
         private void UpdateView()
         {
             CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
@@ -407,207 +657,8 @@ namespace DAR
             }
             
         }
-        private void RibbonButtonEdit_Click(object sender, RoutedEventArgs e)
-        {
-            String selectedCharacter = listviewCharacters.SelectedItem.ToString();
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                var col = db.GetCollection<CharacterProfile>("profiles");
-                var result = col.Find(Query.EQ("ProfileName",selectedCharacter));
-                IEnumerator<CharacterProfile> enumerator = result.GetEnumerator();
-                enumerator.MoveNext();
-                var character = (enumerator.Current);
-                CharacterEditor editCharacter = new CharacterEditor(character);
-                editCharacter.ShowDialog();
-            }
-            UpdateView();
-        }
-        private void RibbonButtonRemove_Click(object sender, RoutedEventArgs e)
-        {
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                var col = db.GetCollection<CharacterProfile>("profiles");
-                String selectedCharacter = ((CharacterProfile)listviewCharacters.SelectedItem).ProfileName;
-                MessageBoxResult result = MessageBox.Show($"Are you sure you want to Delete {selectedCharacter}","Confirmation",MessageBoxButton.YesNo);
-                if(result == MessageBoxResult.Yes)
-                {
-                    var dbdelete = col.Delete(Query.EQ("ProfileName", selectedCharacter));
-                    UpdateView();
-                }
-            }
-        }
-        private void ListviewCharacters_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            ribbonCharEdit.IsEnabled = true;
-            ribbonCharRemove.IsEnabled = true;
-            //Update TriggerView with selected triggers from profile
-            if(listviewCharacters.Items.Count > 0)
-            {
-                CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
-                currentSelection = selectedCharacter.ProfileName;
-                UpdateTriggerView();
-            }
-        }
-        private void TriggerAdd_Click(object sender, RoutedEventArgs e)
-        {
-            //Build new Trigger
-            String selectedGroup = ((TreeViewModel)treeViewTriggers.SelectedItem).Name;
-            AddTrigger newTrigger = new AddTrigger(selectedGroup);
-            newTrigger.ShowDialog();
-            UpdateView();
-        }
-        private void TriggerGroupsAdd_Click(object sender, RoutedEventArgs e)
-        {
-            TriggerGroupEditor triggerDialog = new TriggerGroupEditor();
-            triggerDialog.ShowDialog();
-            e.Handled = true;
-            UpdateView();
-        }
-        private void TriggerGroupsRemove_Click(object sender, RoutedEventArgs e)
-        {
-            TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                var col = db.GetCollection<TriggerGroup>("triggergroups");
-                MessageBoxResult result = MessageBox.Show($"Are you sure you want to Delete {root.Name}", "Confirmation", MessageBoxButton.YesNo);
-                if (result == MessageBoxResult.Yes)
-                {
-                    var dbid = (col.FindOne(x => x.TriggerGroupName.Contains(root.Name))).Id;
-                    var childContains = col.FindAll().Where(x => x.children.Contains(dbid));
-                    foreach(var child in childContains)
-                    {
-                        child.Children.Remove(dbid);
-                        col.Update(child);
-                    }
-                    col.Delete(dbid);
-                    UpdateView();
-                }
-            }
-            e.Handled = true;
-        }
-        private void TriggerGroupsAddSelected_Click(object sender, RoutedEventArgs e)
-        {
-            TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
-            TriggerGroupEditor triggerDialog = new TriggerGroupEditor(root);
-            triggerDialog.ShowDialog();
-            e.Handled = true;
-            UpdateView();
-        }
-        private void TreeViewTriggers_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
-        {
-            TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
-            if (root.Name != "All Triggers")
-            {
-                if (root.Type == "triggergroup")
-                {
-                    triggerGroupsAdd.IsEnabled = true;
-                    triggerGroupsEdit.IsEnabled = true;
-                    triggerGroupsRemove.IsEnabled = true;
-                    triggerGroupsAddSelected.IsEnabled = true;
-                    triggerAdd.IsEnabled = true;
-                    triggerEdit.IsEnabled = false;
-                    triggerRemove.IsEnabled = false;
-                }
-                else
-                {
-                    triggerGroupsAdd.IsEnabled = false;
-                    triggerGroupsEdit.IsEnabled = false;
-                    triggerGroupsRemove.IsEnabled = false;
-                    triggerGroupsAddSelected.IsEnabled = false;
-                    triggerAdd.IsEnabled = false;
-                    triggerEdit.IsEnabled = true;
-                    triggerRemove.IsEnabled = true;
-                }
-            }
-            else
-            {
-                triggerGroupsAdd.IsEnabled = true;
-                triggerAdd.IsEnabled = false;
-                triggerGroupsEdit.IsEnabled = false;
-                triggerGroupsRemove.IsEnabled = false;
-                triggerGroupsAddSelected.IsEnabled = false;
-                triggerAdd.IsEnabled = false;
-                triggerEdit.IsEnabled = false;
-                triggerRemove.IsEnabled = false;
-            }
-        }
-        private void TriggerGroupsEdit_Click(object sender, RoutedEventArgs e)
-        {
-            TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                var col = db.GetCollection<TriggerGroup>("triggergroups");
-                var result = col.Find(Query.EQ("TriggerGroupName", root.Name));
-                IEnumerator<TriggerGroup> enumerator = result.GetEnumerator();
-                enumerator.MoveNext();
-                var selectedGroup = (enumerator.Current);
-                TriggerGroupEditor triggerDialog = new TriggerGroupEditor(selectedGroup);
-                triggerDialog.ShowDialog();
-            }
-            UpdateView();
-        }
-        private void TriggerGroupsAddTopLevel_Click(object sender, RoutedEventArgs e)
-        {
-            TriggerGroupEditor triggerDialog = new TriggerGroupEditor();
-            triggerDialog.ShowDialog();
-            e.Handled = true;
-            UpdateView();
-        }
-        private void TriggerRemove_Click(object sender, RoutedEventArgs e)
-        {
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
-                var col = db.GetCollection<Trigger>("triggers");
-                var triggergroup = db.GetCollection<TriggerGroup>("triggergroups");
-                var getTrigger = col.FindOne(Query.EQ("Name",root.Name));
-                var getGroup = triggergroup.FindById(getTrigger.Parent);
-                MessageBoxResult result = MessageBox.Show($"Are you sure you want to Delete {root.Name}", "Confirmation", MessageBoxButton.YesNo);
-                if (result == MessageBoxResult.Yes)
-                {
-                    RemoveTrigger(root.Name);
-                    getGroup.RemoveTrigger(getTrigger.Id);
-                    triggergroup.Update(getGroup);
-                    col.Delete(getTrigger.Id);
-                }
-                
-            }            
-            UpdateView();
-        }
-        private void ListviewCharacters_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            CharacterProfile selected = ((ListView)sender).SelectedItem as CharacterProfile;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                var colProfiles = db.GetCollection<CharacterProfile>("profiles");
-                CharacterProfile currentProfile = colProfiles.FindById(selected.Id);
-                currentProfile.Monitor = !currentProfile.Monitor;
-                colProfiles.Update(currentProfile);
-                if(currentProfile.Monitor)
-                {
-                    MonitorCharacter(currentProfile);
-                }
-            }
-
-            UpdateListView();
-        }
-        private void Window_Closing(object sender, CancelEventArgs e)
-        {
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                var colProfiles = db.GetCollection<CharacterProfile>("profiles");
-                foreach (CharacterProfile doc in colProfiles.FindAll())
-                {
-                    if(doc.MonitorAtStartup != doc.Monitor)
-                    {
-                        doc.Monitor = doc.MonitorAtStartup;
-                        colProfiles.Update(doc);
-                    }
-                }
-            }
-            Environment.Exit(Environment.ExitCode);
-        }
-
+        #endregion
+        #region Overlays
         private void TextOverlayAddRibbonButton_Click(object sender, RoutedEventArgs e)
         {
             Thread t = new Thread(() =>
@@ -617,7 +668,17 @@ namespace DAR
             });
             t.SetApartmentState(ApartmentState.STA);
             t.Start();
-           
+
         }
+        #endregion
+
+
+
+
+
+
+
+
+
     }
 }

@@ -25,7 +25,7 @@ namespace DAR
         {
             dispatcherTimer = new DispatcherTimer()
             {
-                Interval = new TimeSpan(0, 0, timerDuration)//hours,minutes,seconds
+                Interval = new TimeSpan(0, 0, 1)//hours,minutes,seconds
             };
             timerDescription = "New Timer";
             timerDuration = 0;
@@ -35,6 +35,11 @@ namespace DAR
                 Minimum = 0,
                 Maximum = 1
             };
+        }
+        public Boolean Direction
+        {
+            get { return direction; }
+            set { direction = value; }
         }
         public double Minimum
         {
@@ -83,13 +88,21 @@ namespace DAR
             {
                 progress.Value--;
             }
-            progressValue = progress.Value;
+
             NotifyPropertyChanged("Value");
         }
         public void SetTimer(String description, int duration, Boolean count)
         {
             timerDescription = description;
             timerDuration = duration;
+            if(count)
+            {
+                Progress.Value = 0;
+            }
+            else
+            {
+                Progress.Value = duration;
+            }
             direction = count;
             dispatcherTimer.Tick += DispatcherTimer_Tick;
         }

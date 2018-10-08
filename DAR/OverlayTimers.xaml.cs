@@ -38,25 +38,32 @@ namespace DAR
     }
     public partial class OverlayTimers : Window
     {
-        public ObservableCollection<TriggerTimer> timerBars = new ObservableCollection<TriggerTimer>();
+        private ObservableCollection<TriggerTimer> timers = new ObservableCollection<TriggerTimer>();
+        public ObservableCollection<TriggerTimer> TimerBars
+        {
+            get { return timers; }
+            set { timers = value; }
+        }
         public double fSize;
+        private int id;
+        public int Id
+        {
+            get { return id; }
+            set { id = value; }
+        }
         public OverlayTimers()
         {
             InitializeComponent();
-            var listener = OcPropertyChangedListener.Create(timerBars);
-            listener.PropertyChanged += Listener_PropertyChanged;
-            AddTimer("Timer2", 5, true);
-            AddTimer("Timer1", 6, true);
-            AddTimer("Timer3", 3, true);
-            listviewTimers.ItemsSource = timerBars;
+            var listener = OcPropertyChangedListener.Create(timers);
         }
         public void AddTimer(String description, int duration, Boolean type)
         {
             TriggerTimer newTimer = new TriggerTimer();
-            newTimer.SetProgress(1, duration);
+            newTimer.SetProgress(0, duration);
             newTimer.SetTimer(description, duration, type);
+            newTimer.PropertyChanged += Listener_PropertyChanged;
             newTimer.StartTimer();
-            timerBars.Add(newTimer);
+            TimerBars.Add(newTimer);
         }
         private void Listener_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
@@ -65,7 +72,7 @@ namespace DAR
             if ((s.Direction && (s.Progress.Value == s.TimerDuration)) || (!(s.Direction) && (s.Progress.Value == 0)))
             {
                 s.StopTimer();
-                timerBars.Remove(s);
+                TimerBars.Remove(s);
             }              
         }
 
@@ -104,10 +111,10 @@ namespace DAR
             switch (e.Action)
             {
                 case NotifyCollectionChangedAction.Add:
-                    AddRange(e.NewItems.Cast<T>());
+                    AddRange(e.NewItems.Cast<T>());                    
                     break;
                 case NotifyCollectionChangedAction.Remove:
-                    RemoveRange(e.OldItems.Cast<T>());
+                    RemoveRange(e.OldItems.Cast<T>());                    
                     break;
                 case NotifyCollectionChangedAction.Replace:
                     AddRange(e.NewItems.Cast<T>());

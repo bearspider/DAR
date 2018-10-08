@@ -101,18 +101,24 @@ namespace DAR
             }
             //Prep and/or load database
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
+            {                
                 LiteCollection<CharacterProfile> characterProfiles = db.GetCollection<CharacterProfile>("profiles");
+                LiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");                
                 LiteCollection<TriggerGroup> triggerGroups = db.GetCollection<TriggerGroup>("triggergroups");
+                LiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
                 LiteCollection<Category> categories = db.GetCollection<Category>("categories");
                 LiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
                 characterProfiles.EnsureIndex((CharacterProfile x) => x.Id, true);
+                overlaytimers.EnsureIndex((OverlayTimer v) => v.Id, true);
                 triggerGroups.EnsureIndex((TriggerGroup y) => y.Id, true);
+                overlaytexts.EnsureIndex((OverlayText u) => u.Id, true);
                 categories.EnsureIndex((Category z) => z.Id, true);
                 triggers.EnsureIndex((Trigger w) => w.Id, true);
             }
             UpdateListView();
             UpdateTriggerView();
+            //Deploy Overlays
+
             //Start Monitoring Enabled Profiles
             foreach(CharacterProfile character in characterProfiles)
             {
@@ -661,23 +667,32 @@ namespace DAR
         #region Overlays
         private void TextOverlayAddRibbonButton_Click(object sender, RoutedEventArgs e)
         {
+            /* Thread t = new Thread(() =>
+             {
+                 OverlayTimers newOverlay = new OverlayTimers();
+                 newOverlay.ShowDialog();
+             });
+             t.SetApartmentState(ApartmentState.STA);
+             t.Start();*/
             Thread t = new Thread(() =>
             {
-                OverlayTimers newOverlay = new OverlayTimers();
-                newOverlay.ShowDialog();
+                OverlayTextEditor newOverlayEditor = new OverlayTextEditor();
+                newOverlayEditor.ShowDialog();
             });
             t.SetApartmentState(ApartmentState.STA);
             t.Start();
-
+        }
+        private void TimerOverlayAddRibbonButton_Click(object sender, RoutedEventArgs e)
+        {
+            Thread t = new Thread(() =>
+            {
+                OverlayTimerEditor newOverlayEditor = new OverlayTimerEditor();
+                newOverlayEditor.ShowDialog();
+            });
+            t.SetApartmentState(ApartmentState.STA);
+            t.Start();
         }
         #endregion
-
-
-
-
-
-
-
 
 
     }

@@ -104,7 +104,7 @@
                         </Custom:RibbonSplitButton>
                     </Custom:RibbonGroup>
                     <Custom:RibbonGroup Header="Timer Overlays">
-                        <Custom:RibbonButton Label="Add" LargeImageSource="Google-Noto-Emoji-Travel-Places-42608-stopwatch.ico"/>
+                        <Custom:RibbonButton Label="Add" Click="TimerOverlayAddRibbonButton_Click" LargeImageSource="Google-Noto-Emoji-Travel-Places-42608-stopwatch.ico"/>
                         <Custom:RibbonSplitButton Label="Default" LargeImageSource="Google-Noto-Emoji-Travel-Places-42608-stopwatch.ico">
                             <Custom:RibbonSplitMenuItem Header="Properties"/>
                             <Custom:RibbonSplitMenuItem Header="Save Layout"/>

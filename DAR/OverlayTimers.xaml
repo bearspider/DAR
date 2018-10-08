@@ -4,16 +4,22 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DAR"
+        xmlns:componentModel="clr-namespace:System.ComponentModel;assembly=WindowsBase"
         mc:Ignorable="d"
-        Title="OverlayTimers" Height="450" Width="800" AllowsTransparency="True" WindowStyle="None" MouseDown="Window_MouseDown" Opacity="1" MouseUp="Window_MouseUp">
+        Title="OverlayTimers" Name="overlays" Height="450" Width="800" AllowsTransparency="True" WindowStyle="None" MouseDown="Window_MouseDown" Opacity="1" MouseUp="Window_MouseUp">
     <Window.Resources>
         <ResourceDictionary>
             <local:TimeConverter x:Key="converter" />
+            <CollectionViewSource x:Key='src' Source="{Binding Path=TimerBars, ElementName=overlays}">
+                <CollectionViewSource.SortDescriptions>
+                    <componentModel:SortDescription PropertyName="TimerDuration"/>
+                </CollectionViewSource.SortDescriptions>
+            </CollectionViewSource>
         </ResourceDictionary>
     </Window.Resources>
 
 
-    <ListBox HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Name="listviewTimers">
+    <ListBox HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Name="listviewTimers" ItemsSource="{Binding Source={StaticResource src}}">
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <WrapPanel>

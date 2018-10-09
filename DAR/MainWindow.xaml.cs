@@ -157,15 +157,12 @@ namespace DAR
         #region Character Profiles
         private void RibbonButtonEdit_Click(object sender, RoutedEventArgs e)
         {
-            String selectedCharacter = listviewCharacters.SelectedItem.ToString();
+            CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 var col = db.GetCollection<CharacterProfile>("profiles");
-                var result = col.Find(Query.EQ("ProfileName", selectedCharacter));
-                IEnumerator<CharacterProfile> enumerator = result.GetEnumerator();
-                enumerator.MoveNext();
-                var character = (enumerator.Current);
-                CharacterEditor editCharacter = new CharacterEditor(character);
+                CharacterProfile result = col.FindOne(Query.EQ("ProfileName", selectedCharacter.ProfileName));
+                CharacterEditor editCharacter = new CharacterEditor(result);
                 editCharacter.ShowDialog();
             }
             UpdateView();
@@ -186,8 +183,10 @@ namespace DAR
         }
         private void RibbonButtonAdd_Click(object sender, RoutedEventArgs e)
         {
-            CharacterEditor newCharacter = new CharacterEditor();
-            newCharacter.ShowDialog();
+            //CharacterEditor newCharacter = new CharacterEditor();
+            //newCharacter.ShowDialog();
+            ProfileEditor newProfile = new ProfileEditor();
+            newProfile.ShowDialog();
             UpdateView();
         }
         private void ListviewCharacters_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -424,11 +423,8 @@ namespace DAR
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 var col = db.GetCollection<TriggerGroup>("triggergroups");
-                var result = col.Find(Query.EQ("TriggerGroupName", root.Name));
-                IEnumerator<TriggerGroup> enumerator = result.GetEnumerator();
-                enumerator.MoveNext();
-                var selectedGroup = (enumerator.Current);
-                TriggerGroupEditor triggerDialog = new TriggerGroupEditor(selectedGroup);
+                TriggerGroup result = col.FindOne(Query.EQ("TriggerGroupName", root.Name));
+                TriggerGroupEditor triggerDialog = new TriggerGroupEditor(result);
                 triggerDialog.ShowDialog();
             }
             UpdateView();
@@ -667,13 +663,6 @@ namespace DAR
         #region Overlays
         private void TextOverlayAddRibbonButton_Click(object sender, RoutedEventArgs e)
         {
-            /* Thread t = new Thread(() =>
-             {
-                 OverlayTimers newOverlay = new OverlayTimers();
-                 newOverlay.ShowDialog();
-             });
-             t.SetApartmentState(ApartmentState.STA);
-             t.Start();*/
             Thread t = new Thread(() =>
             {
                 OverlayTextEditor newOverlayEditor = new OverlayTextEditor();

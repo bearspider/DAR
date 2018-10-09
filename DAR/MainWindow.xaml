@@ -82,13 +82,13 @@
                         </Custom:RibbonSplitButton>
                     </Custom:RibbonGroup>
                     <Custom:RibbonGroup Header="Share">
-                        <Custom:RibbonSplitButton Label="Import" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-svn-commit.ico">
+                        <Custom:RibbonSplitButton Label="Import" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-svn-update.ico">
                             <Custom:RibbonSplitMenuItem Header="From GINA Package"/>
                             <Custom:RibbonSplitMenuItem Header="From Everquest"/>
                             <Custom:RibbonSplitMenuItem Header="From Triggers File"/>
                             <Custom:RibbonSplitMenuItem Header="From Configuration"/>
                         </Custom:RibbonSplitButton>
-                        <Custom:RibbonSplitButton Label="Export" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-svn-update.ico">
+                        <Custom:RibbonSplitButton Label="Export" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-svn-commit.ico">
                             <Custom:RibbonSplitMenuItem Header="To Package"/>
                             <Custom:RibbonSplitMenuItem Header="To Everquest"/>
                         </Custom:RibbonSplitButton>
@@ -112,7 +112,7 @@
                         </Custom:RibbonSplitButton>
                     </Custom:RibbonGroup>
                 </Custom:RibbonTab>
-                <Custom:RibbonTab Header="Categories" HorizontalAlignment="Right">
+                <Custom:RibbonTab Header="Categories">
                     <Custom:RibbonGroup Header="Actions">
                         <Custom:RibbonButton Label="Add" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-document-new.ico"/>
                         <Custom:RibbonButton Label="Remove" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-document-close.ico"/>

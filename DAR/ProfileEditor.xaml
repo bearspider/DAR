@@ -1,0 +1,91 @@
+﻿<Window x:Class="DAR.ProfileEditor"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+        xmlns:ComponentModel="clr-namespace:System.ComponentModel;assembly=WindowsBase"
+        xmlns:local="clr-namespace:DAR"
+        mc:Ignorable="d"
+        Title="ProfileEditor" Height="579.467" Width="818.794" Background="#FFB2B2B2">
+    <Grid>
+        <GroupBox x:Name="groupGeneral" Header="General Settings" HorizontalAlignment="Left" Height="134" Margin="10,10,0,0" VerticalAlignment="Top" Width="772">
+            <StackPanel>
+                <Grid>
+                    <Label x:Name="labelLogFile" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Log File" />
+                    <TextBox Name="textboxLogFile" HorizontalAlignment="Center" Height="24" TextWrapping="Wrap" VerticalAlignment="Top" Width="360"/>
+                    <Button Name="buttonLogFile" Content=". . ." HorizontalAlignment="Right" Width="30" Margin="0,0,165,0" Height="24" VerticalAlignment="Top" FontWeight="Bold" Click="buttonLogFile_Click"/>
+                </Grid>
+                <Grid>
+                    <Label x:Name="labelProfileName" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Profile Name" />
+                    <TextBox Name="textBoxProfileName" HorizontalAlignment="Center" Height="24" TextWrapping="Wrap" VerticalAlignment="Top" Width="360" />
+                </Grid>
+                <Grid>
+                    <Label x:Name="labelCharacter" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Character Name" />
+                    <TextBox Name="textboxCharacter" HorizontalAlignment="Center" Height="24" TextWrapping="Wrap" VerticalAlignment="Top" Width="360" />
+                </Grid>
+                <Grid>
+                    <CheckBox Margin="5" Name="checkboxMonitor" Content="Monitor on Startup" IsChecked="True"/>
+                </Grid>
+            </StackPanel>
+        </GroupBox>
+
+        <GroupBox x:Name="groupColors" Margin="10,149,0,0" Header="Colors" HorizontalAlignment="Left" Height="134" VerticalAlignment="Top" Width="772">
+            <StackPanel>
+                <Grid>
+                    <Label HorizontalAlignment="Left" Name="labelTextColor" Content="Text Font Color"/>
+                    <xctk:ColorPicker HorizontalAlignment="Right" Name="ClrPckerText" SelectedColorChanged="ClrPckerText_SelectedColorChanged" Margin="0,0,505,0">
+                        <xctk:ColorPicker.SelectedColor>
+                            <Color>GhostWhite</Color>
+                        </xctk:ColorPicker.SelectedColor>
+                    </xctk:ColorPicker>
+                </Grid>
+                <Grid>
+                    <Label Name="labelTimerFont" HorizontalAlignment="Left" Content="Timer Font Color" Margin="0,10,0,-10"/>
+                    <xctk:ColorPicker HorizontalAlignment="Right" Name="ClrPckerTimer" SelectedColorChanged="ClrPckerTimer_SelectedColorChanged" Margin="0,10,505,-10">
+                        <xctk:ColorPicker.SelectedColor>
+                            <Color>GhostWhite</Color>
+                        </xctk:ColorPicker.SelectedColor>
+                    </xctk:ColorPicker>
+                </Grid>
+                <Grid>
+                    <Label Name="labelBarColor" HorizontalAlignment="Left" Content="Timer Bar Color" Margin="0,20,0,-20"/>
+                    <xctk:ColorPicker HorizontalAlignment="Right" Name="ClrPckerBar" SelectedColorChanged="ClrPckerBar_SelectedColorChanged" Margin="0,20,505,-20" Grid.Column="1" Grid.ColumnSpan="2">
+                        <xctk:ColorPicker.SelectedColor>
+                            <Color>GhostWhite</Color>
+                        </xctk:ColorPicker.SelectedColor>
+                    </xctk:ColorPicker>
+                </Grid>
+            </StackPanel>
+        </GroupBox>
+
+        <GroupBox x:Name="groupAudio" Margin="10,300,0,0" Header="Audio Settings" HorizontalAlignment="Left" Height="178" VerticalAlignment="Top" Width="772">
+            <StackPanel>
+                <Grid>
+                    <Label Name="labelVolume" Content="Volume" HorizontalAlignment="Left" Margin="10,0,0,0"/>
+                    <Slider Name="sliderVolume" Width="400" Minimum="0" Maximum="100" TickFrequency="1" IsSnapToTickEnabled="True" Value="90" HorizontalAlignment="Center"/>
+                    <TextBox HorizontalAlignment="Right" Text="{Binding ElementName=sliderVolume, Path=Value, UpdateSourceTrigger=PropertyChanged}" Width="40" Margin="0,0,135,0"/>
+                </Grid>
+                <Grid>
+                    <Label Name="labelVoice" Content="Voice" HorizontalAlignment="Left" Margin="10,0,0,0" />
+                </Grid>
+                <Grid>
+                    <Label Name="labelVoiceRate" Content="Voice Speed" HorizontalAlignment="Left" Margin="10,0,0,0" Grid.ColumnSpan="2" />
+                    <Slider Name="sliderRate" Width="400" Minimum="-10" Maximum="10" TickFrequency="1" IsSnapToTickEnabled="True" Value="0" HorizontalAlignment="Center" Grid.Column="1" Margin="157.193,0,180,0"/>
+                    <TextBox HorizontalAlignment="Right" Text="{Binding ElementName=sliderRate, Path=Value, UpdateSourceTrigger=PropertyChanged}" Width="40" Margin="0,0,135,0" Grid.Column="1"/>
+                </Grid>
+                <Grid>
+                    <Label Name="labelPhonetic" Content="Phonetic Name" HorizontalAlignment="Left" Margin="10,0,0,0" />
+                    <TextBox Name="textboxPhonetic" HorizontalAlignment="Center" Height="24" Width="200" Margin="186,0,374,2"/>
+                    <Button Name="buttonPlayPhonetic" HorizontalAlignment="Right" Height="24" Content="Play"  Width="60" Click="ButtonPlayPhonetic_Click" Margin="0,2,309,0"/>
+                </Grid>
+                <Grid>
+                    <Label Name="labelSample" Content="Sample" HorizontalAlignment="Left" Margin="10,8,0,-8" />
+                    <TextBox Name="textboxSample" HorizontalAlignment="Center" Height="24" Width="300" Grid.ColumnSpan="2" Margin="187,10,273,-8"/>
+                    <Button Name="buttonPlaySample" HorizontalAlignment="Right" Height="24" Content="Play" Click="ButtonPlaySample_Click" Width="60" Margin="0,10,208,-8" />
+                </Grid>
+            </StackPanel>
+        </GroupBox>
+        <Button Name="buttonSave" Content="Save" HorizontalAlignment="Left" Height="23" Margin="700,515,0,0" VerticalAlignment="Top" Width="100" Click="ButtonSave_Click"/>
+    </Grid>
+</Window>

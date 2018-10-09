@@ -105,6 +105,9 @@
     <Compile Include="OverlayTimers.xaml.cs">
       <DependentUpon>OverlayTimers.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ProfileEditor.xaml.cs">
+      <DependentUpon>ProfileEditor.xaml</DependentUpon>
+    </Compile>
     <Compile Include="SearchText.cs" />
     <Compile Include="TriggerTimer.cs" />
     <Compile Include="TriggerGroupEditor.cs">
@@ -144,6 +147,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="OverlayTimers.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ProfileEditor.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

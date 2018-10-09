@@ -7,14 +7,14 @@
         xmlns:ComponentModel="clr-namespace:System.ComponentModel;assembly=WindowsBase"
         xmlns:local="clr-namespace:DAR"
         mc:Ignorable="d"
-        Title="ProfileEditor" Height="579.467" Width="818.794" Background="#FFB2B2B2">
+        Title="ProfileEditor" Height="579.467" Width="818.794" Background="#FFF1F1F1">
     <Grid>
         <GroupBox x:Name="groupGeneral" Header="General Settings" HorizontalAlignment="Left" Height="134" Margin="10,10,0,0" VerticalAlignment="Top" Width="772">
             <StackPanel>
                 <Grid>
                     <Label x:Name="labelLogFile" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Log File" />
                     <TextBox Name="textboxLogFile" HorizontalAlignment="Center" Height="24" TextWrapping="Wrap" VerticalAlignment="Top" Width="360"/>
-                    <Button Name="buttonLogFile" Content=". . ." HorizontalAlignment="Right" Width="30" Margin="0,0,165,0" Height="24" VerticalAlignment="Top" FontWeight="Bold" Click="buttonLogFile_Click"/>
+                    <Button Name="buttonLogFile" Content=". . ." HorizontalAlignment="Right" Width="30" Margin="0,0,165,0" Height="24" VerticalAlignment="Top" FontWeight="Bold" Click="ButtonLogFile_Click"/>
                 </Grid>
                 <Grid>
                     <Label x:Name="labelProfileName" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Profile Name" />
@@ -63,16 +63,17 @@
             <StackPanel>
                 <Grid>
                     <Label Name="labelVolume" Content="Volume" HorizontalAlignment="Left" Margin="10,0,0,0"/>
-                    <Slider Name="sliderVolume" Width="400" Minimum="0" Maximum="100" TickFrequency="1" IsSnapToTickEnabled="True" Value="90" HorizontalAlignment="Center"/>
-                    <TextBox HorizontalAlignment="Right" Text="{Binding ElementName=sliderVolume, Path=Value, UpdateSourceTrigger=PropertyChanged}" Width="40" Margin="0,0,135,0"/>
+                    <Slider Name="sliderVolume" Width="400" Minimum="0" Maximum="100" TickFrequency="1" IsSnapToTickEnabled="True" Value="90" HorizontalAlignment="Center" ValueChanged="SliderVolume_ValueChanged"/>
+                    <TextBox x:Name="textboxVolume" HorizontalAlignment="Right" Text="{Binding ElementName=sliderVolume, Path=Value, UpdateSourceTrigger=PropertyChanged}" Width="40" Margin="0,0,135,0"/>
                 </Grid>
                 <Grid>
                     <Label Name="labelVoice" Content="Voice" HorizontalAlignment="Left" Margin="10,0,0,0" />
+                    <ComboBox Name="comboVoice" HorizontalAlignment="Center" SelectionChanged="ComboVoice_SelectionChanged"/>
                 </Grid>
-                <Grid>
+                <Grid Margin="0,10">
                     <Label Name="labelVoiceRate" Content="Voice Speed" HorizontalAlignment="Left" Margin="10,0,0,0" Grid.ColumnSpan="2" />
-                    <Slider Name="sliderRate" Width="400" Minimum="-10" Maximum="10" TickFrequency="1" IsSnapToTickEnabled="True" Value="0" HorizontalAlignment="Center" Grid.Column="1" Margin="157.193,0,180,0"/>
-                    <TextBox HorizontalAlignment="Right" Text="{Binding ElementName=sliderRate, Path=Value, UpdateSourceTrigger=PropertyChanged}" Width="40" Margin="0,0,135,0" Grid.Column="1"/>
+                    <Slider Name="sliderRate" Width="400" Minimum="-10" Maximum="10" TickFrequency="1" IsSnapToTickEnabled="True" Value="0" HorizontalAlignment="Center" Grid.Column="1" Margin="157.193,0,180,0" ValueChanged="SliderRate_ValueChanged"/>
+                    <TextBox x:Name="textboxRate" HorizontalAlignment="Right" Text="{Binding ElementName=sliderRate, Path=Value, UpdateSourceTrigger=PropertyChanged}" Width="40" Margin="0,0,135,0" Grid.Column="1"/>
                 </Grid>
                 <Grid>
                     <Label Name="labelPhonetic" Content="Phonetic Name" HorizontalAlignment="Left" Margin="10,0,0,0" />

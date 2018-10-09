@@ -38,6 +38,7 @@ namespace DAR
         public static string eqRegex = @"\[(?<eqtime>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\](?<stringToMatch>.*)";
         public static string pathRegex = @"(?<logdir>.*\\)(?<logname>eqlog_.*\.txt)";
     }
+    #region Converters
     public class MonitoringStatusConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
@@ -80,6 +81,7 @@ namespace DAR
             throw new NotImplementedException();
         }
     }
+    #endregion
     public partial class MainWindow : Window
     {
         #region Properties
@@ -162,7 +164,7 @@ namespace DAR
             {
                 var col = db.GetCollection<CharacterProfile>("profiles");
                 CharacterProfile result = col.FindOne(Query.EQ("ProfileName", selectedCharacter.ProfileName));
-                CharacterEditor editCharacter = new CharacterEditor(result);
+                ProfileEditor editCharacter = new ProfileEditor(result);
                 editCharacter.ShowDialog();
             }
             UpdateView();
@@ -183,8 +185,6 @@ namespace DAR
         }
         private void RibbonButtonAdd_Click(object sender, RoutedEventArgs e)
         {
-            //CharacterEditor newCharacter = new CharacterEditor();
-            //newCharacter.ShowDialog();
             ProfileEditor newProfile = new ProfileEditor();
             newProfile.ShowDialog();
             UpdateView();
@@ -299,7 +299,7 @@ namespace DAR
         {
             //Build new Trigger
             String selectedGroup = ((TreeViewModel)treeViewTriggers.SelectedItem).Name;
-            AddTrigger newTrigger = new AddTrigger(selectedGroup);
+            TriggerEditor newTrigger = new TriggerEditor(selectedGroup);
             newTrigger.ShowDialog();
             UpdateView();
         }
@@ -374,7 +374,7 @@ namespace DAR
             {
                 var triggerCollection = db.GetCollection<Trigger>("triggers");
                 var currentTrigger = triggerCollection.FindOne(Query.EQ("Name", root.Name));
-                AddTrigger triggerDialog = new AddTrigger(currentTrigger.Id);
+                TriggerEditor triggerDialog = new TriggerEditor(currentTrigger.Id);
                 triggerDialog.ShowDialog();
             }
         }
@@ -382,7 +382,7 @@ namespace DAR
         #region Trigger Groups
         private void TriggerGroupsAdd_Click(object sender, RoutedEventArgs e)
         {
-            TriggerGroupEditor triggerDialog = new TriggerGroupEditor();
+            TriggerGroupEdit triggerDialog = new TriggerGroupEdit();
             triggerDialog.ShowDialog();
             e.Handled = true;
             UpdateView();
@@ -412,7 +412,7 @@ namespace DAR
         private void TriggerGroupsAddSelected_Click(object sender, RoutedEventArgs e)
         {
             TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
-            TriggerGroupEditor triggerDialog = new TriggerGroupEditor(root);
+            TriggerGroupEdit triggerDialog = new TriggerGroupEdit(root);
             triggerDialog.ShowDialog();
             e.Handled = true;
             UpdateView();
@@ -424,14 +424,14 @@ namespace DAR
             {
                 var col = db.GetCollection<TriggerGroup>("triggergroups");
                 TriggerGroup result = col.FindOne(Query.EQ("TriggerGroupName", root.Name));
-                TriggerGroupEditor triggerDialog = new TriggerGroupEditor(result);
+                TriggerGroupEdit triggerDialog = new TriggerGroupEdit(result);
                 triggerDialog.ShowDialog();
             }
             UpdateView();
         }
         private void TriggerGroupsAddTopLevel_Click(object sender, RoutedEventArgs e)
         {
-            TriggerGroupEditor triggerDialog = new TriggerGroupEditor();
+            TriggerGroupEdit triggerDialog = new TriggerGroupEdit();
             triggerDialog.ShowDialog();
             e.Handled = true;
             UpdateView();

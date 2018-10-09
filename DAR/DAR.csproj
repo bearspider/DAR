@@ -109,13 +109,13 @@
       <DependentUpon>ProfileEditor.xaml</DependentUpon>
     </Compile>
     <Compile Include="SearchText.cs" />
+    <Compile Include="TriggerEditor.xaml.cs">
+      <DependentUpon>TriggerEditor.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="TriggerGroupEdit.xaml.cs">
+      <DependentUpon>TriggerGroupEdit.xaml</DependentUpon>
+    </Compile>
     <Compile Include="TriggerTimer.cs" />
-    <Compile Include="TriggerGroupEditor.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="TriggerGroupEditor.Designer.cs">
-      <DependentUpon>TriggerGroupEditor.cs</DependentUpon>
-    </Compile>
     <Compile Include="TreeViewModel.cs" />
     <Compile Include="Trigger.cs" />
     <Compile Include="TriggerGroup.cs" />
@@ -126,12 +126,6 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="CharacterEditor.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="CharacterEditor.Designer.cs">
-      <DependentUpon>CharacterEditor.cs</DependentUpon>
     </Compile>
     <Compile Include="CharacterProfile.cs" />
     <Compile Include="MainWindow.xaml.cs">
@@ -154,6 +148,14 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="TriggerEditor.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="TriggerGroupEdit.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">
@@ -171,12 +173,6 @@
     </Compile>
     <EmbeddedResource Include="AddTrigger.resx">
       <DependentUpon>AddTrigger.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="TriggerGroupEditor.resx">
-      <DependentUpon>TriggerGroupEditor.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="CharacterEditor.resx">
-      <DependentUpon>CharacterEditor.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>

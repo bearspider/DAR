@@ -28,6 +28,38 @@ namespace DAR
         public ProfileEditor()
         {
             InitializeComponent();
+            InitializeForm();
+        }
+
+        public ProfileEditor(CharacterProfile editCharacter)
+        {
+            InitializeComponent();
+            InitializeForm();
+            origProfileName = editCharacter.ProfileName;
+            textboxVolume.Text = editCharacter.VolumeValue.ToString();
+            textboxRate.Text = editCharacter.SpeechRate.ToString();
+            textboxCharacter.Text = editCharacter.Name;
+            textBoxProfileName.Text = editCharacter.ProfileName;
+            textboxLogFile.Text = editCharacter.LogFile;
+            checkboxMonitor.IsChecked = editCharacter.MonitorAtStartup;
+            //trackBarRate.Value = editCharacter.SpeechRate;
+            //trackBarVolume.Value = editCharacter.VolumeValue;
+            textboxPhonetic.Text = editCharacter.Name;
+            ClrPckerText.SelectedColor = (Color)ColorConverter.ConvertFromString(editCharacter.TextFontColor);
+            ClrPckerTimer.SelectedColor = (Color)ColorConverter.ConvertFromString(editCharacter.TimerFontColor);
+            ClrPckerBar.SelectedColor = (Color)ColorConverter.ConvertFromString(editCharacter.TimerBarColor);
+        }
+
+        private void InitializeForm()
+        {
+            foreach (System.Speech.Synthesis.InstalledVoice installedVoice in voicesynth.GetInstalledVoices())
+            {
+                comboVoice.Items.Add(installedVoice.VoiceInfo.Name);
+            }
+            if (comboVoice.Items.Count > 0)
+            {
+                comboVoice.SelectedIndex = 0;
+            }
         }
 
         private void ClrPckerText_SelectedColorChanged(object sender, RoutedPropertyChangedEventArgs<Color?> e)
@@ -47,15 +79,15 @@ namespace DAR
 
         private void ButtonPlayPhonetic_Click(object sender, RoutedEventArgs e)
         {
-
+            voicesynth.Speak(textboxPhonetic.Text);
         }
 
         private void ButtonPlaySample_Click(object sender, RoutedEventArgs e)
         {
-
+            voicesynth.Speak(textboxSample.Text);
         }
 
-        private void buttonLogFile_Click(object sender, RoutedEventArgs e)
+        private void ButtonLogFile_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog fileDialog = new OpenFileDialog();
             fileDialog.Filter = "Everquest Log Files|eqlog*.txt";
@@ -97,6 +129,7 @@ namespace DAR
                     character.Name = textboxCharacter.Text;
                     character.ProfileName = textBoxProfileName.Text;
                     character.LogFile = textboxLogFile.Text;
+                    character.MonitorAtStartup = (Boolean)checkboxMonitor.IsChecked;
                     character.SpeechRate = Convert.ToInt32(sliderRate.Value);
                     character.VolumeValue = Convert.ToInt32(sliderVolume.Value);
                     character.TimerBarColor = ClrPckerBar.SelectedColorText;
@@ -111,6 +144,7 @@ namespace DAR
                         Name = textboxCharacter.Text,
                         ProfileName = textBoxProfileName.Text,
                         LogFile = textboxLogFile.Text,
+                        MonitorAtStartup = (Boolean)checkboxMonitor.IsChecked,
                         SpeechRate = Convert.ToInt32(sliderRate.Value),
                         VolumeValue = Convert.ToInt32(sliderVolume.Value),
                         TimerFontColor = ClrPckerTimer.SelectedColorText,
@@ -121,6 +155,21 @@ namespace DAR
                 }
             }
             this.Close();
+        }
+
+        private void ComboVoice_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            voicesynth.SelectVoice(comboVoice.SelectedItem.ToString());
+        }
+
+        private void SliderVolume_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            voicesynth.Volume = Convert.ToInt32(sliderVolume.Value);
+        }
+
+        private void SliderRate_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            voicesynth.Rate = Convert.ToInt32(sliderRate.Value);
         }
     }
 }

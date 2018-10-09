@@ -2,37 +2,43 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Forms;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
 
 namespace DAR
 {
-    public partial class TriggerGroupEditor : Form
+    /// <summary>
+    /// Interaction logic for TriggerGroupEdit.xaml
+    /// </summary>
+    public partial class TriggerGroupEdit : Window
     {
         private string origGroupName;
         private TreeViewModel parentTree;
         private Boolean addChild;
 
-        public TriggerGroupEditor()
+        public TriggerGroupEdit()
         {
             InitializeComponent();
-            addChild = false;
         }
-        public TriggerGroupEditor(TriggerGroup editTrigger)
+        public TriggerGroupEdit(TriggerGroup editTrigger)
         {
             InitializeComponent();
             addChild = false;
             origGroupName = editTrigger.TriggerGroupName;
-            textBoxName.Text = editTrigger.TriggerGroupName;
-            textBoxComments.Text = editTrigger.Comments;
-            checkBoxEnable.Checked = editTrigger.DefaultEnabled;
+            textboxName.Text = editTrigger.TriggerGroupName;
+            textboxComments.Text = editTrigger.Comments;
+            checkboxEnable.IsChecked = editTrigger.DefaultEnabled;
         }
-        public TriggerGroupEditor(TreeViewModel parentObject)
+        public TriggerGroupEdit(TreeViewModel parentObject)
         {
             InitializeComponent();
             addChild = true;
@@ -46,13 +52,13 @@ namespace DAR
                 var col = db.GetCollection<TriggerGroup>("triggergroups");
                 var record = col.FindOne(Query.EQ("TriggerGroupName", parentObject.Name));
                 IEnumerable<TriggerGroup> recordSearch;
-                if (textBoxName.Modified)
+                if (textboxName.Text != origGroupName)
                 {
                     recordSearch = col.Find(Query.EQ("TriggerGroupName", origGroupName));
                 }
                 else
                 {
-                    recordSearch = col.Find(Query.EQ("TriggerGroupName", textBoxName.Text));
+                    recordSearch = col.Find(Query.EQ("TriggerGroupName", textboxName.Text));
                 }
 
                 IEnumerator<TriggerGroup> enumerator = recordSearch.GetEnumerator();
@@ -61,9 +67,9 @@ namespace DAR
                 if (recordSearch.Count<TriggerGroup>() > 0)
                 {
                     //Update Record instead
-                    editTrigger.TriggerGroupName = textBoxName.Text;
-                    editTrigger.Comments = textBoxComments.Text;
-                    editTrigger.DefaultEnabled = checkBoxEnable.Checked;
+                    editTrigger.TriggerGroupName = textboxName.Text;
+                    editTrigger.Comments = textboxComments.Text;
+                    editTrigger.DefaultEnabled = (Boolean)checkboxEnable.IsChecked;
                     col.Update(editTrigger);
                 }
                 else
@@ -71,9 +77,9 @@ namespace DAR
                     //Insert new record
                     var triggerGroup = new TriggerGroup
                     {
-                        TriggerGroupName = textBoxName.Text,
-                        Comments = textBoxComments.Text,
-                        DefaultEnabled = checkBoxEnable.Checked,
+                        TriggerGroupName = textboxName.Text,
+                        Comments = textboxComments.Text,
+                        DefaultEnabled = (Boolean)checkboxEnable.IsChecked,
                         Parent = record.Id,
                         Children = new ArrayList()
                     };
@@ -91,13 +97,13 @@ namespace DAR
             {
                 var col = db.GetCollection<TriggerGroup>("triggergroups");
                 IEnumerable<TriggerGroup> recordSearch;
-                if (textBoxName.Modified)
+                if (textboxName.Text != origGroupName)
                 {
                     recordSearch = col.Find(Query.EQ("TriggerGroupName", origGroupName));
                 }
                 else
                 {
-                    recordSearch = col.Find(Query.EQ("TriggerGroupName", textBoxName.Text));
+                    recordSearch = col.Find(Query.EQ("TriggerGroupName", textboxName.Text));
                 }
 
                 IEnumerator<TriggerGroup> enumerator = recordSearch.GetEnumerator();
@@ -106,9 +112,9 @@ namespace DAR
                 if (recordSearch.Count<TriggerGroup>() > 0)
                 {
                     //Update Record instead
-                    editTrigger.TriggerGroupName = textBoxName.Text;
-                    editTrigger.Comments = textBoxComments.Text;
-                    editTrigger.DefaultEnabled = checkBoxEnable.Checked;
+                    editTrigger.TriggerGroupName = textboxName.Text;
+                    editTrigger.Comments = textboxComments.Text;
+                    editTrigger.DefaultEnabled = (Boolean)checkboxEnable.IsChecked;
                     col.Update(editTrigger);
                 }
                 else
@@ -117,24 +123,24 @@ namespace DAR
                     //No Children since new Trigger Group
                     var triggerGroup = new TriggerGroup
                     {
-                        TriggerGroupName = textBoxName.Text,
-                        Comments = textBoxComments.Text,
-                        DefaultEnabled = checkBoxEnable.Checked
+                        TriggerGroupName = textboxName.Text,
+                        Comments = textboxComments.Text,
+                        DefaultEnabled = (Boolean)checkboxEnable.IsChecked
                     };
                     col.Insert(triggerGroup);
                 }
             }
         }
-        private void ButtonSave_Click(object sender, EventArgs e)
+        private void ButtonSave_Click(object sender, RoutedEventArgs e)
         {
-            if(addChild)
+            if (addChild)
             {
                 AddTriggerGroup(parentTree);
             }
             else
             {
                 AddTriggerGroup();
-            }      
+            }
             this.Close();
         }
     }

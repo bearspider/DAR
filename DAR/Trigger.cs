@@ -5,6 +5,7 @@ using System.Collections;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.ComponentModel;
 
 namespace DAR
 {
@@ -26,8 +27,7 @@ namespace DAR
         public String timerName;
         public int timerDuration;
         public int triggeredAgain;
-        public List<SearchText> endEarlyText;
-        //public String endEarlyText;
+        public BindingList<SearchText> endEarlyText;
         public int timerEndingDuration;
         public String timerEndingDisplayText;
         public String timerEndingClipboardText;
@@ -64,7 +64,7 @@ namespace DAR
             timerName = "";
             timerDuration = 0;
             triggeredAgain = 2;
-            endEarlyText = new List<SearchText>();
+            endEarlyText = new BindingList<SearchText>();
             //endEarlyText = "";
             timerEndingDuration = 0;
             timerEndingDisplayText = "";
@@ -153,7 +153,7 @@ namespace DAR
             get { return triggeredAgain; }
             set { triggeredAgain = value; }
         }
-        public List<SearchText> EndEarlyText
+        public BindingList<SearchText> EndEarlyText
         {
             get { return endEarlyText; }
             set { endEarlyText = value; }

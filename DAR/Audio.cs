@@ -11,14 +11,14 @@ namespace DAR
         private String audioType;
         private String tts;
         private Boolean interrupt;
-        private int soundFileId;
+        private String soundFileId;
 
         public Audio()
         {
             audioType = "";
             tts = "";
             interrupt = false;
-            soundFileId = 0;
+            soundFileId = "";
         }
 
         public String AudioType
@@ -36,7 +36,7 @@ namespace DAR
             get { return interrupt; }
             set { interrupt = value; }
         }
-        public int SoundFileId
+        public String SoundFileId
         {
             get { return soundFileId; }
             set { soundFileId = value; }

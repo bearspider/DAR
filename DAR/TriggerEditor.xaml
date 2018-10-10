@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:DAR"
         xmlns:system="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
-        Title="Trigger Editor" Height="850" Width="800">
+        Title="Trigger Editor" Height="850" Width="800" Background="#FFF1F1F1">
     <StackPanel>
         <Grid>
             <GroupBox Name="groupboxGeneral" Header="General Settings" Margin="10,10,10,10">
@@ -70,7 +70,7 @@
                                     <Grid Margin="50,5,0,0">
                                         <Label Name="labelBasicSoundFile" Content="Sound File" HorizontalAlignment="Left" IsEnabled="False"/>
                                         <TextBox Name="textboxBasicSoundFile" HorizontalAlignment="Center" Margin="0,0,140,0" Width="350" IsEnabled="False"/>
-                                        <Button Name="buttonBasicSoundFile" Width="30" Content=". . ." Margin="270,0,0,0"/>
+                                        <Button Name="buttonBasicSoundFile" Width="30" Content=". . ." Click="ButtonBasicSoundFile_Click" Margin="270,0,0,0"/>
                                     </Grid>
                                 </StackPanel>
                                 <Grid Margin="0,30,0,0">
@@ -99,11 +99,11 @@
                         </Grid>
                         <Grid Margin="0,10,0,0">
                             <Label Name="labelTimerDuration" Content="Timer Duration:" HorizontalAlignment="Left" IsEnabled="False"/>
-                            <TextBox Name="textboxTimerHours" Margin="-500,0,0,0" Width="30" IsEnabled="False"/>
+                            <TextBox Name="textboxTimerHours" VerticalAlignment="Center" Text="0" Margin="-500,0,0,0" Width="30" IsEnabled="False"/>
                             <Label Name="labelTimerHours"  Margin="145,0,0,0" Content="Hours" IsEnabled="False"/>
-                            <TextBox Name="textboxTimerMinutes" Margin="-330,0,0,0" Width="30" IsEnabled="False"/>
+                            <TextBox Name="textboxTimerMinutes" VerticalAlignment="Center" Text="0" Margin="-330,0,0,0" Width="30" IsEnabled="False"/>
                             <Label Name="labelTimerMinutes" Margin="230,0,0,0" Content="Minutes" IsEnabled="False"/>
-                            <TextBox Name="textboxTimerSeconds" Margin="-150,0,0,0" Width="30" IsEnabled="False"/>
+                            <TextBox Name="textboxTimerSeconds" VerticalAlignment="Center" Text="0" Margin="-150,0,0,0" Width="30" IsEnabled="False"/>
                             <Label Name="labelTimerSeconds" Margin="320,0,0,0" Content="Seconds" IsEnabled="False"/>
                         </Grid>
                         <Grid Margin="0,30,0,0">
@@ -118,7 +118,7 @@
                             <Label Name="labelEarlyText" Content="End early text (for multiple possible values, add a row for each):" IsEnabled="False"/>
                         </Grid>
                         <Grid Margin="0,10,0,0">
-                            <DataGrid Name="datagridEarly" Height="200" IsEnabled="False">
+                            <DataGrid Name="datagridEarly" ItemsSource="{Binding}" Height="200" IsEnabled="False">
 
                             </DataGrid>
                         </Grid>
@@ -128,22 +128,22 @@
                 <TabItem Name="tabEnding" Header="Timer Ending" IsEnabled="False">
                     <StackPanel>
                         <Grid Margin="5,10,0,0">
-                            <CheckBox Name="checkboxEndingNotify" Content="Notify when timer is down to:" IsChecked="False" VerticalAlignment="Center"/>
-                            <TextBox Name="textboxEndingHours" Width="40" HorizontalAlignment="Center" Margin="0,0,350,0"/>
+                            <CheckBox Name="checkboxEndingNotify" Content="Notify when timer is down to:" IsChecked="False" VerticalAlignment="Center" Unchecked="CheckboxEndingNotify_Unchecked" Checked="CheckboxEndingNotify_Checked"/>
+                            <TextBox Name="textboxEndingHours" Text="0" VerticalAlignment="Center" Width="40" HorizontalAlignment="Center" Margin="0,0,350,0" IsEnabled="False"/>
                             <Label Name="labelEndingHours" Content="Hours" Margin="0,0,270,0" HorizontalAlignment="Center"/>
-                            <TextBox Name="textboxEndingMinutes" Width="40" HorizontalAlignment="Center" Margin="0,0,190,0"/>
+                            <TextBox Name="textboxEndingMinutes" Text="0" VerticalAlignment="Center" Width="40" HorizontalAlignment="Center" Margin="0,0,190,0" IsEnabled="False"/>
                             <Label Name="labelEndingMinutes" Content="Minutes" Margin="0,0,100,0" HorizontalAlignment="Center"/>
-                            <TextBox Name="textboxEndingSeconds" Width="40" HorizontalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBox Name="textboxEndingSeconds" Text="0" VerticalAlignment="Center" Width="40" HorizontalAlignment="Center" Margin="0,0,10,0" IsEnabled="False"/>
                             <Label Name="labelEndingSeconds" Content="Seconds" Margin="0,0,-80,0" HorizontalAlignment="Center"/>
                         </Grid>
                         <GroupBox Name="groupEndingTextSetting" Header="Text Settings">
                             <StackPanel>
                                 <Grid Margin="0,5,0,0">
-                                    <CheckBox Name="checkboxEndingDisplay" Content="Display Text" IsChecked="False" HorizontalAlignment="Left" IsEnabled="False"/>
+                                    <CheckBox Name="checkboxEndingDisplay" Content="Display Text" IsChecked="False" HorizontalAlignment="Left" Unchecked="CheckboxEndingDisplay_Unchecked" Checked="CheckboxEndingDisplay_Checked" IsEnabled="False"/>
                                     <TextBox Name="textboxEndingDisplay" HorizontalAlignment="Center" Margin="0,0,100,0" Width="400" IsEnabled="False"/>
                                 </Grid>
                                 <Grid Margin="0,5,0,0">
-                                    <CheckBox Name="checkboxEndingClipboard" Content="Clipboard Text" IsChecked="False" HorizontalAlignment="Left" IsEnabled="False"/>
+                                    <CheckBox Name="checkboxEndingClipboard" Content="Clipboard Text" IsChecked="False" HorizontalAlignment="Left" Unchecked="CheckboxEndingClipboard_Unchecked" Checked="CheckboxEndingClipboard_Checked" IsEnabled="False"/>
                                     <TextBox Name="textboxEndingClipboard" HorizontalAlignment="Center" Margin="0,0,100,0" Width="400" IsEnabled="False"/>
                                 </Grid>
                             </StackPanel>
@@ -151,30 +151,30 @@
                         <GroupBox Name="groupEndingAudioSettings" Header="Audio Settings" Margin="0,10,0,0">
                             <StackPanel>
                                 <Grid Margin="0,10,0,0">
-                                    <RadioButton Name="radioEndingNoSound" Content="No Sound" IsChecked="True" IsEnabled="False"/>
+                                    <RadioButton Name="radioEndingNoSound" Content="No Sound" IsChecked="True" IsEnabled="False" Unchecked="RadioEndingNoSound_Unchecked" Checked="RadioEndingNoSound_Checked"/>
                                 </Grid>
                                 <StackPanel>
-                                    <RadioButton Margin="0,10,0,0" Name="radioEndingTTS" Content="Use Text To Speech" IsChecked="False" IsEnabled="False"/>
+                                    <RadioButton Margin="0,10,0,0" Name="radioEndingTTS" Content="Use Text To Speech" IsChecked="False" IsEnabled="False" Unchecked="RadioEndingTTS_Unchecked" Checked="RadioEndingTTS_Checked"/>
                                     <Grid Margin="50,5,0,0">
                                         <Label Name="labelEndingTTS" Content="Text to Say" HorizontalAlignment="Left" IsEnabled="False"/>
-                                        <TextBox Name="textboxEndingTTS" HorizontalAlignment="Center" Margin="0,0,140,0" Width="400" IsEnabled="False"/>
+                                        <TextBox Name="textboxEndingTTS" HorizontalAlignment="Center" Margin="0,0,140,0" Width="400" IsEnabled="False" TextChanged="TextboxEndingTTS_TextChanged"/>
                                     </Grid>
                                     <Grid Margin="50,10,0,0">
                                         <CheckBox Name="checkboxEndingInterrupt" IsChecked="False" Content="Interrupt Speech" IsEnabled="False"/>
                                     </Grid>
                                 </StackPanel>
                                 <StackPanel>
-                                    <RadioButton Margin="0,10,0,0" Name="radioEndingPlay" IsChecked="False" Content="Play Sound File" IsEnabled="False"/>
+                                    <RadioButton Margin="0,10,0,0" Name="radioEndingPlay" IsChecked="False" Content="Play Sound File" Unchecked="RadioEndingPlay_Unchecked" Checked="RadioEndingPlay_Checked" IsEnabled="False"/>
                                     <Grid Margin="50,5,0,0">
                                         <Label Name="labelEndingSoundFile" Content="Sound File" HorizontalAlignment="Left" IsEnabled="False"/>
                                         <TextBox Name="textboxEndingSoundFile" HorizontalAlignment="Center" Margin="0,0,140,0" Width="350" IsEnabled="False"/>
-                                        <Button Name="buttonEndingSoundFile" Width="30" Content=". . ." Margin="270,0,0,0" IsEnabled="False"/>
+                                        <Button Name="buttonEndingSoundFile" Width="30" Content=". . ." Margin="270,0,0,0" Click="ButtonEndingSoundFile_Click" IsEnabled="False"/>
                                     </Grid>
                                 </StackPanel>
                                 <Grid Margin="0,30,0,0">
                                     <Label Name="labelEndingTest" Content="Test" HorizontalAlignment="Left" Margin="35,0,0,0" IsEnabled="False"/>
                                     <ComboBox Name="comboEndingTest" Width="120" HorizontalAlignment="Center" Margin="0,0,490,0" IsEnabled="False"/>
-                                    <Button Name="buttonEndingTest" Content="Play" Width="60" HorizontalAlignment="Right" Margin="0,0,480,0" IsEnabled="False"/>
+                                    <Button Name="buttonEndingTest" Content="Play" Width="60" HorizontalAlignment="Right" Margin="0,0,480,0" Click="ButtonEndingTest_Click" IsEnabled="False"/>
                                 </Grid>
                             </StackPanel>
                         </GroupBox>
@@ -183,51 +183,47 @@
                 <TabItem Name="tabEnded" Header="Timer Ended" IsEnabled="False">
                     <StackPanel>
                         <Grid Margin="5,10,0,0">
-                            <CheckBox Name="checkboxEndedNotify" Content="Notify when timer ends" IsChecked="False" VerticalAlignment="Center"/>
+                            <CheckBox Name="checkboxEndedNotify" Content="Notify when timer ends" IsChecked="False" VerticalAlignment="Center" Unchecked="CheckboxEndedNotify_Unchecked" Checked="CheckboxEndedNotify_Checked" />
                         </Grid>
                         <GroupBox Name="groupEndedTextSetting" Header="Text Settings">
                             <StackPanel>
                                 <Grid Margin="0,5,0,0">
-                                    <CheckBox Name="checkboxEndedDisplay" Content="Display Text" IsChecked="False" HorizontalAlignment="Left" IsEnabled="False"/>
+                                    <CheckBox Name="checkboxEndedDisplay" Content="Display Text" IsChecked="False" HorizontalAlignment="Left" Unchecked="CheckboxEndedDisplay_Unchecked" Checked="CheckboxEndedDisplay_Checked" IsEnabled="False"/>
                                     <TextBox Name="textboxEndedDisplay" HorizontalAlignment="Center" Margin="0,0,100,0" Width="400" IsEnabled="False"/>
                                 </Grid>
                                 <Grid Margin="0,5,0,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="37*"/>
-                                        <ColumnDefinition Width="717*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <CheckBox Name="checkboxEndedClipboard" Content="Clipboard Text" IsChecked="False" HorizontalAlignment="Left" Grid.ColumnSpan="2" IsEnabled="False"/>
-                                    <TextBox Name="textboxEndedClipboard" HorizontalAlignment="Center" Margin="90.089,0,227,0" Width="400" IsEnabled="False" Grid.Column="1"/>
+                                    <CheckBox Name="checkboxEndedClipboard" Content="Clipboard Text" IsChecked="False" HorizontalAlignment="Left" Unchecked="CheckboxEndedClipboard_Unchecked" Checked="CheckboxEndedClipboard_Checked" IsEnabled="False"/>
+                                    <TextBox Name="textboxEndedClipboard" HorizontalAlignment="Center" Margin="0,0,100,0" Width="400" IsEnabled="False"/>
                                 </Grid>
                             </StackPanel>
                         </GroupBox>
                         <GroupBox Name="groupEndedAudioSettings" Header="Audio Settings" Margin="0,10,0,0">
                             <StackPanel>
                                 <Grid Margin="0,10,0,0">
-                                    <RadioButton Name="radioEndedNoSound" Content="No Sound" IsChecked="True" IsEnabled="False"/>
+                                    <RadioButton Name="radioEndedNoSound" Content="No Sound" IsChecked="True" Checked="RadioEndedNoSound_Checked" IsEnabled="False"/>
                                 </Grid>
                                 <StackPanel>
-                                    <RadioButton Margin="0,10,0,0" Name="radioEndedTTS" Content="Use Text To Speech" IsChecked="False" IsEnabled="False"/>
+                                    <RadioButton Margin="0,10,0,0" Name="radioEndedTTS" Content="Use Text To Speech" Unchecked="RadioEndedTTS_Unchecked" Checked="RadioEndedTTS_Checked" IsChecked="False" IsEnabled="False"/>
                                     <Grid Margin="50,5,0,0">
                                         <Label Name="labelEndedTTS" Content="Text to Say" HorizontalAlignment="Left" IsEnabled="False"/>
-                                        <TextBox Name="textboxEndedTTS" HorizontalAlignment="Center" Margin="0,0,140,0" Width="400" IsEnabled="False"/>
+                                        <TextBox Name="textboxEndedTTS" HorizontalAlignment="Center" Margin="0,0,140,0" Width="400" IsEnabled="False" TextChanged="TextboxEndedTTS_TextChanged"/>
                                     </Grid>
                                     <Grid Margin="50,10,0,0">
                                         <CheckBox Name="checkboxEndedInterrupt" IsChecked="False" Content="Interrupt Speech" IsEnabled="False"/>
                                     </Grid>
                                 </StackPanel>
                                 <StackPanel>
-                                    <RadioButton Margin="0,10,0,0" Name="radioEndedPlay" IsChecked="False" Content="Play Sound File" IsEnabled="False"/>
+                                    <RadioButton Margin="0,10,0,0" Name="radioEndedPlay" IsChecked="False" Content="Play Sound File" Unchecked="RadioEndedPlay_Unchecked" Checked="RadioEndedPlay_Checked" IsEnabled="False"/>
                                     <Grid Margin="50,5,0,0">
                                         <Label Name="labelEndedSoundFile" Content="Sound File" HorizontalAlignment="Left" IsEnabled="False"/>
                                         <TextBox Name="textboxEndedSoundFile" HorizontalAlignment="Center" Margin="0,0,140,0" Width="350" IsEnabled="False"/>
-                                        <Button Name="buttonEndedSoundFile" Width="30" Content=". . ." Margin="270,0,0,0" IsEnabled="False"/>
+                                        <Button Name="buttonEndedSoundFile" Width="30" Content=". . ." Margin="270,0,0,0" Click="ButtonEndedSoundFile_Click" IsEnabled="False"/>
                                     </Grid>
                                 </StackPanel>
                                 <Grid Margin="0,30,0,0">
                                     <Label Name="labelEndedTest" Content="Test:" HorizontalAlignment="Left" Margin="35,0,0,0" IsEnabled="False"/>
                                     <ComboBox Name="comboEndedTest" Width="120" HorizontalAlignment="Center" Margin="0,0,500,0" IsEnabled="False"/>
-                                    <Button Name="buttonEndedTest" Content="Play" Width="60" HorizontalAlignment="Right" Margin="0,0,480,0" IsEnabled="False"/>
+                                    <Button Name="buttonEndedTest" Content="Play" Width="60" HorizontalAlignment="Right" Margin="0,0,480,0" Click="ButtonEndedTest_Click" IsEnabled="False"/>
                                 </Grid>
                             </StackPanel>
                         </GroupBox>
@@ -236,12 +232,12 @@
                 <TabItem Name="tabCounter" Header="Counter">
                     <StackPanel>
                         <Grid Margin="5,10,0,10">
-                            <CheckBox Name="checkboxCounterNotify" Content="Reset counter if unmatched for:" IsChecked="False" VerticalAlignment="Center"/>
-                            <TextBox Name="textboxCounterHours" Width="40" HorizontalAlignment="Center" Margin="0,0,330,0"/>
+                            <CheckBox Name="checkboxCounterNotify" Content="Reset counter if unmatched for:" IsChecked="False"  Unchecked="CheckboxCounterNotify_Unchecked" Checked="CheckboxCounterNotify_Checked" VerticalAlignment="Center"/>
+                            <TextBox Name="textboxCounterHours" Text="0" VerticalAlignment="Center" Width="40" HorizontalAlignment="Center" Margin="0,0,330,0" IsEnabled="False"/>
                             <Label Name="labelCounterHours" Content="Hours" Margin="0,0,250,0" HorizontalAlignment="Center"/>
-                            <TextBox Name="textboxCounterMinutes" Width="40" HorizontalAlignment="Center" Margin="0,0,170,0"/>
+                            <TextBox Name="textboxCounterMinutes" Text="0" VerticalAlignment="Center" Width="40" HorizontalAlignment="Center" Margin="0,0,170,0" IsEnabled="False"/>
                             <Label Name="labelCounterMinutes" Content="Minutes" Margin="0,0,80,0" HorizontalAlignment="Center"/>
-                            <TextBox Name="textboxCounterSeconds" Width="40" HorizontalAlignment="Center" Margin="0,0,-10,0"/>
+                            <TextBox Name="textboxCounterSeconds" Text="0" VerticalAlignment="Center" Width="40" HorizontalAlignment="Center" Margin="0,0,-10,0" IsEnabled="False"/>
                             <Label Name="labelCounterSeconds" Content="Seconds" Margin="0,0,-100,0" HorizontalAlignment="Center"/>
                         </Grid>
                     </StackPanel>

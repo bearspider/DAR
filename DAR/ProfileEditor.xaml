@@ -7,7 +7,7 @@
         xmlns:ComponentModel="clr-namespace:System.ComponentModel;assembly=WindowsBase"
         xmlns:local="clr-namespace:DAR"
         mc:Ignorable="d"
-        Title="ProfileEditor" Height="579.467" Width="818.794" Background="#FFF1F1F1">
+        Title="ProfileEditor" Height="580" Width="820" Background="#FFF1F1F1">
     <Grid>
         <GroupBox x:Name="groupGeneral" Header="General Settings" HorizontalAlignment="Left" Height="134" Margin="10,10,0,0" VerticalAlignment="Top" Width="772">
             <StackPanel>

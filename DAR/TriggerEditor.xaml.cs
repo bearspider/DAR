@@ -1,8 +1,12 @@
 ﻿using LiteDB;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Data;
+using System.IO;
 using System.Linq;
+using System.Media;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -26,7 +30,7 @@ namespace DAR
         private CharacterProfile selectedCharacter;
         private Category selectedCategory;
         private int selectedGroupId;
-        private List<SearchText> endEarlyCases = new List<SearchText>();
+        private BindingList<SearchText> endEarlyCases = new BindingList<SearchText>();
         private DataTable dt = new DataTable();
         private Audio basicAudioSettings = new Audio();
         private Audio endedEarlyAudioSettings = new Audio();
@@ -50,15 +54,147 @@ namespace DAR
                 ColumnName = "Regex"
             };
             dt.Columns.Add(column);
-            //datagridEarly.ItemsSource = dt;
-            //datagridEarly.Columns[0].Width = 400;
+            datagridEarly.DataContext = dt.DefaultView;
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                LiteCollection<TriggerGroup> groupsCol = db.GetCollection<TriggerGroup>("triggergroups");
+                var getTriggerGroup = groupsCol.FindOne(Query.EQ("TriggerGroupName", selectedGroup));
+                selectedGroupId = getTriggerGroup.Id;
+            }
+            LoadCharacters();
+        }
+        public TriggerEditor(int selectedTrigger)
+        {
+            InitializeComponent();
+            LoadCharacters();
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                LiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
+                Trigger trigger = triggers.FindById(selectedTrigger);
+                textboxName.Text = trigger.Name;
+                textboxSearch.Text = trigger.SearchText;
+                textboxComments.Text = trigger.Comments;
+                checkboxRegex.IsChecked = trigger.Regex;
+                checkboxFast.IsChecked = trigger.Fastcheck;
+                selectedGroupId = trigger.Parent;
+                //(Category)comboCategory.SelectedItem = trigger.TriggerCategory;
+                datagridEarly.DataContext = trigger.EndEarlyText;
+                textboxBasicDisplay.Text = trigger.Displaytext;
+                if(textboxBasicDisplay.Text != "")
+                {
+                    checkboxBasicDisplay.IsChecked = true;
+                }
+                textboxBasicClipboard.Text = trigger.Clipboardtext;
+                if (textboxBasicClipboard.Text != "")
+                {
+                    checkboxBasicClipboard.IsChecked = true;
+                }
+                switch (trigger.AudioSettings.AudioType)
+                {
+                    case "nosound":
+                        radioBasicNoSound.IsChecked = true;
+                        break;
+                    case "tts":
+                        radioBasicTTS.IsChecked = true;
+                        textboxBasicTTS.Text = trigger.AudioSettings.TTS;
+                        checkboxBasicInterrupt.IsChecked = trigger.AudioSettings.Interrupt;
+                        break;
+                    case "file":
+                        radioBasicPlay.IsChecked = true;
+                        textboxBasicSoundFile.Text = trigger.AudioSettings.SoundFileId;
+                        break;
+                    default:
+                        break;
+                }
+                comboTimerType.Text = trigger.TimerType;
+                textboxTimerName.Text = trigger.TimerName;
+                TimeSpan timer = TimeSpan.FromSeconds(trigger.TimerDuration);
+                textboxTimerHours.Text = timer.Hours.ToString();
+                textboxTimerMinutes.Text = timer.Minutes.ToString();
+                textboxTimerSeconds.Text = timer.Seconds.ToString();
+                comboTriggered.SelectedIndex = trigger.TriggeredAgain;
+                endEarlyCases = trigger.EndEarlyText;
+                TimeSpan endingTimer = TimeSpan.FromSeconds(trigger.TimerEndingDuration);
+                textboxEndingHours.Text = endingTimer.Hours.ToString();
+                textboxEndingMinutes.Text = endingTimer.Minutes.ToString();
+                textboxEndingSeconds.Text = endingTimer.Seconds.ToString();
+                textboxEndingDisplay.Text = trigger.TimerEndingDisplayText;
+                textboxEndingClipboard.Text = trigger.TimerEndingClipboardText;
+                if (textboxEndingDisplay.Text != "")
+                {
+                    checkboxEndingDisplay.IsChecked = true;
+                }
+                if (textboxEndingDisplay.Text != "")
+                {
+                    checkboxEndingDisplay.IsChecked = true;
+                }
+                switch (trigger.TimerEndingAudio.AudioType)
+                {
+                    case "nosound":
+                        radioEndingNoSound.IsChecked = true;
+                        break;
+                    case "tts":
+                        radioEndingTTS.IsChecked = true;
+                        textboxEndingTTS.Text = trigger.TimerEndingAudio.TTS;
+                        checkboxEndingInterrupt.IsChecked = trigger.TimerEndingAudio.Interrupt;
+                        break;
+                    case "file":
+                        radioEndingPlay.IsChecked = true;
+                        textboxEndingSoundFile.Text = trigger.TimerEndingAudio.SoundFileId;
+                        break;
+                    default:
+                        break;
+                }
+                checkboxEndingNotify.IsChecked = trigger.TimerEnding;
+                textboxEndedClipboard.Text = trigger.TimerEndedClipboardText;
+                textboxEndedDisplay.Text = trigger.TimerEndedDisplayText;
+                if (textboxEndedDisplay.Text != "")
+                {
+                    checkboxEndedDisplay.IsChecked = true;
+                }
+                if (textboxEndedDisplay.Text != "")
+                {
+                    checkboxEndedDisplay.IsChecked = true;
+                }
+                checkboxEndedNotify.IsChecked = trigger.TimerEnded;
+                switch (trigger.TimerEndedAudio.AudioType)
+                {
+                    case "nosound":
+                        radioEndedNoSound.IsChecked = true;
+                        break;
+                    case "tts":
+                        radioEndedTTS.IsChecked = true;
+                        textboxEndedTTS.Text = trigger.timerEndedAudio.TTS;
+                        checkboxEndedInterrupt.IsChecked = trigger.TimerEndedAudio.Interrupt;
+                        break;
+                    case "file":
+                        radioEndedPlay.IsChecked = true;
+                        textboxEndedSoundFile.Text = trigger.TimerEndedAudio.SoundFileId;
+                        break;
+                    default:
+                        break;
+                }
+                checkboxCounterNotify.IsChecked = trigger.ResetCounter;
+                TimeSpan resetTimer = TimeSpan.FromSeconds(trigger.ResetCounterDuration);
+                textboxCounterHours.Text = resetTimer.Hours.ToString();
+                textboxCounterMinutes.Text = resetTimer.Minutes.ToString();
+                textboxCounterSeconds.Text = resetTimer.Seconds.ToString();
+            }
+        }
+        private int GetDuration(String hours, String minutes, String seconds)
+        {
+            int totalDuration = 0;
+            totalDuration += (Int32.Parse(hours)) * 60 * 60;
+            totalDuration += (Int32.Parse(minutes)) * 60;
+            totalDuration += (Int32.Parse(seconds));
+            return totalDuration;
+        }
+        private void LoadCharacters()
+        {
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 LiteCollection<CharacterProfile> characterProfilesCol = db.GetCollection<CharacterProfile>("profiles");
                 LiteCollection<Category> categoriesCol = db.GetCollection<Category>("categories");
-                LiteCollection<TriggerGroup> groupsCol = db.GetCollection<TriggerGroup>("triggergroups");
-                var getTriggerGroup = groupsCol.FindOne(Query.EQ("TriggerGroupName", selectedGroup));
-                selectedGroupId = getTriggerGroup.Id;
                 var profiles = characterProfilesCol.FindAll();
                 foreach (var profile in profiles)
                 {
@@ -86,54 +222,41 @@ namespace DAR
                 }
             }
         }
-        public TriggerEditor(int selectedTrigger)
+        private void EnableTimerEntry()
         {
-            InitializeComponent();
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
-                Trigger trigger = triggers.FindById(selectedTrigger);
-                textboxName.Text = trigger.Name;
-                textboxSearch.Text = trigger.SearchText;
-                textboxComments.Text = trigger.Comments;
-                checkboxRegex.IsChecked = trigger.Regex;
-                checkboxFast.IsChecked = trigger.Fastcheck;
-                selectedGroupId = trigger.Parent;
-                //(Category)comboBoxCategories.SelectedItem = trigger.TriggerCategory;
-                textboxBasicDisplay.Text = trigger.Displaytext;
-                textboxBasicClipboard.Text = trigger.Clipboardtext;
-                //basicAudioSettings = trigger.AudioSettings;
-                comboTimerType.Text = trigger.TimerType;
-                textboxTimerName.Text = trigger.TimerName;
-                //trigger.TimerDuration = GetDuration(textBoxTimerHours.Text, textBoxTimerMinutes.Text, textBoxTimerSeconds.Text);
-                //comboBoxTriggered.SelectedIndex = trigger.TriggeredAgain;
-                endEarlyCases = trigger.EndEarlyText;
-                //trigger.TimerEndingDuration = GetDuration(textBoxEndingHours.Text, textBoxEndingMinutes.Text, textBoxEndingSeconds.Text);
-                textboxEndingDisplay.Text = trigger.TimerEndingDisplayText;
-                textboxEndingClipboard.Text = trigger.TimerEndingClipboardText;
-                endingEarlyAudioSettings = trigger.TimerEndingAudio;
-                checkboxEndingNotify.IsChecked = trigger.TimerEnding;
-                textboxEndedClipboard.Text = trigger.TimerEndedClipboardText;
-                textboxEndedDisplay.Text = trigger.TimerEndedDisplayText;
-                checkboxEndedNotify.IsChecked = trigger.TimerEnded;
-                //endedEarlyAudioSettings = trigger.TimerEndedAudio;
-                checkboxCounterNotify.IsChecked = trigger.ResetCounter;
-                //trigger.ResetCounterDuration = GetDuration(textBoxCounterHours.Text, textBoxCounterMinutes.Text, textBoxCounterSeconds.Text)
-
-            }
+            labelTimerDuration.IsEnabled = true;
+            labelTimerHours.IsEnabled = true;
+            labelTimerMinutes.IsEnabled = true;
+            labelTimerName.IsEnabled = true;
+            labelTimerSeconds.IsEnabled = true;
+            labelTimerTriggered.IsEnabled = true;
+            labelTimerType.IsEnabled = true;
+            labelEarlyText.IsEnabled = true;
+            textboxTimerHours.IsEnabled = true;
+            textboxTimerMinutes.IsEnabled = true;
+            textboxTimerName.IsEnabled = true;
+            textboxTimerSeconds.IsEnabled = true;
+            datagridEarly.IsEnabled = true;
+            comboTriggered.IsEnabled = true;
         }
-        private int GetDuration(String hours, String minutes, String seconds)
+        private void DisableTimerEntry()
         {
-            int totalDuration = 0;
-            totalDuration += (Int32.Parse(hours)) * 60 * 60;
-            totalDuration += (Int32.Parse(minutes)) * 60;
-            totalDuration += (Int32.Parse(seconds));
-            return totalDuration;
+            labelTimerDuration.IsEnabled = false;
+            labelTimerHours.IsEnabled = false;
+            labelTimerMinutes.IsEnabled = false;
+            labelTimerName.IsEnabled = false;
+            labelTimerSeconds.IsEnabled = false;
+            labelTimerTriggered.IsEnabled = false;
+            labelTimerType.IsEnabled = false;
+            textboxTimerHours.IsEnabled = false;
+            textboxTimerMinutes.IsEnabled = false;
+            textboxTimerName.IsEnabled = false;
+            textboxTimerSeconds.IsEnabled = false;
+            datagridEarly.IsEnabled = false;
+            comboTriggered.IsEnabled = false;
+            labelEarlyText.IsEnabled = false;
         }
-        private void ButtonBasicTest_Click(object sender, RoutedEventArgs e)
-        {
-            selectedCharacter.Speak(textboxBasicTTS.Text);
-        }
+        #region Events        
         private void RadioBasicTTS_Checked(object sender, RoutedEventArgs e)
         {
             textboxBasicTTS.IsEnabled = true;
@@ -161,7 +284,7 @@ namespace DAR
             textboxBasicSoundFile.IsEnabled = true;
             labelBasicSoundFile.IsEnabled = true;
             buttonBasicSoundFile.IsEnabled = true;
-            buttonBasicTest.IsEnabled = false;
+            buttonBasicTest.IsEnabled = true;
             radioBasicNoSound.IsChecked = false;
             radioBasicTTS.IsChecked = false;
         }
@@ -171,35 +294,35 @@ namespace DAR
             {
                 textboxBasicTTS.IsEnabled = false;
             }
-            if(labelBasicTTS != null)
+            if (labelBasicTTS != null)
             {
                 labelBasicTTS.IsEnabled = false;
             }
-            if(checkboxBasicInterrupt != null)
+            if (checkboxBasicInterrupt != null)
             {
                 checkboxBasicInterrupt.IsEnabled = false;
             }
-            if(textboxBasicSoundFile != null)
+            if (textboxBasicSoundFile != null)
             {
                 textboxBasicSoundFile.IsEnabled = false;
             }
-            if(labelBasicSoundFile != null)
+            if (labelBasicSoundFile != null)
             {
                 labelBasicSoundFile.IsEnabled = false;
             }
-            if(buttonBasicSoundFile != null)
+            if (buttonBasicSoundFile != null)
             {
                 buttonBasicSoundFile.IsEnabled = false;
             }
-            if(buttonBasicTest != null)
+            if (buttonBasicTest != null)
             {
                 buttonBasicTest.IsEnabled = false;
             }
-            if(radioBasicPlay != null)
+            if (radioBasicPlay != null)
             {
                 radioBasicPlay.IsChecked = false;
             }
-            if(radioBasicTTS != null)
+            if (radioBasicTTS != null)
             {
                 radioBasicTTS.IsChecked = false;
             }
@@ -221,7 +344,7 @@ namespace DAR
         }
         private void CheckboxBasicClipboard_Checked(object sender, RoutedEventArgs e)
         {
-            textboxBasicClipboard.IsEnabled = true;                
+            textboxBasicClipboard.IsEnabled = true;
         }
         private void CheckboxRegex_Checked(object sender, RoutedEventArgs e)
         {
@@ -252,54 +375,53 @@ namespace DAR
                     endEarlyCases.Add(st);
                 }
             }
-            /* Add Code to determine Sound File Id and AudioType Radio Button */
             //Basic Audio Settings
             if ((Boolean)radioBasicNoSound.IsChecked)
             {
-                basicAudioSettings.AudioType = "radioButtonNoSound";
+                basicAudioSettings.AudioType = "nosound";
             }
             if ((Boolean)radioBasicPlay.IsChecked)
             {
-                basicAudioSettings.AudioType = "radioButtonPlaySound";
-                basicAudioSettings.SoundFileId = 0;
+                basicAudioSettings.AudioType = "file";
+                basicAudioSettings.SoundFileId = textboxBasicSoundFile.Text;
             }
             if ((Boolean)radioBasicTTS.IsChecked)
             {
-                basicAudioSettings.AudioType = "radioButtonTTS";
+                basicAudioSettings.AudioType = "tts";
                 basicAudioSettings.TTS = textboxBasicTTS.Text;
                 basicAudioSettings.Interrupt = (Boolean)checkboxBasicInterrupt.IsChecked;
             }
             //Timer Ending Audio Settings
             if ((Boolean)radioEndingNoSound.IsChecked)
             {
-                endingEarlyAudioSettings.AudioType = "radioButtonEndingNoSound";
+                endingEarlyAudioSettings.AudioType = "nosound";
             }
             if ((Boolean)radioEndingPlay.IsChecked)
             {
-                endingEarlyAudioSettings.AudioType = "radioButtonEndingPlaySound";
-                endingEarlyAudioSettings.SoundFileId = 0;
+                endingEarlyAudioSettings.AudioType = "file";
+                endingEarlyAudioSettings.SoundFileId = textboxEndingSoundFile.Text;
             }
             if ((Boolean)radioEndingTTS.IsChecked)
             {
-                endingEarlyAudioSettings.AudioType = "radioButtonEndingTTS";
+                endingEarlyAudioSettings.AudioType = "tts";
                 endingEarlyAudioSettings.TTS = textboxEndingTTS.Text;
                 endingEarlyAudioSettings.Interrupt = (Boolean)checkboxEndingInterrupt.IsChecked;
             }
             //Timer Ended Audio Settings
             if ((Boolean)radioEndedNoSound.IsChecked)
             {
-                endedEarlyAudioSettings.AudioType = "radioButtonEndedNoSound";
+                endedEarlyAudioSettings.AudioType = "nosound";
             }
             if ((Boolean)radioEndedPlay.IsChecked)
             {
-                endedEarlyAudioSettings.AudioType = "radioButtonEndedPlay";
-                endedEarlyAudioSettings.SoundFileId = 0;
+                endedEarlyAudioSettings.AudioType = "file";
+                endedEarlyAudioSettings.SoundFileId = textboxEndedSoundFile.Text;
             }
             if ((Boolean)radioEndedTTS.IsChecked)
             {
-                endedEarlyAudioSettings.AudioType = "radioButtonTTS";
-                endedEarlyAudioSettings.TTS = textboxEndingTTS.Text;
-                endedEarlyAudioSettings.Interrupt = (Boolean)checkboxEndingInterrupt.IsChecked;
+                endedEarlyAudioSettings.AudioType = "tts";
+                endedEarlyAudioSettings.TTS = textboxEndedTTS.Text;
+                endedEarlyAudioSettings.Interrupt = (Boolean)checkboxEndedInterrupt.IsChecked;
             }
 
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
@@ -382,7 +504,7 @@ namespace DAR
                     };
 
                     newTriggerId = triggers.Insert(newTrigger);
-                    var getTriggerGroup = triggergroups.FindById(existingTrigger.Parent);
+                    var getTriggerGroup = triggergroups.FindById(selectedGroupId);
                     getTriggerGroup.AddTriggers(newTriggerId.AsInt32);
                     triggergroups.Update(getTriggerGroup);
                     //If group is marked as default, enable it on each character
@@ -405,12 +527,70 @@ namespace DAR
             }
             this.Close();
         }
+        private void ButtonEndingTest_Click(object sender, RoutedEventArgs e)
+        {
+            if ((Boolean)radioEndingTTS.IsChecked)
+            {
+                selectedCharacter.Speak(textboxEndingTTS.Text);
+            }
+            if((Boolean)radioEndingPlay.IsChecked)
+            {
+                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                {
+                    Stream soundfile = new System.IO.MemoryStream();
+                    db.FileStorage.Download($"$/triggersounds/{textboxEndingSoundFile.Text}", soundfile);
+                    SoundPlayer test = new SoundPlayer(soundfile);
+                    test.Stream.Position = 0;
+                    test.Play();
+                }
+                   
+            }
+        }
+        private void ButtonEndedTest_Click(object sender, RoutedEventArgs e)
+        {
+            if((Boolean)radioEndedTTS.IsChecked)
+            {
+                selectedCharacter.Speak(textboxEndedTTS.Text);
+            }
+            if ((Boolean)radioEndedPlay.IsChecked)
+            {
+                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                {
+                    Stream soundfile = new System.IO.MemoryStream();
+                    db.FileStorage.Download($"$/triggersounds/{textboxEndedSoundFile.Text}", soundfile);
+                    SoundPlayer test = new SoundPlayer(soundfile);
+                    test.Stream.Position = 0;
+                    test.Play();
+                }
+
+            }
+        }
+        private void ButtonBasicTest_Click(object sender, RoutedEventArgs e)
+        {
+            
+            if ((Boolean)radioBasicTTS.IsChecked)
+            {
+                selectedCharacter.Speak(textboxBasicTTS.Text);
+            }
+            if ((Boolean)radioBasicPlay.IsChecked)
+            {
+                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                {
+                    Stream soundfile = new System.IO.MemoryStream();
+                    db.FileStorage.Download($"$/triggersounds/{textboxBasicSoundFile.Text}", soundfile);
+                    SoundPlayer test = new SoundPlayer(soundfile);
+                    test.Stream.Position = 0;
+                    test.Play();
+                }
+
+            }
+        }
         private void ComboTimerType_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            switch(comboTimerType.SelectedIndex)
+            switch (comboTimerType.SelectedIndex)
             {
                 case 0:
-                    if(tabEnding != null && tabEnded != null)
+                    if (tabEnding != null && tabEnded != null)
                     {
                         tabEnding.IsEnabled = false;
                         tabEnded.IsEnabled = false;
@@ -436,40 +616,6 @@ namespace DAR
                     break;
             }
         }
-        private void EnableTimerEntry()
-        {
-            labelTimerDuration.IsEnabled = true;
-            labelTimerHours.IsEnabled = true;
-            labelTimerMinutes.IsEnabled = true;
-            labelTimerName.IsEnabled = true;
-            labelTimerSeconds.IsEnabled = true;
-            labelTimerTriggered.IsEnabled = true;
-            labelTimerType.IsEnabled = true;
-            labelEarlyText.IsEnabled = true;
-            textboxTimerHours.IsEnabled = true;
-            textboxTimerMinutes.IsEnabled = true;
-            textboxTimerName.IsEnabled = true;
-            textboxTimerSeconds.IsEnabled = true;
-            datagridEarly.IsEnabled = true;
-            comboTriggered.IsEnabled = true;
-        }
-        private void DisableTimerEntry()
-        {
-            labelTimerDuration.IsEnabled = false;
-            labelTimerHours.IsEnabled = false;
-            labelTimerMinutes.IsEnabled = false;
-            labelTimerName.IsEnabled = false;
-            labelTimerSeconds.IsEnabled = false;
-            labelTimerTriggered.IsEnabled = false;
-            labelTimerType.IsEnabled = false;
-            textboxTimerHours.IsEnabled = false;
-            textboxTimerMinutes.IsEnabled = false;
-            textboxTimerName.IsEnabled = false;
-            textboxTimerSeconds.IsEnabled = false;
-            datagridEarly.IsEnabled = false;
-            comboTriggered.IsEnabled = false;
-            labelEarlyText.IsEnabled = false;
-        }
         private void CheckboxBasicDisplay_Unchecked(object sender, RoutedEventArgs e)
         {
             textboxBasicDisplay.IsEnabled = false;
@@ -478,5 +624,310 @@ namespace DAR
         {
             textboxBasicClipboard.IsEnabled = false;
         }
+        private void CheckboxEndingNotify_Checked(object sender, RoutedEventArgs e)
+        {
+            checkboxEndingClipboard.IsEnabled = true;
+            checkboxEndingDisplay.IsEnabled = true;
+            textboxEndingHours.IsEnabled = true;
+            textboxEndingMinutes.IsEnabled = true;
+            textboxEndingSeconds.IsEnabled = true;
+            radioEndingNoSound.IsEnabled = true;
+            radioEndingPlay.IsEnabled = true;
+            radioEndingTTS.IsEnabled = true;
+        }
+        private void CheckboxEndingNotify_Unchecked(object sender, RoutedEventArgs e)
+        {
+            textboxEndingClipboard.IsEnabled = false;
+            textboxEndingDisplay.IsEnabled = false;
+            textboxEndingHours.IsEnabled = false;
+            textboxEndingMinutes.IsEnabled = false;
+            textboxEndingSeconds.IsEnabled = false;
+            radioEndingNoSound.IsEnabled = false;
+            radioEndingPlay.IsEnabled = false;
+            radioEndingTTS.IsEnabled = false;
+        }
+        private void RadioEndingNoSound_Checked(object sender, RoutedEventArgs e)
+        {
+            if(radioEndingTTS != null)
+            {
+                radioEndingTTS.IsChecked = false;
+            }
+            if(radioEndingPlay != null)
+            {
+                radioEndingPlay.IsChecked = false;
+            }
+            if(textboxEndingTTS != null)
+            {
+                textboxEndingTTS.IsEnabled = false;
+            }
+            if(labelEndingTTS != null)
+            {
+                labelEndingTTS.IsEnabled = false;
+            }
+            if(labelEndingSoundFile != null)
+            {
+                labelEndingSoundFile.IsEnabled = false;
+            }
+            if(buttonEndingSoundFile != null)
+            {
+                buttonEndingSoundFile.IsEnabled = false;
+            }
+            if(buttonEndingTest != null)
+            {
+                buttonEndingTest.IsEnabled = false;
+            }
+            
+        }
+        private void RadioEndingNoSound_Unchecked(object sender, RoutedEventArgs e)
+        {
+
+        }
+        private void RadioEndingTTS_Checked(object sender, RoutedEventArgs e)
+        {
+            radioEndingNoSound.IsChecked = false;
+            radioEndingPlay.IsChecked = false;
+            labelEndingTTS.IsEnabled = true;
+            textboxEndingTTS.IsEnabled = true;
+            checkboxEndingInterrupt.IsEnabled = true;
+            if (textboxEndingTTS.Text.Length > 0)
+            {
+                buttonEndingTest.IsEnabled = true;
+            }
+            else
+            {
+                buttonEndingTest.IsEnabled = false;
+            }
+        }
+        private void RadioEndingTTS_Unchecked(object sender, RoutedEventArgs e)
+        {
+            labelEndingTTS.IsEnabled = false;
+            textboxEndingTTS.IsEnabled = false;
+            checkboxEndingInterrupt.IsEnabled = false;
+        }
+        private void RadioEndingPlay_Checked(object sender, RoutedEventArgs e)
+        {
+            radioEndingTTS.IsChecked = false;
+            radioEndingNoSound.IsChecked = false;
+            labelEndingTTS.IsEnabled = false;
+            textboxEndingTTS.IsEnabled = false;
+            checkboxEndingInterrupt.IsEnabled = false;
+            labelEndingSoundFile.IsEnabled = true;
+            textboxEndingSoundFile.IsEnabled = true;
+            buttonEndingSoundFile.IsEnabled = true;
+            buttonEndingTest.IsEnabled = true;
+        }
+        private void RadioEndingPlay_Unchecked(object sender, RoutedEventArgs e)
+        {
+            labelEndingSoundFile.IsEnabled = false;
+            textboxEndingSoundFile.IsEnabled = false;
+            buttonEndingSoundFile.IsEnabled = false;
+            buttonEndingTest.IsEnabled = false;
+        }
+        private void CheckboxEndingDisplay_Checked(object sender, RoutedEventArgs e)
+        {
+            textboxEndingDisplay.IsEnabled = true;
+        }
+        private void CheckboxEndingDisplay_Unchecked(object sender, RoutedEventArgs e)
+        {
+            textboxEndingDisplay.IsEnabled = false;
+        }
+        private void CheckboxEndingClipboard_Checked(object sender, RoutedEventArgs e)
+        {
+            textboxEndingClipboard.IsEnabled = true;
+        }
+        private void CheckboxEndingClipboard_Unchecked(object sender, RoutedEventArgs e)
+        {
+            textboxEndingClipboard.IsEnabled = false;
+        }
+        private void CheckboxCounterNotify_Checked(object sender, RoutedEventArgs e)
+        {
+            textboxCounterHours.IsEnabled = true;
+            textboxCounterMinutes.IsEnabled = true;
+            textboxCounterSeconds.IsEnabled = true;
+        }
+        private void CheckboxCounterNotify_Unchecked(object sender, RoutedEventArgs e)
+        {
+            textboxCounterHours.IsEnabled = false;
+            textboxCounterMinutes.IsEnabled = false;
+            textboxCounterSeconds.IsEnabled = false;
+        }
+        private void CheckboxEndedNotify_Checked(object sender, RoutedEventArgs e)
+        {
+            checkboxEndedDisplay.IsEnabled = true;
+            checkboxEndedClipboard.IsEnabled = true;
+            radioEndedNoSound.IsEnabled = true;
+            radioEndedPlay.IsEnabled = true;
+            radioEndedTTS.IsEnabled = true;
+        }
+        private void CheckboxEndedNotify_Unchecked(object sender, RoutedEventArgs e)
+        {
+            checkboxEndedDisplay.IsEnabled = false;
+            checkboxEndedClipboard.IsEnabled = false;
+            radioEndedNoSound.IsEnabled = false;
+            radioEndedPlay.IsEnabled = false;
+            radioEndedTTS.IsEnabled = false;
+        }
+        private void CheckboxEndedDisplay_Checked(object sender, RoutedEventArgs e)
+        {
+            textboxEndedDisplay.IsEnabled = true;
+        }
+        private void CheckboxEndedDisplay_Unchecked(object sender, RoutedEventArgs e)
+        {
+            textboxEndedDisplay.IsEnabled = false;
+        }
+        private void CheckboxEndedClipboard_Checked(object sender, RoutedEventArgs e)
+        {
+            textboxEndedClipboard.IsEnabled = true;
+        }
+        private void CheckboxEndedClipboard_Unchecked(object sender, RoutedEventArgs e)
+        {
+            textboxEndedClipboard.IsEnabled = false;
+        }
+        private void RadioEndedNoSound_Checked(object sender, RoutedEventArgs e)
+        {
+            if(radioEndedTTS != null)
+            {
+                radioEndedTTS.IsChecked = false;
+            }
+            if(radioEndedPlay != null)
+            {
+                radioEndedPlay.IsChecked = false;
+            }
+            if(labelEndedTTS != null)
+            {
+                labelEndedTTS.IsEnabled = false;
+            }
+            if(textboxEndedTTS != null)
+            {
+                textboxEndedTTS.IsEnabled = false;
+            }
+            if(checkboxEndedInterrupt != null)
+            {
+                checkboxEndedInterrupt.IsEnabled = false;
+            }
+            if(labelEndedSoundFile != null)
+            {
+                labelEndedSoundFile.IsEnabled = false;
+            }
+            if(textboxEndedSoundFile != null)
+            {
+                textboxEndedSoundFile.IsEnabled = false;
+            }
+            if(buttonEndedSoundFile != null)
+            {
+                buttonEndedSoundFile.IsEnabled = false;
+            }
+            if(buttonEndedTest != null)
+            {
+                buttonEndedTest.IsEnabled = false;
+            }            
+        }
+        private void RadioEndedTTS_Checked(object sender, RoutedEventArgs e)
+        {
+            radioEndedNoSound.IsChecked = false;
+            radioEndedPlay.IsChecked = false;
+            labelEndedTTS.IsEnabled = true;
+            textboxEndedTTS.IsEnabled = true;
+            checkboxEndedInterrupt.IsEnabled = true;
+            labelEndedSoundFile.IsEnabled = false;
+            textboxEndedSoundFile.IsEnabled = false;
+            buttonEndedSoundFile.IsEnabled = false;
+            if (textboxEndedTTS.Text.Length > 0)
+            {
+                buttonEndedTest.IsEnabled = true;
+            }
+            else
+            {
+                buttonEndedTest.IsEnabled = false;
+            }
+        }
+        private void RadioEndedTTS_Unchecked(object sender, RoutedEventArgs e)
+        {
+            labelEndedTTS.IsEnabled = false;
+            textboxEndedTTS.IsEnabled = false;
+            checkboxEndedInterrupt.IsEnabled = false;
+            buttonEndedTest.IsEnabled = false;
+        }
+        private void RadioEndedPlay_Checked(object sender, RoutedEventArgs e)
+        {
+            radioEndedNoSound.IsChecked = false;
+            radioEndedTTS.IsChecked = false;
+            labelEndedTTS.IsEnabled = false;
+            textboxEndedTTS.IsEnabled = false;
+            checkboxEndedInterrupt.IsEnabled = false;
+            labelEndedSoundFile.IsEnabled = true;
+            textboxEndedSoundFile.IsEnabled = true;
+            buttonEndedSoundFile.IsEnabled = true;
+            buttonEndedTest.IsEnabled = true;
+        }
+        private void RadioEndedPlay_Unchecked(object sender, RoutedEventArgs e)
+        {
+            labelEndedSoundFile.IsEnabled = false;
+            textboxEndedSoundFile.IsEnabled = false;
+            buttonEndedSoundFile.IsEnabled = false;
+            buttonEndedTest.IsEnabled = false;
+        }
+        private void ButtonBasicSoundFile_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog fileDialog = new OpenFileDialog();
+            fileDialog.Filter = "Audio Files|*.wav";
+            if (fileDialog.ShowDialog() == true)
+            {
+                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                {
+                    db.FileStorage.Upload($"$/triggersounds/{fileDialog.SafeFileName}", fileDialog.FileName);
+                }
+                textboxBasicSoundFile.Text = fileDialog.SafeFileName;
+            }
+        }
+        private void ButtonEndingSoundFile_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog fileDialog = new OpenFileDialog();
+            fileDialog.Filter = "Audio Files|*.wav";
+            if (fileDialog.ShowDialog() == true)
+            {
+                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                {
+                    db.FileStorage.Upload($"$/triggersounds/{fileDialog.SafeFileName}", fileDialog.FileName);
+                }
+                textboxEndingSoundFile.Text = fileDialog.SafeFileName;
+            }
+        }
+        private void ButtonEndedSoundFile_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog fileDialog = new OpenFileDialog();
+            fileDialog.Filter = "Audio Files|*.wav";
+            if (fileDialog.ShowDialog() == true)
+            {
+                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                {
+                    db.FileStorage.Upload($"$/triggersounds/{fileDialog.SafeFileName}", fileDialog.FileName);
+                }
+                textboxEndedSoundFile.Text = fileDialog.SafeFileName;
+            }
+        }
+        private void TextboxEndedTTS_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (textboxEndedTTS.Text.Length > 0)
+            {
+                buttonEndedTest.IsEnabled = true;
+            }
+            else
+            {
+                buttonEndedTest.IsEnabled = false;
+            }
+        }
+        private void TextboxEndingTTS_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (textboxEndingTTS.Text.Length > 0)
+            {
+                buttonEndingTest.IsEnabled = true;
+            }
+            else
+            {
+                buttonEndingTest.IsEnabled = false;
+            }
+        }
+        #endregion
     }
 }

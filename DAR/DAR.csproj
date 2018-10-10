@@ -86,12 +86,6 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="AddTrigger.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="AddTrigger.Designer.cs">
-      <DependentUpon>AddTrigger.cs</DependentUpon>
-    </Compile>
     <Compile Include="Audio.cs" />
     <Compile Include="Category.cs" />
     <Compile Include="OverlayText.cs" />
@@ -171,9 +165,6 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <EmbeddedResource Include="AddTrigger.resx">
-      <DependentUpon>AddTrigger.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>

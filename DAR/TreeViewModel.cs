@@ -44,7 +44,6 @@ namespace DAR
             }
             else
             {
-                //Notify Trigger Added
                 NotifyTriggerRemoved(Name);
             }
             _isChecked = value;

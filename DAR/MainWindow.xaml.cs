@@ -322,10 +322,13 @@ namespace DAR
                 var colTriggers = db.GetCollection<Trigger>("triggers");
                 var currentProfile = colProfiles.FindById(selectedCharacter.Id);
                 var currentTrigger = colTriggers.FindOne(Query.EQ("Name", triggerName));
-                currentProfile.Triggers.Remove(currentTrigger.id);
-                currentTrigger.Profiles.Remove(selectedCharacter.Id);
-                colProfiles.Update(currentProfile);
+                if ((currentTrigger.Profiles.Contains(selectedCharacter.Id)))
+                {
+                    currentProfile.Triggers.Remove(currentTrigger.id);
+                    currentTrigger.profiles.Remove(selectedCharacter.Id);
+                }
                 colTriggers.Update(currentTrigger);
+                colProfiles.Update(currentProfile);
             }
         }
         public void AddTrigger(String triggerName)
@@ -358,12 +361,17 @@ namespace DAR
                 MessageBoxResult result = MessageBox.Show($"Are you sure you want to Delete {root.Name}", "Confirmation", MessageBoxButton.YesNo);
                 if (result == MessageBoxResult.Yes)
                 {
-                    RemoveTrigger(root.Name);
+                    var colProfiles = db.GetCollection<CharacterProfile>("profiles");
+                    var profiles = colProfiles.FindAll();                    
+                    foreach (CharacterProfile profile in profiles)
+                    {
+                        profile.Triggers.Remove(getTrigger.Id);
+                        colProfiles.Update(profile);
+                    }
                     getGroup.RemoveTrigger(getTrigger.Id);
                     triggergroup.Update(getGroup);
                     col.Delete(getTrigger.Id);
                 }
-
             }
             UpdateView();
         }

@@ -63,10 +63,14 @@ namespace DAR
                 foreach (var profile in profiles)
                 {
                     comboBasicTest.Items.Add(profile.ProfileName);
+                    comboEndingTest.Items.Add(profile.ProfileName);
+                    comboEndedTest.Items.Add(profile.ProfileName);
                 }
-                if (comboBasicTest.Items.Count > 0)
+                if (profiles.Count<CharacterProfile>() > 0)
                 {
                     comboBasicTest.SelectedIndex = 0;
+                    comboEndingTest.SelectedIndex = 0;
+                    comboEndedTest.SelectedIndex = 0;
                     selectedCharacter = profiles.ElementAt<CharacterProfile>(0);
                 }
 
@@ -441,6 +445,13 @@ namespace DAR
             labelTimerSeconds.IsEnabled = true;
             labelTimerTriggered.IsEnabled = true;
             labelTimerType.IsEnabled = true;
+            labelEarlyText.IsEnabled = true;
+            textboxTimerHours.IsEnabled = true;
+            textboxTimerMinutes.IsEnabled = true;
+            textboxTimerName.IsEnabled = true;
+            textboxTimerSeconds.IsEnabled = true;
+            datagridEarly.IsEnabled = true;
+            comboTriggered.IsEnabled = true;
         }
         private void DisableTimerEntry()
         {
@@ -451,6 +462,13 @@ namespace DAR
             labelTimerSeconds.IsEnabled = false;
             labelTimerTriggered.IsEnabled = false;
             labelTimerType.IsEnabled = false;
+            textboxTimerHours.IsEnabled = false;
+            textboxTimerMinutes.IsEnabled = false;
+            textboxTimerName.IsEnabled = false;
+            textboxTimerSeconds.IsEnabled = false;
+            datagridEarly.IsEnabled = false;
+            comboTriggered.IsEnabled = false;
+            labelEarlyText.IsEnabled = false;
         }
         private void CheckboxBasicDisplay_Unchecked(object sender, RoutedEventArgs e)
         {

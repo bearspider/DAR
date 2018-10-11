@@ -24,11 +24,29 @@ namespace DAR
         {
             InitializeComponent();
         }
-
-        private void ClrPckerFaded_SelectedColorChanged(object sender, RoutedPropertyChangedEventArgs<Color?> e)
+        public OverlayTextEditor(int id)
         {
-            Brush brush = new SolidColorBrush((Color)ClrPckerFaded.SelectedColor);
-            if(brush.ToString() == "#00FFFFFF")
+            InitializeComponent();
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                LiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
+                OverlayText window = overlaytexts.FindById(id);
+                this.Width = window.WindowWidth;
+                this.Height = window.WindowHeight;
+                this.Left = window.WindowX;
+                this.Top = window.WindowY;
+                if(textDemo != null){ textDemo.Text = window.Name; }
+                if(comboFont != null) { comboFont.SelectedItem = window.Font; }
+                if(sliderDelay != null) { sliderDelay.Value = window.Delay; }
+                if(sliderSize != null) { sliderSize.Value = window.Size; }
+                SetBackground(window.Faded);
+            }
+        }
+        private void SetBackground(String bgcolor)
+        {
+            var windowcolor = ColorConverter.ConvertFromString(bgcolor);
+            Brush brush = new SolidColorBrush((Color)windowcolor);
+            if (brush.ToString() == "#00FFFFFF")
             {
                 brush = Brushes.LightGray;
                 this.Opacity = 0.7;
@@ -38,6 +56,10 @@ namespace DAR
                 this.Opacity = 1.0;
             }
             this.Background = brush;
+        }
+        private void ClrPckerFaded_SelectedColorChanged(object sender, RoutedPropertyChangedEventArgs<Color?> e)
+        {
+            SetBackground(ClrPckerFaded.SelectedColorText);
         }
 
         private void ClrPckerBg_SelectedColorChanged(object sender, RoutedPropertyChangedEventArgs<Color?> e)
@@ -54,7 +76,11 @@ namespace DAR
                 Size = Convert.ToInt32(sliderSize.Value),
                 Delay = Convert.ToInt32(sliderDelay.Value),
                 BG = ClrPckerBg.SelectedColorText,
-                Faded = ClrPckerFaded.SelectedColorText
+                Faded = ClrPckerFaded.SelectedColorText,
+                WindowHeight = this.Height,
+                WindowWidth = this.Width,
+                WindowX = this.Left,
+                WindowY = this.Top            
             };
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -62,11 +88,13 @@ namespace DAR
                 var getTextGroup = overlaytexts.FindOne(Query.EQ("Name", overlaytext.Name));
                 if (getTextGroup != null)
                 {
-                    //update Timer
+                    int textid = getTextGroup.Id;
+                    getTextGroup = overlaytext;
+                    getTextGroup.Id = textid;
+                    overlaytexts.Update(getTextGroup);
                 }
                 else
                 {
-                    //Insert new timer
                     overlaytexts.Insert(overlaytext);
                 }
             }

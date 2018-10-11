@@ -20,6 +20,10 @@ namespace DAR
             Standardize = false;
             Group = false;
             Sortby = "Time Remaining";
+            WindowHeight = 450;
+            WindowWidth = 800;
+            WindowX = 0;
+            WindowY = 0;
         }
         public int Id { get; set; }
         public String Name { get; set; }
@@ -32,5 +36,9 @@ namespace DAR
         public Boolean Standardize { get; set; }
         public Boolean Group { get; set; }
         public String Sortby { get; set; }
+        public double WindowHeight { get; set; }
+        public double WindowWidth { get; set; }
+        public double WindowX { get; set; }
+        public double WindowY { get; set; }
     }
 }

@@ -89,6 +89,9 @@
     <Compile Include="Audio.cs" />
     <Compile Include="Category.cs" />
     <Compile Include="OverlayText.cs" />
+    <Compile Include="OverlayTextWindow.xaml.cs">
+      <DependentUpon>OverlayTextWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="OverlayTimer.cs" />
     <Compile Include="OverlayTextEditor.xaml.cs">
       <DependentUpon>OverlayTextEditor.xaml</DependentUpon>
@@ -98,6 +101,9 @@
     </Compile>
     <Compile Include="OverlayTimers.xaml.cs">
       <DependentUpon>OverlayTimers.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="OverlayTimerWindow.xaml.cs">
+      <DependentUpon>OverlayTimerWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="ProfileEditor.xaml.cs">
       <DependentUpon>ProfileEditor.xaml</DependentUpon>
@@ -130,11 +136,19 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="OverlayTextWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="OverlayTimerEditor.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="OverlayTimers.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="OverlayTimerWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

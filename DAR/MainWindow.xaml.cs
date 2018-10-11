@@ -25,6 +25,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Xceed.Wpf.AvalonDock;
+using System.Media;
 
 namespace DAR
 {
@@ -91,26 +92,29 @@ namespace DAR
         private String currentSelection;
         private Dictionary<String, FileSystemWatcher> watchers = new Dictionary<String, FileSystemWatcher>();
         private Dictionary<Trigger,ArrayList> activeTriggers = new Dictionary<Trigger,ArrayList>();
+        private ObservableCollection<OverlayTextWindow> textWindows = new ObservableCollection<OverlayTextWindow>();
+        private ObservableCollection<OverlayTimerWindow> timerWindows = new ObservableCollection<OverlayTimerWindow>();
+        private List<String> testlist = new List<String>();
         #endregion
         public MainWindow()
         {
             InitializeComponent();
             //Check if EQAudioTriggers folder exists, if not create.
-            bool mainPath = System.IO.Directory.Exists(GlobalVariables.defaultPath);
+            bool mainPath = Directory.Exists(GlobalVariables.defaultPath);
             if (!mainPath)
             {
-                System.IO.Directory.CreateDirectory(GlobalVariables.defaultPath);
+                Directory.CreateDirectory(GlobalVariables.defaultPath);
             }
             //Prep and/or load database
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {                
-                LiteCollection<CharacterProfile> characterProfiles = db.GetCollection<CharacterProfile>("profiles");
+                LiteCollection<CharacterProfile> dbcharacterProfiles = db.GetCollection<CharacterProfile>("profiles");
                 LiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");                
                 LiteCollection<TriggerGroup> triggerGroups = db.GetCollection<TriggerGroup>("triggergroups");
                 LiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
                 LiteCollection<Category> categories = db.GetCollection<Category>("categories");
                 LiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
-                characterProfiles.EnsureIndex((CharacterProfile x) => x.Id, true);
+                dbcharacterProfiles.EnsureIndex((CharacterProfile x) => x.Id, true);
                 overlaytimers.EnsureIndex((OverlayTimer v) => v.Id, true);
                 triggerGroups.EnsureIndex((TriggerGroup y) => y.Id, true);
                 overlaytexts.EnsureIndex((OverlayText u) => u.Id, true);
@@ -120,11 +124,32 @@ namespace DAR
             UpdateListView();
             UpdateTriggerView();
             //Deploy Overlays
-
-            //Start Monitoring Enabled Profiles
-            foreach(CharacterProfile character in characterProfiles)
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                if(System.IO.Directory.Exists(character.LogFile))
+                LiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");
+                LiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
+
+                foreach(var overlay in overlaytexts.FindAll())
+                {
+
+                    Thread t = new Thread(() =>
+                    {
+                        OverlayTextWindow newWindow = new OverlayTextWindow();
+                        newWindow.SetProperties(overlay);
+                        newWindow.ShowInTaskbar = false;
+                        newWindow.triggers = testlist;
+                        textWindows.Add(newWindow);
+                        newWindow.ShowDialog();
+                    });
+                    t.SetApartmentState(ApartmentState.STA);
+                    t.IsBackground = true;
+                    t.Start();
+                }
+            }
+            //Start Monitoring Enabled Profiles
+            foreach (CharacterProfile character in characterProfiles)
+            {
+                if(File.Exists(character.LogFile) && character.Monitor)
                 {                    
                     MonitorCharacter(character);
                 }
@@ -222,55 +247,50 @@ namespace DAR
         #region Monitoring
         private void MonitorCharacter(CharacterProfile character)
         {
-            if (character.Monitor)
+            Thread t = new Thread(() =>
             {
-                Thread t = new Thread(() =>
+                using (FileStream filestream = File.Open(character.LogFile, System.IO.FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
-                    using (FileStream filestream = File.Open(character.LogFile, System.IO.FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    filestream.Seek(0, SeekOrigin.End);
+                    using (StreamReader streamReader = new StreamReader(filestream))
                     {
-                        filestream.Seek(0, SeekOrigin.End);
-                        using (StreamReader streamReader = new StreamReader(filestream))
+                        for (; ; )
                         {
-                            for (; ; )
+                            Thread.Sleep(TimeSpan.FromMilliseconds(5));
+                            String capturedLine = streamReader.ReadToEnd();
+                            if (capturedLine.Length > 0)
                             {
-                                Thread.Sleep(TimeSpan.FromMilliseconds(500));
-                                String capturedLine = streamReader.ReadToEnd();
-                                if (capturedLine.Length > 0)
+                                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                                 {
-                                    using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                                    var triggerCollection = db.GetCollection<Trigger>("triggers");
+                                    foreach(var doc in triggerCollection.FindAll())
                                     {
-                                        var triggerCollection = db.GetCollection<Trigger>("triggers");
-                                        foreach(var doc in triggerCollection.FindAll())
+                                        MatchCollection matches = Regex.Matches(capturedLine,doc.SearchText, RegexOptions.IgnoreCase);
+                                        if (matches.Count > 0)
                                         {
-                                            MatchCollection matches = Regex.Matches(capturedLine,doc.SearchText, RegexOptions.IgnoreCase);
-                                            if (matches.Count > 0)
+                                            foreach (Match tMatch in matches)
                                             {
-                                                foreach (int profile in doc.Profiles)
-                                                {
-                                                    var characters = db.GetCollection<CharacterProfile>("profiles");
-                                                    var currentProfile = characters.FindById(profile);
-                                                    foreach(Match tMatch in matches)
-                                                    {
-                                                        currentProfile.Speak(doc.SearchText);
-                                                        //Add Timer code
-                                                        
-                                                    }
-                                                }
+                                                if(doc.AudioSettings.AudioType == "tts")
+                                                { character.Speak(doc.AudioSettings.TTS); }
+                                                if(doc.AudioSettings.AudioType == "file")
+                                                { PlaySound(doc.AudioSettings.SoundFileId); }
+                                                //Add Timer code
+
                                             }
                                         }
                                     }
-
                                 }
-                                if (characterProfiles.Any(x => x.Monitor == false && x.ProfileName == character.ProfileName))
-                                {
-                                    break;
-                               }
+
+                            }
+                            if (characterProfiles.Any(x => x.Monitor == false && x.ProfileName == character.ProfileName))
+                            {
+                                break;
                             }
                         }
                     }
-                });
-                t.Start();
-            }
+                }
+            });
+            t.Start();
         }
         private void Changed(object sender, FileSystemEventArgs e)
         {
@@ -540,6 +560,17 @@ namespace DAR
         }
         #endregion
         #region Functions
+        private void PlaySound(string soundid)
+        {
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                Stream soundfile = new System.IO.MemoryStream();
+                db.FileStorage.Download($"$/triggersounds/{soundid}", soundfile);
+                SoundPlayer test = new SoundPlayer(soundfile);
+                test.Stream.Position = 0;
+                test.Play();
+            }
+        }
         private void UpdateView()
         {
             CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
@@ -684,6 +715,16 @@ namespace DAR
             Thread t = new Thread(() =>
             {
                 OverlayTimerEditor newOverlayEditor = new OverlayTimerEditor();
+                newOverlayEditor.ShowDialog();
+            });
+            t.SetApartmentState(ApartmentState.STA);
+            t.Start();
+        }
+        private void TextOverlayProperties_Click(object sender, RoutedEventArgs e)
+        {
+            Thread t = new Thread(() =>
+            {
+                OverlayTextEditor newOverlayEditor = new OverlayTextEditor(2);
                 newOverlayEditor.ShowDialog();
             });
             t.SetApartmentState(ApartmentState.STA);

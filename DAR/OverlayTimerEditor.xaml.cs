@@ -26,12 +26,30 @@ namespace DAR
             InitializeComponent();
             
         }
+        public OverlayTimerEditor(int id)
+        {
+            InitializeComponent();
 
+        }
         private void ClrPckerBg_SelectedColorChanged(object sender, RoutedPropertyChangedEventArgs<Color?> e)
         {
 
         }
-
+        private void SetBackground(String bgcolor)
+        {
+            var windowcolor = ColorConverter.ConvertFromString(bgcolor);
+            Brush brush = new SolidColorBrush((Color)windowcolor);
+            if (brush.ToString() == "#00FFFFFF")
+            {
+                brush = Brushes.LightGray;
+                this.Opacity = 0.7;
+            }
+            else
+            {
+                this.Opacity = 1.0;
+            }
+            this.Background = brush;
+        }
         private void ButtonSave_Click(object sender, RoutedEventArgs e)
         {
             OverlayTimer timer = new OverlayTimer
@@ -45,15 +63,23 @@ namespace DAR
                 Emptycolor = ClrPckerFaded.SelectedColorText,
                 Standardize = (Boolean)checkStandardize.IsChecked,
                 Group = (Boolean)checkGroup.IsChecked,
-                Sortby = comboSort.SelectionBoxItem.ToString()
-        };
+                Sortby = comboSort.SelectionBoxItem.ToString(),
+                WindowHeight = this.Height,
+                WindowWidth = this.Width,
+                WindowX = this.Left,
+                WindowY = this.Top
+            };
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 LiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");
-                var getTimerGroup = overlaytimers.FindOne(Query.EQ("Name", timer.Name));
-                if(getTimerGroup != null)
+                var getTimer = overlaytimers.FindOne(Query.EQ("Name", timer.Name));
+                if(getTimer != null)
                 {
                     //update Timer
+                    int timerid = getTimer.Id;
+                    getTimer = timer;
+                    getTimer.Id = timerid;
+                    overlaytimers.Update(getTimer);
                 }
                 else
                 {
@@ -65,17 +91,7 @@ namespace DAR
         }
         private void ClrPckerFaded_SelectedColorChanged(object sender, RoutedPropertyChangedEventArgs<Color?> e)
         {
-            Brush brush = new SolidColorBrush((Color)ClrPckerFaded.SelectedColor);
-            if (brush.ToString() == "#00FFFFFF")
-            {
-                brush = Brushes.LightGray;
-                this.Opacity = 0.7;
-            }
-            else
-            {
-                this.Opacity = 1.0;
-            }
-            this.Background = brush;
+            SetBackground(ClrPckerFaded.SelectedColorText);
         }
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
         {

@@ -42,8 +42,6 @@ namespace DAR
             textBoxProfileName.Text = editCharacter.ProfileName;
             textboxLogFile.Text = editCharacter.LogFile;
             checkboxMonitor.IsChecked = editCharacter.MonitorAtStartup;
-            //trackBarRate.Value = editCharacter.SpeechRate;
-            //trackBarVolume.Value = editCharacter.VolumeValue;
             textboxPhonetic.Text = editCharacter.Name;
             ClrPckerText.SelectedColor = (Color)ColorConverter.ConvertFromString(editCharacter.TextFontColor);
             ClrPckerTimer.SelectedColor = (Color)ColorConverter.ConvertFromString(editCharacter.TimerFontColor);
@@ -109,48 +107,39 @@ namespace DAR
 
         private void ButtonSave_Click(object sender, RoutedEventArgs e)
         {
+            var player = new CharacterProfile
+            {
+                Name = textboxCharacter.Text,
+                ProfileName = textBoxProfileName.Text,
+                LogFile = textboxLogFile.Text,
+                MonitorAtStartup = (Boolean)checkboxMonitor.IsChecked,
+                SpeechRate = Convert.ToInt32(sliderRate.Value),
+                VolumeValue = Convert.ToInt32(sliderVolume.Value),
+                TimerFontColor = ClrPckerTimer.SelectedColorText,
+                TimerBarColor = ClrPckerBar.SelectedColorText,
+                TextFontColor = ClrPckerText.SelectedColorText
+            };
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 var col = db.GetCollection<CharacterProfile>("profiles");
-                IEnumerable<CharacterProfile> recordSearch;
+                CharacterProfile recordSearch;
                 if (textBoxProfileName.Text != origProfileName)
                 {
-                    recordSearch = col.Find(Query.EQ("ProfileName", origProfileName));
+                    recordSearch = col.FindOne(Query.EQ("ProfileName", origProfileName));
                 }
                 else
                 {
-                    recordSearch = col.Find(Query.EQ("ProfileName", textBoxProfileName.Text));
+                    recordSearch = col.FindOne(Query.EQ("ProfileName", textBoxProfileName.Text));
                 }
-                if (recordSearch.Count<CharacterProfile>() > 0)
+                if (recordSearch != null)
                 {
-                    IEnumerator<CharacterProfile> enumerator = recordSearch.GetEnumerator();
-                    enumerator.MoveNext();
-                    var character = (enumerator.Current);
-                    character.Name = textboxCharacter.Text;
-                    character.ProfileName = textBoxProfileName.Text;
-                    character.LogFile = textboxLogFile.Text;
-                    character.MonitorAtStartup = (Boolean)checkboxMonitor.IsChecked;
-                    character.SpeechRate = Convert.ToInt32(sliderRate.Value);
-                    character.VolumeValue = Convert.ToInt32(sliderVolume.Value);
-                    character.TimerBarColor = ClrPckerBar.SelectedColorText;
-                    character.TimerFontColor = ClrPckerTimer.SelectedColorText;
-                    character.TextFontColor = ClrPckerText.SelectedColorText;
-                    col.Update(character);
+                    int searchid = recordSearch.Id;
+                    recordSearch = player;
+                    recordSearch.Id = searchid;
+                    col.Update(recordSearch);
                 }
                 else
                 {
-                    var player = new CharacterProfile
-                    {
-                        Name = textboxCharacter.Text,
-                        ProfileName = textBoxProfileName.Text,
-                        LogFile = textboxLogFile.Text,
-                        MonitorAtStartup = (Boolean)checkboxMonitor.IsChecked,
-                        SpeechRate = Convert.ToInt32(sliderRate.Value),
-                        VolumeValue = Convert.ToInt32(sliderVolume.Value),
-                        TimerFontColor = ClrPckerTimer.SelectedColorText,
-                        TimerBarColor = ClrPckerBar.SelectedColorText,
-                        TextFontColor = ClrPckerText.SelectedColorText
-                };
                     col.Insert(player);
                 }
             }

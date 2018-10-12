@@ -24,12 +24,32 @@ namespace DAR
         public OverlayTimerEditor()
         {
             InitializeComponent();
-            
+            comboFont.Text = "Segoe UI";
+            comboSort.Text = "Order Triggered";
         }
-        public OverlayTimerEditor(int id)
+        public OverlayTimerEditor(String toedit)
         {
             InitializeComponent();
-
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                LiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");
+                OverlayTimer window = overlaytimers.FindOne(Query.EQ("Name", toedit));
+                this.Width = window.WindowWidth;
+                this.Height = window.WindowHeight;
+                this.Left = window.WindowX;
+                this.Top = window.WindowY;
+                if (textDemo != null) { textDemo.Text = window.Name; }
+                if (comboFont != null) { comboFont.Text = window.Font; }
+                if (sliderSize != null) { sliderSize.Value = window.Size; }
+                if (checkTimer != null) { checkTimer.IsChecked = window.Showtimer; }
+                if (checkStandardize != null) { checkStandardize.IsChecked = window.Standardize; }
+                if (checkGroup != null) { checkGroup.IsChecked = window.Group; }
+                if (comboSort != null) { comboSort.Text = window.Sortby; }
+                if (ClrPckerBg != null) { ClrPckerBg.SelectedColor = (Color)ColorConverter.ConvertFromString(window.BG); }
+                if (ClrPckerEmpty != null) { ClrPckerEmpty.SelectedColor = (Color)ColorConverter.ConvertFromString(window.Emptycolor); }
+                if (ClrPckerFaded != null) { ClrPckerFaded.SelectedColor = (Color)ColorConverter.ConvertFromString(window.Emptycolor); }
+                SetBackground(window.Faded);
+            }
         }
         private void ClrPckerBg_SelectedColorChanged(object sender, RoutedPropertyChangedEventArgs<Color?> e)
         {
@@ -87,6 +107,8 @@ namespace DAR
                     overlaytimers.Insert(timer);
                 }
             }
+            var main = App.Current.MainWindow as MainWindow;
+            main.OverlayTimer_Refresh();
             this.Close();
         }
         private void ClrPckerFaded_SelectedColorChanged(object sender, RoutedPropertyChangedEventArgs<Color?> e)
@@ -106,6 +128,11 @@ namespace DAR
             {
 
             }
+        }
+
+        private void ComboSort_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
         }
     }
 }

@@ -131,7 +131,7 @@ namespace DAR
                 LiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");
                 LiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
                 LiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
-                Trigger testtrigger = triggers.FindById(15);
+                Trigger testtrigger = triggers.FindById(14);
 
                 foreach (var overlay in overlaytexts.FindAll())
                 {
@@ -191,8 +191,12 @@ namespace DAR
             }
             Environment.Exit(Environment.ExitCode);
         }
-        private void OverlayTimer_Refresh()
+        public void OverlayTimer_Refresh()
         {
+            for (int i = ribbongroupTimerOverlays.Items.Count; i > 1; i--)
+            {
+                ribbongroupTimerOverlays.Items.RemoveAt(i - 1);
+            }
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 LiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");
@@ -203,20 +207,25 @@ namespace DAR
                     overlaytimer.LargeImageSource = new BitmapImage(new Uri(@"Google-Noto-Emoji-Travel-Places-42608-stopwatch.ico", UriKind.RelativeOrAbsolute));
                     overlaytimer.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("Gray"));
                     RibbonSplitMenuItem timerProperties = new RibbonSplitMenuItem();
+                    timerProperties.Name = overlay.Name;
                     timerProperties.Header = "Properties";
-                    RibbonSplitMenuItem timerSave = new RibbonSplitMenuItem();
-                    timerSave.Header = "Save";
+                    timerProperties.AddHandler(Button.ClickEvent, new RoutedEventHandler(TimerOverlayProperties_Click));
                     RibbonSplitMenuItem timerDelete = new RibbonSplitMenuItem();
                     timerDelete.Header = "Delete";
+                    timerDelete.Name = overlay.Name;
+                    timerDelete.AddHandler(Button.ClickEvent, new RoutedEventHandler(TimerOverlayDelete_Click));
                     overlaytimer.Items.Add(timerProperties);
-                    overlaytimer.Items.Add(timerSave);
                     overlaytimer.Items.Add(timerDelete);
                     ribbongroupTimerOverlays.Items.Add(overlaytimer);
                 }
             }
         }
-        private void OverlayText_Refresh()
+        public void OverlayText_Refresh()
         {
+            for(int i = ribbongroupTextOverlays.Items.Count; i > 1 ; i--)
+            {
+                ribbongroupTextOverlays.Items.RemoveAt(i-1);
+            }
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 LiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
@@ -227,13 +236,14 @@ namespace DAR
                     overlaytext.LargeImageSource = new BitmapImage(new Uri(@"Oxygen-Icons.org-Oxygen-Actions-document-new.ico", UriKind.RelativeOrAbsolute));
                     overlaytext.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("Gray"));
                     RibbonSplitMenuItem textProperties = new RibbonSplitMenuItem();
+                    textProperties.Name = overlay.Name;
                     textProperties.Header = "Properties";
-                    RibbonSplitMenuItem textSave = new RibbonSplitMenuItem();
-                    textSave.Header = "Save";
+                    textProperties.AddHandler(Button.ClickEvent, new RoutedEventHandler(TextOverlayProperties_Click));
                     RibbonSplitMenuItem textDelete = new RibbonSplitMenuItem();
                     textDelete.Header = "Delete";
+                    textDelete.Name = overlay.Name;
+                    textDelete.AddHandler(Button.ClickEvent, new RoutedEventHandler(TextOverlayDelete_Click));
                     overlaytext.Items.Add(textProperties);
-                    overlaytext.Items.Add(textSave);
                     overlaytext.Items.Add(textDelete);
                     ribbongroupTextOverlays.Items.Add(overlaytext);
                 }
@@ -263,6 +273,7 @@ namespace DAR
                 if (result == MessageBoxResult.Yes)
                 {
                     var dbdelete = col.Delete(Query.EQ("ProfileName", selectedCharacter));
+                    currentSelection = null;
                     UpdateView();
                 }
             }
@@ -378,10 +389,9 @@ namespace DAR
         private void TriggerAdd_Click(object sender, RoutedEventArgs e)
         {
             //Build new Trigger
-            String selectedGroup = ((TreeViewModel)treeViewTriggers.SelectedItem).Name;
+            TreeViewModel selectedGroup = (TreeViewModel)treeViewTriggers.SelectedItem;
             TriggerEditor newTrigger = new TriggerEditor(selectedGroup);
             newTrigger.Show();
-            UpdateView();
         }
         private void TriggerRemoved_TreeViewModel(object sender, PropertyChangedEventArgs e)
         {
@@ -473,7 +483,6 @@ namespace DAR
             TriggerGroupEdit triggerDialog = new TriggerGroupEdit();
             triggerDialog.Show();
             e.Handled = true;
-            UpdateView();
         }
         private void TriggerGroupsRemove_Click(object sender, RoutedEventArgs e)
         {
@@ -503,15 +512,15 @@ namespace DAR
             TriggerGroupEdit triggerDialog = new TriggerGroupEdit(root);
             triggerDialog.Show();
             e.Handled = true;
-            UpdateView();
         }
         private void TriggerGroupsEdit_Click(object sender, RoutedEventArgs e)
         {
             TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
+            //Add case where adding a sub group with the same name in a different parent updates the correct one
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 var col = db.GetCollection<TriggerGroup>("triggergroups");
-                TriggerGroup result = col.FindOne(Query.EQ("TriggerGroupName", root.Name));
+                TriggerGroup result = col.FindOne(Query.And(Query.EQ("TriggerGroupName", root.Name),Query.EQ("_id",root.Id)));
                 TriggerGroupEdit triggerDialog = new TriggerGroupEdit(result);
                 triggerDialog.Show();
             }
@@ -531,6 +540,7 @@ namespace DAR
             TreeViewModel rTree = new TreeViewModel(branch.TriggerGroupName)
             {
                 Type = "triggergroup",
+                Id = branch.Id
             };
             if (branch.triggers.Count > 0)
             {
@@ -633,12 +643,10 @@ namespace DAR
         }
         private void UpdateView()
         {
-            CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
-            currentSelection = selectedCharacter.ProfileName;
             UpdateListView();
             UpdateTriggerView();
         }
-        private void UpdateTriggerView()
+        public void UpdateTriggerView()
         {                
             //root of the Trigger Tree
             treeView = new List<TreeViewModel>();
@@ -654,7 +662,8 @@ namespace DAR
                     {
                         TreeViewModel rTree = new TreeViewModel(doc.TriggerGroupName)
                         {
-                            Type = "triggergroup"
+                            Type = "triggergroup",
+                            Id = doc.Id
                         };
                         if (doc.triggers.Count > 0)
                         {
@@ -698,7 +707,7 @@ namespace DAR
             tv.VerifyCheckedState();
             treeViewTriggers.ItemsSource = treeView;
         }
-        private void UpdateListView()
+        public void UpdateListView()
         {
             characterProfiles.Clear();
             activeTriggers.Clear();
@@ -772,9 +781,59 @@ namespace DAR
         }
         private void TextOverlayProperties_Click(object sender, RoutedEventArgs e)
         {
-            OverlayTextEditor newOverlayEditor = new OverlayTextEditor(2);
+            String overlayname = (sender as RibbonSplitMenuItem).Name;            
+            OverlayTextEditor newOverlayEditor = new OverlayTextEditor(overlayname);
             newOverlayEditor.Show();
         }
+        private void TimerOverlayProperties_Click(object sender, RoutedEventArgs e)
+        {
+            String overlayname = (sender as RibbonSplitMenuItem).Name;
+            OverlayTimerEditor newOverlayEditor = new OverlayTimerEditor(overlayname);
+            newOverlayEditor.Show();
+        }
+        private void TextOverlayDelete_Click(object sender, RoutedEventArgs e)
+        {
+            String overlayname = (sender as RibbonSplitMenuItem).Name;
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                LiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
+                overlaytexts.Delete(Query.EQ("Name", overlayname));
+            }
+            //Kill current overlay if running
+            foreach(OverlayTextWindow overlay in textWindows)
+            {
+                if(overlay.Name == overlayname)
+                {
+                    textWindows.Remove(overlay);
+                    overlay.Close();
+                }
+            }
+            OverlayText_Refresh();
+        }
+        private void TimerOverlayDelete_Click(object sender, RoutedEventArgs e)
+        {
+            String overlayname = (sender as RibbonSplitMenuItem).Name;
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                LiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");
+                overlaytimers.Delete(Query.EQ("Name", overlayname));
+            }
+            //Kill current overlay if running
+            foreach (OverlayTimerWindow overlay in timerWindows)
+            {
+                if (overlay.Name == overlayname)
+                {
+                    timerWindows.Remove(overlay);
+                    overlay.Close();
+                }
+            }
+            OverlayTimer_Refresh();
+        }
+        private void NotifySaveOverlay_OverlayTextEditor(object sender, RoutedEventArgs e)
+        {
+            OverlayText_Refresh();
+        }
+
         #endregion
 
 

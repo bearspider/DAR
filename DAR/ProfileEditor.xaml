@@ -87,6 +87,8 @@
                 </Grid>
             </StackPanel>
         </GroupBox>
-        <Button Name="buttonSave" Content="Save" HorizontalAlignment="Left" Height="23" Margin="700,515,0,0" VerticalAlignment="Top" Width="100" Click="ButtonSave_Click"/>
+        <Button Name="buttonSave" Content="Save" HorizontalAlignment="Left" Height="23" Margin="575,515,0,0" VerticalAlignment="Top" Width="100" Click="ButtonSave_Click"/>
+        <Button Name="buttonCancel" Content="Cancel" HorizontalAlignment="Left" Margin="700,515,0,0" VerticalAlignment="Top" Height="23" Width="100" IsCancel="True" Click="ButtonCancel_Click"/>
+
     </Grid>
 </Window>

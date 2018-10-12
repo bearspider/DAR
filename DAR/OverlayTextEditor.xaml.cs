@@ -1,6 +1,7 @@
 ﻿using LiteDB;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,27 +19,29 @@ namespace DAR
     /// <summary>
     /// Interaction logic for OverlayTextEditor.xaml
     /// </summary>
-    public partial class OverlayTextEditor : Window
+    public partial class OverlayTextEditor : Window, INotifyPropertyChanged
     {
         public OverlayTextEditor()
         {
             InitializeComponent();
         }
-        public OverlayTextEditor(int id)
+        public OverlayTextEditor(String toedit)
         {
             InitializeComponent();
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 LiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
-                OverlayText window = overlaytexts.FindById(id);
+                OverlayText window = overlaytexts.FindOne(Query.EQ("Name", toedit));
                 this.Width = window.WindowWidth;
                 this.Height = window.WindowHeight;
                 this.Left = window.WindowX;
                 this.Top = window.WindowY;
                 if(textDemo != null){ textDemo.Text = window.Name; }
-                if(comboFont != null) { comboFont.SelectedItem = window.Font; }
+                if(comboFont != null) { comboFont.Text = window.Font; }
                 if(sliderDelay != null) { sliderDelay.Value = window.Delay; }
                 if(sliderSize != null) { sliderSize.Value = window.Size; }
+                if(ClrPckerBg != null) { ClrPckerBg.SelectedColor = (Color)ColorConverter.ConvertFromString(window.BG); }
+                if(ClrPckerFaded != null) { ClrPckerFaded.SelectedColor = (Color)ColorConverter.ConvertFromString(window.Faded); }
                 SetBackground(window.Faded);
             }
         }
@@ -98,6 +101,9 @@ namespace DAR
                     overlaytexts.Insert(overlaytext);
                 }
             }
+            NotifySaveOverlay(textDemo.Text);
+            var main = App.Current.MainWindow as MainWindow;
+            main.OverlayText_Refresh();
             this.Close();
         }
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
@@ -114,5 +120,14 @@ namespace DAR
 
             }
         }
+        #region INotifyPropertyChanged Members
+        public event PropertyChangedEventHandler OverlaySaved;
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected void NotifySaveOverlay(string info)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(info));
+        }
+        #endregion
     }
 }

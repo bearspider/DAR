@@ -5,13 +5,13 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DAR"
         mc:Ignorable="d"
-        Title="OverlayTextWindow" Height="450" Width="800" WindowStyle="None" Topmost="True" AllowsTransparency="True" >
+        Title="OverlayTextWindow" Height="450" Width="800" WindowStyle="None" Topmost="True" AllowsTransparency="True" ShowInTaskbar="False" >
     <Grid ScrollViewer.VerticalScrollBarVisibility="Disabled">
         <ItemsControl Name="icTriggers" ItemsSource="{Binding UpdateSourceTrigger=PropertyChanged}">
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
                     <Grid Margin="0,0,0,5">
-                        <TextBlock FontSize="40" Text="{Binding Displaytext}"/>
+                        <TextBlock Text="{Binding Displaytext}"/>
                     </Grid>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>

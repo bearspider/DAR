@@ -15,6 +15,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Text.RegularExpressions;
 using System.Speech.Synthesis;
+using System.Collections;
 
 namespace DAR
 {
@@ -133,16 +134,17 @@ namespace DAR
                 }
                 if (recordSearch != null)
                 {
-                    int searchid = recordSearch.Id;
-                    recordSearch = player;
-                    recordSearch.Id = searchid;
-                    col.Update(recordSearch);
+                    player.Id = recordSearch.Id;
+                    player.Triggers = recordSearch.Triggers;
+                    col.Update(player);
                 }
                 else
                 {
                     col.Insert(player);
                 }
             }
+            var main = App.Current.MainWindow as MainWindow;
+            main.UpdateListView();
             this.Close();
         }
 
@@ -159,6 +161,11 @@ namespace DAR
         private void SliderRate_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             voicesynth.Rate = Convert.ToInt32(sliderRate.Value);
+        }
+
+        private void ButtonCancel_Click(object sender, RoutedEventArgs e)
+        {
+            this.Close();
         }
     }
 }

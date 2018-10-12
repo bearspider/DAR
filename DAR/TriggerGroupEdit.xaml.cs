@@ -24,6 +24,7 @@ namespace DAR
         private string origGroupName;
         private TreeViewModel parentTree;
         private Boolean addChild;
+        private int editGroupId;
 
         public TriggerGroupEdit()
         {
@@ -37,6 +38,7 @@ namespace DAR
             textboxName.Text = editTrigger.TriggerGroupName;
             textboxComments.Text = editTrigger.Comments;
             checkboxEnable.IsChecked = editTrigger.DefaultEnabled;
+            editGroupId = editTrigger.Id;
         }
         public TriggerGroupEdit(TreeViewModel parentObject)
         {
@@ -62,15 +64,21 @@ namespace DAR
                 }
 
                 IEnumerator<TriggerGroup> enumerator = recordSearch.GetEnumerator();
-                enumerator.MoveNext();
-                var editTrigger = (enumerator.Current);
                 if (recordSearch.Count<TriggerGroup>() > 0)
                 {
-                    //Update Record instead
-                    editTrigger.TriggerGroupName = textboxName.Text;
-                    editTrigger.Comments = textboxComments.Text;
-                    editTrigger.DefaultEnabled = (Boolean)checkboxEnable.IsChecked;
-                    col.Update(editTrigger);
+                    for (int i = 0; i < recordSearch.Count<TriggerGroup>(); i++)
+                    {
+                        enumerator.MoveNext();
+                        var editTrigger = (enumerator.Current);
+                        //Update Record instead
+                        if (editTrigger.Parent == record.Id)
+                        {
+                            editTrigger.TriggerGroupName = textboxName.Text;
+                            editTrigger.Comments = textboxComments.Text;
+                            editTrigger.DefaultEnabled = (Boolean)checkboxEnable.IsChecked;
+                            col.Update(editTrigger);
+                        }
+                    }
                 }
                 else
                 {
@@ -107,15 +115,21 @@ namespace DAR
                 }
 
                 IEnumerator<TriggerGroup> enumerator = recordSearch.GetEnumerator();
-                enumerator.MoveNext();
-                var editTrigger = (enumerator.Current);
                 if (recordSearch.Count<TriggerGroup>() > 0)
                 {
-                    //Update Record instead
-                    editTrigger.TriggerGroupName = textboxName.Text;
-                    editTrigger.Comments = textboxComments.Text;
-                    editTrigger.DefaultEnabled = (Boolean)checkboxEnable.IsChecked;
-                    col.Update(editTrigger);
+                    for (int i = 0; i < recordSearch.Count<TriggerGroup>(); i++)
+                    {
+                        enumerator.MoveNext();
+                        var editTrigger = (enumerator.Current);
+                        //Update Record instead
+                        if (editTrigger.Id == editGroupId)
+                        {
+                            editTrigger.TriggerGroupName = textboxName.Text;
+                            editTrigger.Comments = textboxComments.Text;
+                            editTrigger.DefaultEnabled = (Boolean)checkboxEnable.IsChecked;
+                            col.Update(editTrigger);
+                        }
+                    }
                 }
                 else
                 {
@@ -135,12 +149,20 @@ namespace DAR
         {
             if (addChild)
             {
+                //I don't know if this ever gets called.
                 AddTriggerGroup(parentTree);
             }
             else
             {
                 AddTriggerGroup();
             }
+            var main = App.Current.MainWindow as MainWindow;
+            main.UpdateTriggerView();
+            this.Close();
+        }
+
+        private void ButtonCancel_Click(object sender, RoutedEventArgs e)
+        {
             this.Close();
         }
     }

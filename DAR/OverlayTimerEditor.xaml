@@ -20,10 +20,7 @@
         <StackPanel HorizontalAlignment="Left" Height="255" Margin="10,284,0,0" VerticalAlignment="Top" Width="294" RenderTransformOrigin="1.248,0.505">
             <Grid>
                 <Label HorizontalAlignment="Left" x:Name="labelFont" Content="Font:"/>
-                <ComboBox ItemsSource="{Binding Source={StaticResource SortedFontsCollection}}" HorizontalAlignment="Right" x:Name="comboFont" >
-                    <ComboBox.SelectedValue>
-                        <FontFamily>Segoe UI</FontFamily>
-                    </ComboBox.SelectedValue>
+                <ComboBox IsSynchronizedWithCurrentItem="True" ItemsSource="{Binding Source={StaticResource SortedFontsCollection}}" HorizontalAlignment="Right" x:Name="comboFont">
                 </ComboBox>
             </Grid>
             <Grid>
@@ -71,9 +68,9 @@
             </Grid>
             <Grid>
                 <Label HorizontalAlignment="Left" x:Name="labelSort" Content="Sort:" />
-                <ComboBox HorizontalAlignment="Right" x:Name="comboSort">
+                <ComboBox HorizontalAlignment="Right" Name="comboSort" SelectionChanged="ComboSort_SelectionChanged">
                     <ComboBoxItem Content="Order Triggered"/>
-                    <ComboBoxItem Content="Time Remaining" IsSelected="True"/>
+                    <ComboBoxItem Content="Time Remaining"/>
                 </ComboBox>
             </Grid>
         </StackPanel>

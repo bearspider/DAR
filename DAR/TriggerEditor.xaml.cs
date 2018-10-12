@@ -39,7 +39,7 @@ namespace DAR
         {
             InitializeComponent();
         }
-        public TriggerEditor(String selectedGroup)
+        public TriggerEditor(TreeViewModel selectedGroup)
         {
             InitializeComponent();
             DataColumn column = new DataColumn
@@ -58,7 +58,7 @@ namespace DAR
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 LiteCollection<TriggerGroup> groupsCol = db.GetCollection<TriggerGroup>("triggergroups");
-                var getTriggerGroup = groupsCol.FindOne(Query.EQ("TriggerGroupName", selectedGroup));
+                var getTriggerGroup = groupsCol.FindOne(Query.And(Query.EQ("TriggerGroupName", selectedGroup.Name), Query.EQ("_id", selectedGroup.Id)));
                 selectedGroupId = getTriggerGroup.Id;
             }
             LoadCharacters();
@@ -525,6 +525,8 @@ namespace DAR
                     }
                 }
             }
+            var main = App.Current.MainWindow as MainWindow;
+            main.UpdateTriggerView();
             this.Close();
         }
         private void ButtonEndingTest_Click(object sender, RoutedEventArgs e)
@@ -929,5 +931,10 @@ namespace DAR
             }
         }
         #endregion
+
+        private void ButtonTimerCancel_Click(object sender, RoutedEventArgs e)
+        {
+            this.Close();
+        }
     }
 }

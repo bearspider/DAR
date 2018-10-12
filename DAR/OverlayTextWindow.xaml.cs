@@ -30,6 +30,7 @@ namespace DAR
         public void SetProperties(OverlayText overlay)
         {
             windowproperties = overlay;
+            this.Name = overlay.Name;
             this.Left = windowproperties.WindowX;
             this.Top = windowproperties.WindowY;
             this.Height = windowproperties.WindowHeight;

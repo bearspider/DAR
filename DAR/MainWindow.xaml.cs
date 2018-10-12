@@ -26,6 +26,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Xceed.Wpf.AvalonDock;
 using System.Media;
+using Microsoft.Windows.Controls.Ribbon;
 
 namespace DAR
 {
@@ -94,7 +95,6 @@ namespace DAR
         private Dictionary<Trigger,ArrayList> activeTriggers = new Dictionary<Trigger,ArrayList>();
         private ObservableCollection<OverlayTextWindow> textWindows = new ObservableCollection<OverlayTextWindow>();
         private ObservableCollection<OverlayTimerWindow> timerWindows = new ObservableCollection<OverlayTimerWindow>();
-        private List<String> testlist = new List<String>();
         #endregion
         public MainWindow()
         {
@@ -123,32 +123,43 @@ namespace DAR
             }
             UpdateListView();
             UpdateTriggerView();
+            OverlayText_Refresh();
+            OverlayTimer_Refresh();
             //Deploy Overlays
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 LiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");
                 LiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
+                LiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
+                Trigger testtrigger = triggers.FindById(15);
 
-                foreach(var overlay in overlaytexts.FindAll())
+                foreach (var overlay in overlaytexts.FindAll())
                 {
-
-                    Thread t = new Thread(() =>
-                    {
-                        OverlayTextWindow newWindow = new OverlayTextWindow();
-                        newWindow.SetProperties(overlay);
-                        newWindow.ShowInTaskbar = false;
-                        newWindow.triggers = testlist;
-                        textWindows.Add(newWindow);
-                        newWindow.ShowDialog();
-                    });
-                    t.SetApartmentState(ApartmentState.STA);
-                    t.IsBackground = true;
-                    t.Start();
+                    OverlayTextWindow newWindow = new OverlayTextWindow();
+                    newWindow.SetProperties(overlay);
+                    newWindow.ShowInTaskbar = false;
+                    textWindows.Add(newWindow);
+                    newWindow.AddTrigger(testtrigger);
+                    newWindow.Show();
+                }
+                foreach (var overlay in overlaytimers.FindAll())
+                {
+                    OverlayTimerWindow newWindow = new OverlayTimerWindow();
+                    newWindow.SetProperties(overlay);
+                    newWindow.ShowInTaskbar = false;
+                    timerWindows.Add(newWindow);
+                    //newWindow.Show();
                 }
             }
             //Start Monitoring Enabled Profiles
             foreach (CharacterProfile character in characterProfiles)
             {
+                RibbonSplitMenuItem characterStopAlerts = new RibbonSplitMenuItem();
+                RibbonSplitMenuItem characterResetCounters = new RibbonSplitMenuItem();
+                characterStopAlerts.Header = character.Name;
+                characterResetCounters.Header = character.Name;
+                rbnStopAlerts.Items.Add(characterStopAlerts);
+                rbnResetCounters.Items.Add(characterResetCounters);
                 if(File.Exists(character.LogFile) && character.Monitor)
                 {                    
                     MonitorCharacter(character);
@@ -180,6 +191,54 @@ namespace DAR
             }
             Environment.Exit(Environment.ExitCode);
         }
+        private void OverlayTimer_Refresh()
+        {
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                LiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");
+                foreach (var overlay in overlaytimers.FindAll())
+                {
+                    RibbonSplitButton overlaytimer = new RibbonSplitButton();
+                    overlaytimer.Label = overlay.Name;
+                    overlaytimer.LargeImageSource = new BitmapImage(new Uri(@"Google-Noto-Emoji-Travel-Places-42608-stopwatch.ico", UriKind.RelativeOrAbsolute));
+                    overlaytimer.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("Gray"));
+                    RibbonSplitMenuItem timerProperties = new RibbonSplitMenuItem();
+                    timerProperties.Header = "Properties";
+                    RibbonSplitMenuItem timerSave = new RibbonSplitMenuItem();
+                    timerSave.Header = "Save";
+                    RibbonSplitMenuItem timerDelete = new RibbonSplitMenuItem();
+                    timerDelete.Header = "Delete";
+                    overlaytimer.Items.Add(timerProperties);
+                    overlaytimer.Items.Add(timerSave);
+                    overlaytimer.Items.Add(timerDelete);
+                    ribbongroupTimerOverlays.Items.Add(overlaytimer);
+                }
+            }
+        }
+        private void OverlayText_Refresh()
+        {
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                LiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
+                foreach (var overlay in overlaytexts.FindAll())
+                {
+                    RibbonSplitButton overlaytext = new RibbonSplitButton();
+                    overlaytext.Label = overlay.Name;
+                    overlaytext.LargeImageSource = new BitmapImage(new Uri(@"Oxygen-Icons.org-Oxygen-Actions-document-new.ico", UriKind.RelativeOrAbsolute));
+                    overlaytext.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("Gray"));
+                    RibbonSplitMenuItem textProperties = new RibbonSplitMenuItem();
+                    textProperties.Header = "Properties";
+                    RibbonSplitMenuItem textSave = new RibbonSplitMenuItem();
+                    textSave.Header = "Save";
+                    RibbonSplitMenuItem textDelete = new RibbonSplitMenuItem();
+                    textDelete.Header = "Delete";
+                    overlaytext.Items.Add(textProperties);
+                    overlaytext.Items.Add(textSave);
+                    overlaytext.Items.Add(textDelete);
+                    ribbongroupTextOverlays.Items.Add(overlaytext);
+                }
+            }
+        }
         #endregion
         #region Character Profiles
         private void RibbonButtonEdit_Click(object sender, RoutedEventArgs e)
@@ -190,7 +249,7 @@ namespace DAR
                 var col = db.GetCollection<CharacterProfile>("profiles");
                 CharacterProfile result = col.FindOne(Query.EQ("ProfileName", selectedCharacter.ProfileName));
                 ProfileEditor editCharacter = new ProfileEditor(result);
-                editCharacter.ShowDialog();
+                editCharacter.Show();
             }
             UpdateView();
         }
@@ -211,7 +270,7 @@ namespace DAR
         private void RibbonButtonAdd_Click(object sender, RoutedEventArgs e)
         {
             ProfileEditor newProfile = new ProfileEditor();
-            newProfile.ShowDialog();
+            newProfile.Show();
             UpdateView();
         }
         private void ListviewCharacters_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -247,6 +306,7 @@ namespace DAR
         #region Monitoring
         private void MonitorCharacter(CharacterProfile character)
         {
+            //Look into doing Parallel.Foreach with semaphores by cpu core count inspection
             Thread t = new Thread(() =>
             {
                 using (FileStream filestream = File.Open(character.LogFile, System.IO.FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
@@ -320,7 +380,7 @@ namespace DAR
             //Build new Trigger
             String selectedGroup = ((TreeViewModel)treeViewTriggers.SelectedItem).Name;
             TriggerEditor newTrigger = new TriggerEditor(selectedGroup);
-            newTrigger.ShowDialog();
+            newTrigger.Show();
             UpdateView();
         }
         private void TriggerRemoved_TreeViewModel(object sender, PropertyChangedEventArgs e)
@@ -403,7 +463,7 @@ namespace DAR
                 var triggerCollection = db.GetCollection<Trigger>("triggers");
                 var currentTrigger = triggerCollection.FindOne(Query.EQ("Name", root.Name));
                 TriggerEditor triggerDialog = new TriggerEditor(currentTrigger.Id);
-                triggerDialog.ShowDialog();
+                triggerDialog.Show();
             }
         }
         #endregion
@@ -411,7 +471,7 @@ namespace DAR
         private void TriggerGroupsAdd_Click(object sender, RoutedEventArgs e)
         {
             TriggerGroupEdit triggerDialog = new TriggerGroupEdit();
-            triggerDialog.ShowDialog();
+            triggerDialog.Show();
             e.Handled = true;
             UpdateView();
         }
@@ -441,7 +501,7 @@ namespace DAR
         {
             TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
             TriggerGroupEdit triggerDialog = new TriggerGroupEdit(root);
-            triggerDialog.ShowDialog();
+            triggerDialog.Show();
             e.Handled = true;
             UpdateView();
         }
@@ -453,14 +513,14 @@ namespace DAR
                 var col = db.GetCollection<TriggerGroup>("triggergroups");
                 TriggerGroup result = col.FindOne(Query.EQ("TriggerGroupName", root.Name));
                 TriggerGroupEdit triggerDialog = new TriggerGroupEdit(result);
-                triggerDialog.ShowDialog();
+                triggerDialog.Show();
             }
             UpdateView();
         }
         private void TriggerGroupsAddTopLevel_Click(object sender, RoutedEventArgs e)
         {
             TriggerGroupEdit triggerDialog = new TriggerGroupEdit();
-            triggerDialog.ShowDialog();
+            triggerDialog.Show();
             e.Handled = true;
             UpdateView();
         }
@@ -702,33 +762,18 @@ namespace DAR
         #region Overlays
         private void TextOverlayAddRibbonButton_Click(object sender, RoutedEventArgs e)
         {
-            Thread t = new Thread(() =>
-            {
-                OverlayTextEditor newOverlayEditor = new OverlayTextEditor();
-                newOverlayEditor.ShowDialog();
-            });
-            t.SetApartmentState(ApartmentState.STA);
-            t.Start();
+            OverlayTextEditor newOverlayEditor = new OverlayTextEditor();
+            newOverlayEditor.Show();
         }
         private void TimerOverlayAddRibbonButton_Click(object sender, RoutedEventArgs e)
         {
-            Thread t = new Thread(() =>
-            {
-                OverlayTimerEditor newOverlayEditor = new OverlayTimerEditor();
-                newOverlayEditor.ShowDialog();
-            });
-            t.SetApartmentState(ApartmentState.STA);
-            t.Start();
+            OverlayTimerEditor newOverlayEditor = new OverlayTimerEditor();
+            newOverlayEditor.Show();
         }
         private void TextOverlayProperties_Click(object sender, RoutedEventArgs e)
         {
-            Thread t = new Thread(() =>
-            {
-                OverlayTextEditor newOverlayEditor = new OverlayTextEditor(2);
-                newOverlayEditor.ShowDialog();
-            });
-            t.SetApartmentState(ApartmentState.STA);
-            t.Start();
+            OverlayTextEditor newOverlayEditor = new OverlayTextEditor(2);
+            newOverlayEditor.Show();
         }
         #endregion
 

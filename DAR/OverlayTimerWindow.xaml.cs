@@ -19,9 +19,25 @@ namespace DAR
     /// </summary>
     public partial class OverlayTimerWindow : Window
     {
+        public OverlayTimer windowproperties { get; set; }
         public OverlayTimerWindow()
         {
             InitializeComponent();
+        }
+        public void SetProperties(OverlayTimer overlay)
+        {
+            windowproperties = overlay;
+            this.Left = windowproperties.WindowX;
+            this.Top = windowproperties.WindowY;
+            this.Height = windowproperties.WindowHeight;
+            this.Width = windowproperties.WindowWidth;
+            SetBackground(windowproperties.Faded);
+        }
+        private void SetBackground(String bgcolor)
+        {
+            var windowcolor = ColorConverter.ConvertFromString(bgcolor);
+            Brush brush = new SolidColorBrush((Color)windowcolor);
+            this.Background = brush;
         }
     }
 }

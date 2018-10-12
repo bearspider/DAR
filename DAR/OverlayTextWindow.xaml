@@ -7,13 +7,15 @@
         mc:Ignorable="d"
         Title="OverlayTextWindow" Height="450" Width="800" WindowStyle="None" Topmost="True" AllowsTransparency="True" >
     <Grid ScrollViewer.VerticalScrollBarVisibility="Disabled">
-        <ListView Name="listviewTriggers" ItemsSource="{Binding UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Left" Margin="0,1,0,0" VerticalAlignment="Top">
-            <ListView.View>
-                <GridView>
-                    <GridViewColumn/>
-                </GridView>
-            </ListView.View>
-        </ListView>
+        <ItemsControl Name="icTriggers" ItemsSource="{Binding UpdateSourceTrigger=PropertyChanged}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Grid Margin="0,0,0,5">
+                        <TextBlock FontSize="40" Text="{Binding Displaytext}"/>
+                    </Grid>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
 
     </Grid>
 </Window>

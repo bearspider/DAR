@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -20,11 +21,11 @@ namespace DAR
     public partial class OverlayTextWindow : Window
     {
         public OverlayText windowproperties {get; set;}
-        public List<String> triggers { get; set; }
+        private ObservableCollection<Trigger> triggers = new ObservableCollection<Trigger>();
         public OverlayTextWindow()
         {
             InitializeComponent();
-            listviewTriggers.ItemsSource = triggers;
+            icTriggers.ItemsSource = triggers;
         }
         public void SetProperties(OverlayText overlay)
         {
@@ -41,9 +42,9 @@ namespace DAR
             Brush brush = new SolidColorBrush((Color)windowcolor);
             this.Background = brush;
         }
-        public void AddTrigger(String newtext)
+        public void AddTrigger(Trigger newtrigger)
         {
-            triggers.Add(newtext);
+            triggers.Add(newtrigger);
         }
     }
 }

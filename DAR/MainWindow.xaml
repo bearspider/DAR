@@ -59,11 +59,9 @@
                     </Custom:RibbonGroup>
                     <Custom:RibbonGroup Header="Misc">
                         <Custom:RibbonSplitButton Label="Commands" LargeImageSource="Oxygen-Icons.org-Oxygen-Apps-utilities-terminal.ico">
-                            <Custom:RibbonSplitMenuItem Header="Stop Alerts">
-                                <Custom:RibbonSplitMenuItem Header="MenuItem"/>
+                            <Custom:RibbonSplitMenuItem Name="rbnStopAlerts" Header="Stop Alerts">
                             </Custom:RibbonSplitMenuItem>
-                            <Custom:RibbonSplitMenuItem Header="Reset Counters">
-                                <Custom:RibbonSplitMenuItem Header="MenuItem"/>
+                            <Custom:RibbonSplitMenuItem Name="rbnResetCounters" Header="Reset Counters">
                             </Custom:RibbonSplitMenuItem>
                         </Custom:RibbonSplitButton>
                         <Custom:RibbonButton Label="Pronunciations" LargeImageSource="Oxygen-Icons.org-Oxygen-Apps-konversation.ico"/>
@@ -95,21 +93,11 @@
                     </Custom:RibbonGroup>
                 </Custom:RibbonTab>
                 <Custom:RibbonTab Header="Overlays">
-                    <Custom:RibbonGroup Header="Text Overlays">
-                        <Custom:RibbonButton Label="Add" Click="TextOverlayAddRibbonButton_Click" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-document-new.ico"/>
-                        <Custom:RibbonSplitButton Label="Default" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-document-edit.ico">
-                            <Custom:RibbonSplitMenuItem Click="TextOverlayProperties_Click" Header="Properties"/>
-                            <Custom:RibbonSplitMenuItem Header="Save Layout"/>
-                            <Custom:RibbonSplitMenuItem Header="Delete"/>
-                        </Custom:RibbonSplitButton>
+                    <Custom:RibbonGroup Name="ribbongroupTextOverlays" Header="Text Overlays">
+                        <Custom:RibbonButton  Label="Add" Click="TextOverlayAddRibbonButton_Click" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-document-new.ico"/>
                     </Custom:RibbonGroup>
-                    <Custom:RibbonGroup Header="Timer Overlays">
+                    <Custom:RibbonGroup Name="ribbongroupTimerOverlays" Header="Timer Overlays">
                         <Custom:RibbonButton Label="Add" Click="TimerOverlayAddRibbonButton_Click" LargeImageSource="Google-Noto-Emoji-Travel-Places-42608-stopwatch.ico"/>
-                        <Custom:RibbonSplitButton Label="Default" LargeImageSource="Google-Noto-Emoji-Travel-Places-42608-stopwatch.ico">
-                            <Custom:RibbonSplitMenuItem Header="Properties"/>
-                            <Custom:RibbonSplitMenuItem Header="Save Layout"/>
-                            <Custom:RibbonSplitMenuItem Header="Delete"/>
-                        </Custom:RibbonSplitButton>
                     </Custom:RibbonGroup>
                 </Custom:RibbonTab>
                 <Custom:RibbonTab Header="Categories">

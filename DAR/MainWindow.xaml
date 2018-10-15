@@ -4,10 +4,12 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:xcad="http://schemas.xceed.com/wpf/xaml/avalondock"
+        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
         xmlns:local="clr-namespace:DAR"
-        xmlns:Custom="http://schemas.microsoft.com/winfx/2006/xaml/presentation/ribbon" x:Class="DAR.MainWindow"
+        xmlns:Custom="http://schemas.microsoft.com/winfx/2006/xaml/presentation/ribbon"
+    xmlns:wpf="http://schemas.microsoft.com/netfx/2009/xaml/presentation" x:Class="DAR.MainWindow"
         mc:Ignorable="d"
-        Title="EQ Audio Triggers" Height="812" Width="1170" Icon="Tonev-Windows-7-Windows-7-headphone.ico" WindowStyle="ThreeDBorderWindow" SizeChanged="Window_SizeChanged" Closing="Window_Closing">
+        Title="EQ Audio Triggers" Height="812" Width="1170" Icon="Images/Tonev-Windows-7-Windows-7-headphone.ico" WindowStyle="ThreeDBorderWindow" SizeChanged="Window_SizeChanged" Closing="Window_Closing">
     <Window.Resources>
         <ResourceDictionary>
             <local:MonitoringStatusConverter x:Key="converter" />
@@ -22,6 +24,27 @@
                     <ContentPresenter Content="{Binding Name, Mode=OneTime}" Margin="2,0" />
                 </StackPanel>
             </HierarchicalDataTemplate>
+            <Style x:Key="profileexpander" TargetType="Expander">
+                <Setter Property="Background" Value="Lavender"/>
+                <Setter Property="ExpandDirection" Value="Down"/>
+                <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                <Setter Property="IsExpanded" Value="False"/>
+            </Style>
+            <Style x:Key="overrideexpander" TargetType="Expander">
+                <Setter Property="Background" Value="Azure"/>
+                <Setter Property="ExpandDirection" Value="Down"/>
+                <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                <Setter Property="IsExpanded" Value="False"/>
+                <Setter Property="Margin" Value="20,0,0,0"/>
+            </Style>
+            <CollectionViewSource x:Key="categorysource" Source="{Binding CategoryList}"/>
+            <CollectionViewSource x:Key="overlaytextsource" Source="{Binding OverlayTexts}"/>
+            <CollectionViewSource x:Key="overlaytimersource" Source="{Binding OverlayTimers}"/>
+            <CompositeCollection x:Key="categorycollection">
+                <CollectionContainer Collection="{Binding Source={StaticResource categorysource}}"/>
+                <CollectionContainer Collection="{Binding Source={StaticResource overlaytextsource}}"/>
+                <CollectionContainer Collection="{Binding Source={StaticResource overlaytimersource}}"/>
+            </CompositeCollection>
         </ResourceDictionary>
     </Window.Resources>
     <Grid>
@@ -30,7 +53,7 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-            <Custom:Ribbon x:Name="ribbonMain" HorizontalAlignment="Left" VerticalAlignment="Top" FontFamily="Global User Interface" RenderTransformOrigin="0.512,1.045" Width="1170">
+            <Custom:Ribbon x:Name="ribbonMain" HorizontalAlignment="Left" VerticalAlignment="Top" FontFamily="Global User Interface" RenderTransformOrigin="0.512,1.045" Width="1170" SelectionChanged="RibbonMain_SelectionChanged">
                 <Custom:Ribbon.ApplicationMenu>
                     <Custom:RibbonApplicationMenu>
                         <Custom:RibbonApplicationMenuItem Header="Settings"/>
@@ -40,32 +63,32 @@
                 </Custom:Ribbon.ApplicationMenu>
                 <Custom:RibbonTab Header="Home">
                     <Custom:RibbonGroup Header="Characters">
-                        <Custom:RibbonButton Name="ribbonCharAdd" Label="Add" IsEnabled="True" Click="RibbonButtonAdd_Click" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-list-add-user.ico"/>
-                        <Custom:RibbonButton Name="ribbonCharEdit" Label="Edit" IsEnabled="False" Click="RibbonButtonEdit_Click" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-user-properties.ico"/>
-                        <Custom:RibbonButton Name="ribbonCharRemove" Label="Remove" IsEnabled="False" Click="RibbonButtonRemove_Click" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-list-remove-user.ico"/>
+                        <Custom:RibbonButton Name="ribbonCharAdd" Label="Add" IsEnabled="True" Click="RibbonButtonAdd_Click" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-list-add-user.ico"/>
+                        <Custom:RibbonButton Name="ribbonCharEdit" Label="Edit" IsEnabled="False" Click="RibbonButtonEdit_Click" SmallImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-user-properties.ico"/>
+                        <Custom:RibbonButton Name="ribbonCharRemove" Label="Remove" IsEnabled="False" Click="RibbonButtonRemove_Click" SmallImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-list-remove-user.ico"/>
                     </Custom:RibbonGroup>
                     <Custom:RibbonGroup Header="Trigger Groups">
-                        <Custom:RibbonSplitButton Name="triggerGroupsAdd" Click="TriggerGroupsAdd_Click" Label="Add" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-tab-new-background.ico">
+                        <Custom:RibbonSplitButton Name="triggerGroupsAdd" Click="TriggerGroupsAdd_Click" Label="Add" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-tab-new-background.ico">
                             <Custom:RibbonSplitMenuItem Name="triggerGroupsAddSelected" Click="TriggerGroupsAddSelected_Click" IsEnabled="False" Header="Add To Selected Group"/>
                             <Custom:RibbonSplitMenuItem Name="triggerGroupsAddTopLevel" Click="TriggerGroupsAddTopLevel_Click" Header="Add Top Level Group"/>
                         </Custom:RibbonSplitButton>
-                        <Custom:RibbonButton Name="triggerGroupsEdit" Click="TriggerGroupsEdit_Click" IsEnabled="False" Label="Edit" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-draw-freehand.ico"/>
-                        <Custom:RibbonButton Name="triggerGroupsRemove" Click="TriggerGroupsRemove_Click" IsEnabled="False" Label="Remove" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-tab-close-other.ico"/>
+                        <Custom:RibbonButton Name="triggerGroupsEdit" Click="TriggerGroupsEdit_Click" IsEnabled="False" Label="Edit" SmallImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-draw-freehand.ico"/>
+                        <Custom:RibbonButton Name="triggerGroupsRemove" Click="TriggerGroupsRemove_Click" IsEnabled="False" Label="Remove" SmallImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-tab-close-other.ico"/>
                     </Custom:RibbonGroup>
                     <Custom:RibbonGroup Header="Triggers">
-                        <Custom:RibbonButton Name="triggerAdd" IsEnabled="False" Label="Add" Click="TriggerAdd_Click" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-document-new.ico"/>
-                        <Custom:RibbonButton Name="triggerEdit" IsEnabled="False" Label="Edit" Click="TriggerEdit_Click" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-document-edit.ico"/>
-                        <Custom:RibbonButton Name="triggerRemove" IsEnabled="False" Label="Remove" Click="TriggerRemove_Click" SmallImageSource="Oxygen-Icons.org-Oxygen-Actions-document-close.ico"/>
+                        <Custom:RibbonButton Name="triggerAdd" IsEnabled="False" Label="Add" Click="TriggerAdd_Click" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-document-new.ico"/>
+                        <Custom:RibbonButton Name="triggerEdit" IsEnabled="False" Label="Edit" Click="TriggerEdit_Click" SmallImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-document-edit.ico"/>
+                        <Custom:RibbonButton Name="triggerRemove" IsEnabled="False" Label="Remove" Click="TriggerRemove_Click" SmallImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-document-close.ico"/>
                     </Custom:RibbonGroup>
                     <Custom:RibbonGroup Header="Misc">
-                        <Custom:RibbonSplitButton Label="Commands" LargeImageSource="Oxygen-Icons.org-Oxygen-Apps-utilities-terminal.ico">
+                        <Custom:RibbonSplitButton Label="Commands" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Apps-utilities-terminal.ico">
                             <Custom:RibbonSplitMenuItem Name="rbnStopAlerts" Header="Stop Alerts">
                             </Custom:RibbonSplitMenuItem>
                             <Custom:RibbonSplitMenuItem Name="rbnResetCounters" Header="Reset Counters">
                             </Custom:RibbonSplitMenuItem>
                         </Custom:RibbonSplitButton>
-                        <Custom:RibbonButton Label="Pronunciations" LargeImageSource="Oxygen-Icons.org-Oxygen-Apps-konversation.ico"/>
-                        <Custom:RibbonSplitButton Label="Search" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-edit-find.ico">
+                        <Custom:RibbonButton Label="Pronunciations" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Apps-konversation.ico"/>
+                        <Custom:RibbonSplitButton Label="Search" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-edit-find.ico">
                             <Custom:RibbonSplitMenuItem Header="Log File"/>
                             <Custom:RibbonSplitMenuItem Header="Triggers"/>
                         </Custom:RibbonSplitButton>
@@ -73,20 +96,20 @@
                 </Custom:RibbonTab>
                 <Custom:RibbonTab Header="Sharing">
                     <Custom:RibbonGroup Header="Library">
-                        <Custom:RibbonButton Label="Online Library" LargeImageSource="Itzikgur-My-Seven-Books-1.ico"/>
-                        <Custom:RibbonSplitButton Label="Share" LargeImageSource="Oxygen-Icons.org-Oxygen-Apps-preferences-system-network-sharing.ico">
+                        <Custom:RibbonButton Label="Online Library" LargeImageSource="Images/Itzikgur-My-Seven-Books-1.ico"/>
+                        <Custom:RibbonSplitButton Label="Share" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Apps-preferences-system-network-sharing.ico">
                             <Custom:RibbonSplitMenuItem Header="Quick Share"/>
                             <Custom:RibbonSplitMenuItem Header="Submit to Library"/>
                         </Custom:RibbonSplitButton>
                     </Custom:RibbonGroup>
                     <Custom:RibbonGroup Header="Share">
-                        <Custom:RibbonSplitButton Label="Import" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-svn-update.ico">
+                        <Custom:RibbonSplitButton Label="Import" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-svn-update.ico">
                             <Custom:RibbonSplitMenuItem Header="From GINA Package"/>
                             <Custom:RibbonSplitMenuItem Header="From Everquest"/>
                             <Custom:RibbonSplitMenuItem Header="From Triggers File"/>
                             <Custom:RibbonSplitMenuItem Header="From Configuration"/>
                         </Custom:RibbonSplitButton>
-                        <Custom:RibbonSplitButton Label="Export" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-svn-commit.ico">
+                        <Custom:RibbonSplitButton Label="Export" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-svn-commit.ico">
                             <Custom:RibbonSplitMenuItem Header="To Package"/>
                             <Custom:RibbonSplitMenuItem Header="To Everquest"/>
                         </Custom:RibbonSplitButton>
@@ -94,17 +117,17 @@
                 </Custom:RibbonTab>
                 <Custom:RibbonTab Header="Overlays">
                     <Custom:RibbonGroup Name="ribbongroupTextOverlays" Header="Text Overlays">
-                        <Custom:RibbonButton  Label="Add" Click="TextOverlayAddRibbonButton_Click" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-document-new.ico"/>
+                        <Custom:RibbonButton  Label="Add" Click="TextOverlayAddRibbonButton_Click" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-document-new.ico"/>
                     </Custom:RibbonGroup>
                     <Custom:RibbonGroup Name="ribbongroupTimerOverlays" Header="Timer Overlays">
-                        <Custom:RibbonButton Label="Add" Click="TimerOverlayAddRibbonButton_Click" LargeImageSource="Google-Noto-Emoji-Travel-Places-42608-stopwatch.ico"/>
+                        <Custom:RibbonButton Label="Add" Click="TimerOverlayAddRibbonButton_Click" LargeImageSource="Images/Google-Noto-Emoji-Travel-Places-42608-stopwatch.ico"/>
                     </Custom:RibbonGroup>
                 </Custom:RibbonTab>
                 <Custom:RibbonTab Header="Categories">
                     <Custom:RibbonGroup Header="Actions">
-                        <Custom:RibbonButton Label="Add" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-document-new.ico"/>
-                        <Custom:RibbonButton Label="Remove" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-document-close.ico"/>
-                        <Custom:RibbonButton Label="Set As Default" LargeImageSource="Oxygen-Icons.org-Oxygen-Actions-dialog-ok-apply.ico"/>
+                        <Custom:RibbonButton Label="Add" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-document-new.ico"/>
+                        <Custom:RibbonButton Label="Remove" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-document-close.ico"/>
+                        <Custom:RibbonButton Label="Set As Default" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-dialog-ok-apply.ico"/>
                     </Custom:RibbonGroup>
                 </Custom:RibbonTab>
             </Custom:Ribbon>
@@ -118,16 +141,16 @@
                 <xcad:VS2010Theme />
             </xcad:DockingManager.Theme>
 
-            <xcad:LayoutRoot>                
+            <xcad:LayoutRoot>
                 <xcad:LayoutPanel>
                     <xcad:LayoutAnchorablePaneGroup DockWidth="200">
                         <xcad:LayoutAnchorablePane>
-                            <xcad:LayoutAnchorable Title="Characters" ContentId="text1" CanHide="False">
+                            <xcad:LayoutAnchorable x:Name="characters" Title="Characters" ContentId="charactersPane" CanHide="False">
                                 <ListView MouseDoubleClick="ListviewCharacters_MouseDoubleClick" SelectionChanged="ListviewCharacters_SelectionChanged" Name="listviewCharacters" IsSynchronizedWithCurrentItem="True">
                                     <ListView.ItemTemplate>
                                         <DataTemplate>
                                             <WrapPanel>
-                                            <Image Source="{Binding Monitor, Converter={StaticResource converter}}" />
+                                                <Image Source="{Binding Monitor, Converter={StaticResource converter}}" />
                                                 <TextBlock Text="    " />
                                                 <TextBlock Text="{Binding ProfileName}" />
                                             </WrapPanel>
@@ -138,14 +161,198 @@
                         </xcad:LayoutAnchorablePane>
                     </xcad:LayoutAnchorablePaneGroup>
                     <xcad:LayoutDocumentPane>
-                        <xcad:LayoutDocument CanClose="False" Title="Triggers" ContentId="doc1">
+                        <xcad:LayoutDocument x:Name="availabletriggers" CanClose="False" Title="Triggers" ContentId="triggersPane" IsSelectedChanged="Availabletriggers_IsSelectedChanged">
                             <TreeView SelectedItemChanged="TreeViewTriggers_SelectedItemChanged" HorizontalAlignment="Left" Margin="12,12,0,0" x:Name="treeViewTriggers" VerticalAlignment="Top"
                   ItemContainerStyle="{StaticResource TreeViewItemStyle}"
                   ItemTemplate="{StaticResource CheckBoxItemTemplate}" />
                         </xcad:LayoutDocument>
-                        <xcad:LayoutAnchorable Title="Activated Triggers" ContentId="doc1">
+                        <xcad:LayoutDocument x:Name="firedtriggers" Title="Activated Triggers" ContentId="activatedPane">
                             <TextBox AcceptsReturn="True" TextWrapping="Wrap"></TextBox>
-                        </xcad:LayoutAnchorable>
+                        </xcad:LayoutDocument>
+                        <xcad:LayoutDocument  x:Name="categoriesDocument" Title="Categories" ContentId="categoriesPane" IsEnabled="True" CanClose="False" IsSelectedChanged="Categories_IsSelectedChanged">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <TabControl Name="tabcontrolCategory" TabStripPlacement="Left" SelectionChanged="TabcontrolCategory_SelectionChanged" ItemsSource="{Binding CategoryList}">
+                                    <TabControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <ContentControl Content="{Binding}">
+                                                <ContentControl.Resources>
+                                                    <DataTemplate DataType="{x:Type local:Category}">
+                                                        <TextBlock Text="{Binding Name}"/>
+                                                    </DataTemplate>
+                                                </ContentControl.Resources>
+                                            </ContentControl>
+                                        </DataTemplate>
+                                    </TabControl.ItemTemplate>
+                                    <TabControl.ContentTemplate>
+                                        <DataTemplate>
+                                            <StackPanel>
+                                                <GroupBox Margin="5,5,0,0" Name="groupboxSettings" Header="Category Settings">
+                                                    <StackPanel>
+                                                        <Grid>
+                                                            <Grid.RowDefinitions>
+                                                                <RowDefinition Height="Auto" />
+                                                            </Grid.RowDefinitions>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="75"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock Margin="10,0,10,0" HorizontalAlignment="Right" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Text="Name"/>
+                                                            <TextBox Text="{Binding Name}" Grid.Row="0" Grid.Column="1" Name="categoryName" Width="300" Height="25"/>
+                                                        </Grid>
+                                                        <Line Margin="0,8" SnapsToDevicePixels="True" Stroke="{Binding ElementName=groupboxSettings,Path=BorderBrush}" Stretch="Fill" X1="0" X2="1"/>
+                                                        <Grid>
+                                                            <Grid.RowDefinitions>
+                                                                <RowDefinition Height="Auto" />
+                                                                <RowDefinition Height="Auto"/>
+                                                                <RowDefinition Height="Auto"/>
+                                                                <RowDefinition Height="Auto"/>
+                                                            </Grid.RowDefinitions>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="75"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock HorizontalAlignment="Right" Grid.Row="0" Grid.Column="0" Margin="10,0,10,0" VerticalAlignment="Center" Text="Text"/>
+                                                            <TextBlock Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Text="Overlay:"/>
+                                                            <ComboBox ItemsSource="{Binding AvailableTextOverlays}" Margin="10,0,0,0" Grid.Row="0" Grid.Column="2" Width="100" Name="categoryTextOverlay">
+                                                                <ComboBox.ItemTemplate>
+                                                                    <DataTemplate>
+                                                                        <TextBlock Text="{Binding Name}"/>
+                                                                    </DataTemplate>
+                                                                </ComboBox.ItemTemplate>
+                                                            </ComboBox>
+                                                            <TextBlock Margin="0,10,0,0" Grid.Row="1" Grid.Column="1" Text="Colors:"/>
+                                                            <RadioButton Margin="0,10,0,0" Grid.Row="1" Grid.Column="2" GroupName="textcolors" Content="Use Character Colors" IsChecked="False"/>
+                                                            <RadioButton GroupName="textcolors" Grid.Row="2" Grid.Column="2" Content="Use These Colors:" IsChecked="True"/>
+                                                            <TextBlock Grid.Row="2" Grid.Column="3" Text="Font:"/>
+                                                            <xctk:ColorPicker Grid.Row="2" Grid.Column="4" Width="100" Name="clrpckrText" SelectedColor="{Binding TextFontColor}"/>
+                                                        </Grid>
+                                                        <Line Margin="0,8" SnapsToDevicePixels="True" Stroke="{Binding ElementName=groupboxSettings,Path=BorderBrush}" Stretch="Fill" X1="0" X2="1"/>
+                                                        <Grid>
+                                                            <Grid.RowDefinitions>
+                                                                <RowDefinition Height="Auto" />
+                                                                <RowDefinition Height="Auto"/>
+                                                                <RowDefinition Height="Auto"/>
+                                                            </Grid.RowDefinitions>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="75"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock Margin="10,0,10,0" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Right" Text="Timers"/>
+                                                            <TextBlock Grid.Row="0" Grid.Column="1" Text="Overlay:"/>
+                                                            <ComboBox ItemsSource="{Binding AvailableTimerOverlays}" Margin="10,0,0,0" Grid.Row="0" Grid.Column="2" Width="100" Name="categoryTimerOverlay">
+                                                            <ComboBox.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <TextBlock Text="{Binding Name}"/>
+                                                                </DataTemplate>
+                                                            </ComboBox.ItemTemplate>
+                                                            </ComboBox>
+                                                            <TextBlock Grid.Row="1" Grid.Column="1" Text="Colors:"/>
+                                                            <RadioButton Grid.Row="1" Grid.Column="2" GroupName="timercolors" Content="Use Character Colors" IsChecked="False"/>
+                                                            <RadioButton Grid.Row="2" Grid.Column="2" GroupName="timercolors" Content="Use These Colors:" IsChecked="True"/>
+                                                            <TextBlock Grid.Row="2" Grid.Column="3" Text="Font:"/>
+                                                            <xctk:ColorPicker Margin="10,0,0,0" Width="100" Grid.Row="2" Grid.Column="4" Name="clrpckrTimerText" SelectedColor="{Binding TimerFontColor}"/>
+                                                            <TextBlock Margin="10,0,0,0" Grid.Row="2" Grid.Column="5" Text="Timer Bar:"/>
+                                                            <xctk:ColorPicker Margin="10,0,0,0" Width="100" Grid.Row="2" Grid.Column="6" Name="clrpckrTimerBar" SelectedColor="{Binding TimerBarColor}"/>
+                                                        </Grid>
+                                                    </StackPanel>
+                                                </GroupBox>
+                                                <StackPanel>
+                                                    <GroupBox Margin="5,10,0,0" Name="groupOverrides" Header="Character Overrides">
+                                                        <StackPanel>
+                                                            <ItemsControl ItemsSource="{Binding CharacterOverrides}">
+                                                                <ItemsControl.ItemTemplate>
+                                                                    <DataTemplate>
+                                                                        <Expander Header="{Binding ProfileName}" Style="{StaticResource profileexpander}">
+                                                                            <StackPanel>
+                                                                                <Expander  Name="expanderText" Header="Text Overrides" Style="{StaticResource overrideexpander}" Expanded="ExpanderText_Expanded">
+                                                                                    <StackPanel>
+                                                                                        <Grid>
+                                                                                            <Grid.RowDefinitions>
+                                                                                                <RowDefinition Height="Auto" />
+                                                                                                <RowDefinition Height="Auto"/>
+                                                                                                <RowDefinition Height="Auto"/>
+                                                                                                <RowDefinition Height="Auto"/>
+                                                                                                <RowDefinition Height="Auto"/>
+                                                                                                <RowDefinition Height="Auto"/>
+                                                                                                <RowDefinition Height="Auto"/>
+                                                                                            </Grid.RowDefinitions>
+                                                                                            <Grid.ColumnDefinitions>
+                                                                                                <ColumnDefinition Width="75"/>
+                                                                                                <ColumnDefinition Width="Auto"/>
+                                                                                                <ColumnDefinition Width="Auto"/>
+                                                                                                <ColumnDefinition Width="Auto"/>
+                                                                                            </Grid.ColumnDefinitions>
+                                                                                            <TextBlock HorizontalAlignment="Right" Grid.Row="0" Grid.Column="0" Margin="10,0,0,0" Text="Overlay"/>
+                                                                                            <RadioButton Grid.Row="0" Grid.Column="1" GroupName="textoverlay" Margin="10,0,0,0" Content="Use Category Overlay" />
+                                                                                            <RadioButton Grid.Row="1" Grid.Column="1" GroupName="textoverlay" VerticalAlignment="Center" Margin="10,0,0,0" Content="Use This Overlay:"/>
+                                                                                            <ComboBox Grid.Row="1" Grid.Column="2" VerticalAlignment="Center" Width="100" Name="comboOverrideTextOverlay" />
+                                                                                            <TextBlock Grid.Row="2" Grid.Column="0" Text=""/>
+                                                                                            <TextBlock HorizontalAlignment="Right" Grid.Row="3" Grid.Column="0" Margin="10,0,0,0" VerticalAlignment="Center" Text="Colors"/>
+                                                                                            <RadioButton Grid.Row="3" Grid.Column="1" GroupName="textcolors" Margin="10,0,0,0" Content="Use Category Colors"/>
+                                                                                            <RadioButton Grid.Row="4" Grid.Column="1" GroupName="textcolors" Margin="10,0,0,0" Content="Use Character Colors"/>
+                                                                                            <RadioButton Grid.Row="5" Grid.Column="1" GroupName="textcolors" Margin="10,0,0,0" Content="Use These Colors:"/>
+                                                                                            <TextBlock HorizontalAlignment="Right" Grid.Row="5" Grid.Column="2" Margin="0,0,10,0" Text="Font:"/>
+                                                                                            <xctk:ColorPicker  Width="100" Grid.Row="5" Grid.Column="3" Name="clrpckrTextOverride" SelectedColor="{Binding TextColorFont}"/>
+                                                                                        </Grid>
+                                                                                    </StackPanel>
+                                                                                </Expander>
+                                                                                <Expander Name="expanderTimer" Header="Timer Overrides" Style="{StaticResource overrideexpander}">
+                                                                                    <StackPanel>
+                                                                                        <Grid>
+                                                                                            <Grid.RowDefinitions>
+                                                                                                <RowDefinition Height="Auto" />
+                                                                                                <RowDefinition Height="Auto"/>
+                                                                                                <RowDefinition Height="Auto"/>
+                                                                                                <RowDefinition Height="Auto"/>
+                                                                                                <RowDefinition Height="Auto"/>
+                                                                                                <RowDefinition Height="Auto"/>
+                                                                                            </Grid.RowDefinitions>
+                                                                                            <Grid.ColumnDefinitions>
+                                                                                                <ColumnDefinition Width="75"/>
+                                                                                                <ColumnDefinition Width="Auto"/>
+                                                                                                <ColumnDefinition Width="Auto"/>
+                                                                                                <ColumnDefinition Width="Auto"/>
+                                                                                                <ColumnDefinition Width="Auto"/>
+                                                                                                <ColumnDefinition Width="Auto"/>
+                                                                                                <ColumnDefinition Width="Auto"/>
+                                                                                            </Grid.ColumnDefinitions>
+                                                                                            <TextBlock HorizontalAlignment="Right" Grid.Row="0" Grid.Column="0" Margin="10,0,0,0" VerticalAlignment="Center" Text="Overlay"/>
+                                                                                            <RadioButton Grid.Row="0" Grid.Column="1" GroupName="timeroverlay" Margin="10,0,0,0" Content="Use Category Overlay"/>
+                                                                                            <RadioButton Grid.Row="1" Grid.Column="1" GroupName="timeroverlay" VerticalAlignment="Center" Margin="10,0,0,0" Content="Use This Overlay"/>
+                                                                                            <ComboBox ItemsSource="{Binding AvailableTimerOverlays}" Grid.Row="1" Grid.Column="2" Margin="0,0,0,0" Width="100" Name="comboTimerOverlayOverride"/>
+                                                                                            <TextBlock Grid.Row="2" Grid.Column="0" Text=""/>
+                                                                                            <TextBlock HorizontalAlignment="Right" Grid.Row="3" Grid.Column="0" Margin="10,0,0,0" VerticalAlignment="Center" Text="Colors"/>
+                                                                                            <RadioButton Grid.Row="3" Grid.Column="1" GroupName="timercolors" Margin="10,0,0,0" Content="Use Category Colors"/>
+                                                                                            <RadioButton Grid.Row="4" Grid.Column="1" GroupName="timercolors" Margin="10,0,0,0" Content="Use Character Colors"/>
+                                                                                            <RadioButton Grid.Row="5" Grid.Column="1" GroupName="timercolors" Margin="10,0,0,0" Content="Use These Colors:"/>
+                                                                                            <TextBlock HorizontalAlignment="Right" Grid.Row="5" Grid.Column="2" Margin="0,0,10,0" Text="Font:"/>
+                                                                                            <xctk:ColorPicker Grid.Row="5" Grid.Column="3" Width="100" Margin="0,0,0,0" Name="clrpckrTimerFontOverride" SelectedColor="{Binding TimerColorFont}"/>
+                                                                                            <TextBlock Grid.Row="5" Grid.Column="4" Margin="10,0,0,0" Text="Timer Bar:"/>
+                                                                                            <xctk:ColorPicker Grid.Row="5" Grid.Column="5" Width="100" Margin="10,0,0,0" Name="clrpckrTimerBarOverride" SelectedColor="{Binding TimerColorBar}"/>
+                                                                                        </Grid>
+                                                                                    </StackPanel>
+                                                                                </Expander>
+                                                                            </StackPanel>
+                                                                        </Expander>
+                                                                    </DataTemplate>
+                                                                </ItemsControl.ItemTemplate>
+                                                            </ItemsControl>
+                                                        </StackPanel>
+                                                    </GroupBox>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </TabControl.ContentTemplate>
+                                </TabControl>
+                            </ScrollViewer>
+                        </xcad:LayoutDocument>
                     </xcad:LayoutDocumentPane>
                 </xcad:LayoutPanel>
             </xcad:LayoutRoot>

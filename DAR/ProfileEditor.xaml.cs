@@ -141,10 +141,22 @@ namespace DAR
                 else
                 {
                     col.Insert(player);
+                    //If new Profile, update categories
+                    CharacterOverride characterOverride = new CharacterOverride();
+                    characterOverride.ProfileName = player.ProfileName;
+                    var colcategories = db.GetCollection < Category >("categories");
+                    foreach (var category in colcategories.FindAll())
+                    {
+                        category.CharacterOverrides.Add(characterOverride);
+                        colcategories.Update(category);
+                    }
                 }
+
             }
+
             var main = App.Current.MainWindow as MainWindow;
             main.UpdateListView();
+            main.Refresh_Categories();
             this.Close();
         }
 

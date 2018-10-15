@@ -35,7 +35,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>Tonev-Windows-7-Windows-7-headphone.ico</ApplicationIcon>
+    <ApplicationIcon>Images\Tonev-Windows-7-Windows-7-headphone.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="LiteDB">
@@ -88,6 +88,8 @@
     </ApplicationDefinition>
     <Compile Include="Audio.cs" />
     <Compile Include="Category.cs" />
+    <Compile Include="CategoryWrapper.cs" />
+    <Compile Include="CharacterOverride.cs" />
     <Compile Include="OverlayText.cs" />
     <Compile Include="OverlayTextWindow.xaml.cs">
       <DependentUpon>OverlayTextWindow.xaml</DependentUpon>
@@ -119,6 +121,7 @@
     <Compile Include="TreeViewModel.cs" />
     <Compile Include="Trigger.cs" />
     <Compile Include="TriggerGroup.cs" />
+    <Compile Include="UIHelper.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -192,57 +195,57 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Tonev-Windows-7-Windows-7-headphone.ico" />
+    <Resource Include="Images\Tonev-Windows-7-Windows-7-headphone.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Oxygen-Icons.org-Oxygen-Actions-edit-find-user.ico" />
-    <Resource Include="Oxygen-Icons.org-Oxygen-Actions-list-add-user.ico" />
-    <Resource Include="Oxygen-Icons.org-Oxygen-Actions-list-remove-user.ico" />
+    <Resource Include="Images\Oxygen-Icons.org-Oxygen-Actions-edit-find-user.ico" />
+    <Resource Include="Images\Oxygen-Icons.org-Oxygen-Actions-list-add-user.ico" />
+    <Resource Include="Images\Oxygen-Icons.org-Oxygen-Actions-list-remove-user.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Oxygen-Icons.org-Oxygen-Actions-document-close.ico" />
-    <Resource Include="Oxygen-Icons.org-Oxygen-Actions-document-edit.ico" />
-    <Resource Include="Oxygen-Icons.org-Oxygen-Actions-document-new.ico" />
+    <Resource Include="Images\Oxygen-Icons.org-Oxygen-Actions-document-close.ico" />
+    <Resource Include="Images\Oxygen-Icons.org-Oxygen-Actions-document-edit.ico" />
+    <Resource Include="Images\Oxygen-Icons.org-Oxygen-Actions-document-new.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Oxygen-Icons.org-Oxygen-Actions-tab-close-other.ico" />
-    <Resource Include="Oxygen-Icons.org-Oxygen-Actions-tab-new-background.ico" />
+    <Resource Include="Images\Oxygen-Icons.org-Oxygen-Actions-tab-close-other.ico" />
+    <Resource Include="Images\Oxygen-Icons.org-Oxygen-Actions-tab-new-background.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Oxygen-Icons.org-Oxygen-Actions-user-properties.ico" />
+    <Resource Include="Images\Oxygen-Icons.org-Oxygen-Actions-user-properties.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Oxygen-Icons.org-Oxygen-Actions-draw-freehand.ico" />
+    <Resource Include="Images\Oxygen-Icons.org-Oxygen-Actions-draw-freehand.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Oxygen-Icons.org-Oxygen-Actions-edit-find.ico" />
-    <Resource Include="Oxygen-Icons.org-Oxygen-Apps-konversation.ico" />
-    <Resource Include="Oxygen-Icons.org-Oxygen-Apps-utilities-terminal.ico" />
+    <Resource Include="Images\Oxygen-Icons.org-Oxygen-Actions-edit-find.ico" />
+    <Resource Include="Images\Oxygen-Icons.org-Oxygen-Apps-konversation.ico" />
+    <Resource Include="Images\Oxygen-Icons.org-Oxygen-Apps-utilities-terminal.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Gakuseisean-Aire-Download-Folder.ico" />
-    <Resource Include="Gakuseisean-Aire-Upload-Folder.ico" />
-    <Resource Include="Itzikgur-My-Seven-Books-1.ico" />
+    <Resource Include="Images\Gakuseisean-Aire-Download-Folder.ico" />
+    <Resource Include="Images\Gakuseisean-Aire-Upload-Folder.ico" />
+    <Resource Include="Images\Itzikgur-My-Seven-Books-1.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Oxygen-Icons.org-Oxygen-Apps-preferences-system-network-sharing.ico" />
+    <Resource Include="Images\Oxygen-Icons.org-Oxygen-Apps-preferences-system-network-sharing.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Google-Noto-Emoji-Travel-Places-42608-stopwatch.ico" />
+    <Resource Include="Images\Google-Noto-Emoji-Travel-Places-42608-stopwatch.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Oxygen-Icons.org-Oxygen-Actions-dialog-ok-apply.ico" />
-    <Resource Include="Oxygen-Icons.org-Oxygen-Actions-svn-commit.ico" />
-    <Resource Include="Oxygen-Icons.org-Oxygen-Actions-svn-update.ico" />
+    <Resource Include="Images\Oxygen-Icons.org-Oxygen-Actions-dialog-ok-apply.ico" />
+    <Resource Include="Images\Oxygen-Icons.org-Oxygen-Actions-svn-commit.ico" />
+    <Resource Include="Images\Oxygen-Icons.org-Oxygen-Actions-svn-update.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Oxygen-Icons.org-Oxygen-Actions-arrow-right.ico" />
+    <Resource Include="Images\Oxygen-Icons.org-Oxygen-Actions-arrow-right.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Knob-Remove-icon.png" />
-    <Resource Include="Knob-Remove-Red-icon.png" />
+    <Resource Include="Images\Knob-Remove-icon.png" />
+    <Resource Include="Images\Knob-Remove-Red-icon.png" />
     <Content Include="LiteDB.dll" />
-    <Resource Include="Oxygen-Icons.org-Oxygen-Status-image-missing.ico" />
+    <Resource Include="Images\Oxygen-Icons.org-Oxygen-Status-image-missing.ico" />
     <Content Include="Xceed.Wpf.AvalonDock.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -48,11 +48,11 @@ namespace DAR
             String rString = "";
             if((Boolean)value)
             {
-                rString = "Knob-Remove-icon.png";
+                rString = "Images/Knob-Remove-icon.png";
             }
             else
             {
-                rString = "Knob-Remove-Red-icon.png";
+                rString = "Images/Knob-Remove-Red-icon.png";
             }
             return rString;
         }
@@ -73,7 +73,7 @@ namespace DAR
             }
             else
             {
-                rString = "Oxygen-Icons.org-Oxygen-Status-image-missing.ico";
+                rString = "Images/Oxygen-Icons.org-Oxygen-Status-image-missing.ico";
             }
             return rString;
         }
@@ -89,12 +89,16 @@ namespace DAR
         #region Properties
         private TreeViewModel tv;
         private List<TreeViewModel> treeView;
-        private ObservableCollection<CharacterProfile> characterProfiles = new ObservableCollection<CharacterProfile>();
+        public ObservableCollection<CharacterProfile> characterProfiles = new ObservableCollection<CharacterProfile>();
         private String currentSelection;
         private Dictionary<String, FileSystemWatcher> watchers = new Dictionary<String, FileSystemWatcher>();
         private Dictionary<Trigger,ArrayList> activeTriggers = new Dictionary<Trigger,ArrayList>();
         private ObservableCollection<OverlayTextWindow> textWindows = new ObservableCollection<OverlayTextWindow>();
         private ObservableCollection<OverlayTimerWindow> timerWindows = new ObservableCollection<OverlayTimerWindow>();
+        private ObservableCollection<Category> categorycollection = new ObservableCollection<Category>();
+        private ObservableCollection<OverlayTimer> availoverlaytimers = new ObservableCollection<OverlayTimer>();
+        private ObservableCollection<OverlayText> availoverlaytexts = new ObservableCollection<OverlayText>();
+        private CategoryWrapper categoryWrapper = new CategoryWrapper();
         #endregion
         public MainWindow()
         {
@@ -130,11 +134,21 @@ namespace DAR
             {
                 LiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");
                 LiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
+                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
                 LiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
                 Trigger testtrigger = triggers.FindById(14);
 
+                IEnumerable<Category> availcategories = categoriescol.FindAll();
+                if(availcategories.Count<Category>() == 0)
+                {
+                    Category defaultcategory = new Category();
+                    defaultcategory.DefaultCategory = true;
+                    categoriescol.Insert(defaultcategory);
+                    availcategories = categoriescol.FindAll();
+                }
                 foreach (var overlay in overlaytexts.FindAll())
                 {
+                    availoverlaytexts.Add(overlay);
                     OverlayTextWindow newWindow = new OverlayTextWindow();
                     newWindow.SetProperties(overlay);
                     newWindow.ShowInTaskbar = false;
@@ -144,14 +158,18 @@ namespace DAR
                 }
                 foreach (var overlay in overlaytimers.FindAll())
                 {
+                    availoverlaytimers.Add(overlay);
                     OverlayTimerWindow newWindow = new OverlayTimerWindow();
                     newWindow.SetProperties(overlay);
                     newWindow.ShowInTaskbar = false;
                     timerWindows.Add(newWindow);
                     //newWindow.Show();
                 }
+                Refresh_Categories();
+                tabcontrolCategory.DataContext = categoryWrapper;
             }
             //Start Monitoring Enabled Profiles
+            
             foreach (CharacterProfile character in characterProfiles)
             {
                 RibbonSplitMenuItem characterStopAlerts = new RibbonSplitMenuItem();
@@ -193,6 +211,7 @@ namespace DAR
         }
         public void OverlayTimer_Refresh()
         {
+            categoryWrapper.OverlayTimers.Clear();
             for (int i = ribbongroupTimerOverlays.Items.Count; i > 1; i--)
             {
                 ribbongroupTimerOverlays.Items.RemoveAt(i - 1);
@@ -202,9 +221,10 @@ namespace DAR
                 LiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");
                 foreach (var overlay in overlaytimers.FindAll())
                 {
+                    categoryWrapper.OverlayTimers.Add(overlay);
                     RibbonSplitButton overlaytimer = new RibbonSplitButton();
                     overlaytimer.Label = overlay.Name;
-                    overlaytimer.LargeImageSource = new BitmapImage(new Uri(@"Google-Noto-Emoji-Travel-Places-42608-stopwatch.ico", UriKind.RelativeOrAbsolute));
+                    overlaytimer.LargeImageSource = new BitmapImage(new Uri(@"Images/Google-Noto-Emoji-Travel-Places-42608-stopwatch.ico", UriKind.RelativeOrAbsolute));
                     overlaytimer.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("Gray"));
                     RibbonSplitMenuItem timerProperties = new RibbonSplitMenuItem();
                     timerProperties.Name = overlay.Name;
@@ -219,9 +239,11 @@ namespace DAR
                     ribbongroupTimerOverlays.Items.Add(overlaytimer);
                 }
             }
+            Refresh_Categories();
         }
         public void OverlayText_Refresh()
         {
+            categoryWrapper.OverlayTexts.Clear();
             for(int i = ribbongroupTextOverlays.Items.Count; i > 1 ; i--)
             {
                 ribbongroupTextOverlays.Items.RemoveAt(i-1);
@@ -231,9 +253,10 @@ namespace DAR
                 LiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
                 foreach (var overlay in overlaytexts.FindAll())
                 {
+                    categoryWrapper.OverlayTexts.Add(overlay);
                     RibbonSplitButton overlaytext = new RibbonSplitButton();
                     overlaytext.Label = overlay.Name;
-                    overlaytext.LargeImageSource = new BitmapImage(new Uri(@"Oxygen-Icons.org-Oxygen-Actions-document-new.ico", UriKind.RelativeOrAbsolute));
+                    overlaytext.LargeImageSource = new BitmapImage(new Uri(@"Images/Oxygen-Icons.org-Oxygen-Actions-document-new.ico", UriKind.RelativeOrAbsolute));
                     overlaytext.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("Gray"));
                     RibbonSplitMenuItem textProperties = new RibbonSplitMenuItem();
                     textProperties.Name = overlay.Name;
@@ -248,6 +271,7 @@ namespace DAR
                     ribbongroupTextOverlays.Items.Add(overlaytext);
                 }
             }
+            Refresh_Categories();
         }
         #endregion
         #region Character Profiles
@@ -832,10 +856,61 @@ namespace DAR
         private void NotifySaveOverlay_OverlayTextEditor(object sender, RoutedEventArgs e)
         {
             OverlayText_Refresh();
-        }
-
+        }        
         #endregion
 
+        public void Refresh_Categories()
+        {
+            categoryWrapper.CategoryList.Clear();
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+                IEnumerable<Category> availcategories = categoriescol.FindAll();
+                foreach (var category in availcategories)
+                {
+                    categoryWrapper.CategoryList.Add(category);
+                    category.AvailableTextOverlays = availoverlaytexts;
+                    category.AvailableTimerOverlays = availoverlaytimers;
+                    categorycollection.Add(category);
+                }
+            }
+            
+        }
+        private void RibbonMain_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if(ribbonMain.SelectedIndex == 3)
+            {
+                categoriesDocument.IsSelected = true;
+            }
+            else
+            {
+                availabletriggers.IsSelected = true;
+            }
+        }
 
+        private void Categories_IsSelectedChanged(object sender, EventArgs e)
+        {
+            if(categoriesDocument.IsSelected == true)
+            {
+                ribbonMain.SelectedIndex = 3;
+            }
+        }
+
+        private void Availabletriggers_IsSelectedChanged(object sender, EventArgs e)
+        {
+            if(availabletriggers.IsSelected == true)
+            {
+                ribbonMain.SelectedIndex = 0;
+            }
+        }
+
+        private void TabcontrolCategory_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+        }
+
+        private void ExpanderText_Expanded(object sender, RoutedEventArgs e)
+        {
+           
+        }
     }
 }

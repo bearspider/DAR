@@ -109,6 +109,7 @@ namespace DAR
             }
             var main = App.Current.MainWindow as MainWindow;
             main.OverlayTimer_Refresh();
+            //Deploy overlay
             this.Close();
         }
         private void ClrPckerFaded_SelectedColorChanged(object sender, RoutedPropertyChangedEventArgs<Color?> e)

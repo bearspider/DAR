@@ -148,25 +148,22 @@ namespace DAR
                 }
                 foreach (var overlay in overlaytexts.FindAll())
                 {
-                    availoverlaytexts.Add(overlay);
                     OverlayTextWindow newWindow = new OverlayTextWindow();
                     newWindow.SetProperties(overlay);
                     newWindow.ShowInTaskbar = false;
                     textWindows.Add(newWindow);
-                    newWindow.AddTrigger(testtrigger);
-                    newWindow.Show();
+                    //newWindow.AddTrigger(testtrigger);
+                    //newWindow.Show();
                 }
                 foreach (var overlay in overlaytimers.FindAll())
                 {
-                    availoverlaytimers.Add(overlay);
                     OverlayTimerWindow newWindow = new OverlayTimerWindow();
                     newWindow.SetProperties(overlay);
                     newWindow.ShowInTaskbar = false;
                     timerWindows.Add(newWindow);
                     //newWindow.Show();
                 }
-                Refresh_Categories();
-                tabcontrolCategory.DataContext = categoryWrapper;
+                Refresh_Categories();                
             }
             //Start Monitoring Enabled Profiles
             
@@ -212,6 +209,7 @@ namespace DAR
         public void OverlayTimer_Refresh()
         {
             categoryWrapper.OverlayTimers.Clear();
+            availoverlaytimers.Clear();
             for (int i = ribbongroupTimerOverlays.Items.Count; i > 1; i--)
             {
                 ribbongroupTimerOverlays.Items.RemoveAt(i - 1);
@@ -222,6 +220,7 @@ namespace DAR
                 foreach (var overlay in overlaytimers.FindAll())
                 {
                     categoryWrapper.OverlayTimers.Add(overlay);
+                    availoverlaytimers.Add(overlay);
                     RibbonSplitButton overlaytimer = new RibbonSplitButton();
                     overlaytimer.Label = overlay.Name;
                     overlaytimer.LargeImageSource = new BitmapImage(new Uri(@"Images/Google-Noto-Emoji-Travel-Places-42608-stopwatch.ico", UriKind.RelativeOrAbsolute));
@@ -241,9 +240,11 @@ namespace DAR
             }
             Refresh_Categories();
         }
+
         public void OverlayText_Refresh()
         {
             categoryWrapper.OverlayTexts.Clear();
+            availoverlaytexts.Clear();
             for(int i = ribbongroupTextOverlays.Items.Count; i > 1 ; i--)
             {
                 ribbongroupTextOverlays.Items.RemoveAt(i-1);
@@ -254,6 +255,7 @@ namespace DAR
                 foreach (var overlay in overlaytexts.FindAll())
                 {
                     categoryWrapper.OverlayTexts.Add(overlay);
+                    availoverlaytexts.Add(overlay);
                     RibbonSplitButton overlaytext = new RibbonSplitButton();
                     overlaytext.Label = overlay.Name;
                     overlaytext.LargeImageSource = new BitmapImage(new Uri(@"Images/Oxygen-Icons.org-Oxygen-Actions-document-new.ico", UriKind.RelativeOrAbsolute));
@@ -292,12 +294,30 @@ namespace DAR
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 var col = db.GetCollection<CharacterProfile>("profiles");
+                var triggers = db.GetCollection<Trigger>("triggers");
+                var categories = db.GetCollection<Category>("categories");
                 String selectedCharacter = ((CharacterProfile)listviewCharacters.SelectedItem).ProfileName;
+                int profileid = ((CharacterProfile)listviewCharacters.SelectedItem).Id;
                 MessageBoxResult result = MessageBox.Show($"Are you sure you want to Delete {selectedCharacter}", "Confirmation", MessageBoxButton.YesNo);
                 if (result == MessageBoxResult.Yes)
                 {
                     var dbdelete = col.Delete(Query.EQ("ProfileName", selectedCharacter));
                     currentSelection = null;
+                    foreach(var trigger in triggers.FindAll())
+                    {
+                        if(trigger.Profiles.Contains(profileid))
+                        {
+                            trigger.Profiles.Remove(profileid);
+                            triggers.Update(trigger);
+                        }
+                    }
+                    foreach(var category in categories.FindAll())
+                    {
+                        var profile = from p in category.CharacterOverrides where p.ProfileName == selectedCharacter select p;
+                        var collection = new ObservableCollection<CharacterOverride>(profile);
+                        category.CharacterOverrides.Remove(collection[0]);                                
+                        categories.Update(category);
+                    }
                     UpdateView();
                 }
             }
@@ -669,6 +689,7 @@ namespace DAR
         {
             UpdateListView();
             UpdateTriggerView();
+            Refresh_Categories();
         }
         public void UpdateTriggerView()
         {                
@@ -865,16 +886,17 @@ namespace DAR
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                IEnumerable<Category> availcategories = categoriescol.FindAll();
-                foreach (var category in availcategories)
+                foreach (var category in categoriescol.FindAll())
                 {
                     categoryWrapper.CategoryList.Add(category);
                     category.AvailableTextOverlays = availoverlaytexts;
                     category.AvailableTimerOverlays = availoverlaytimers;
+                    categoriescol.Update(category);
                     categorycollection.Add(category);
                 }
             }
-            
+            tabcontrolCategory.DataContext = categoryWrapper;
+            tabcontrolCategory.SelectedIndex = 0;
         }
         private void RibbonMain_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {

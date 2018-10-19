@@ -104,6 +104,7 @@ namespace DAR
             NotifySaveOverlay(textDemo.Text);
             var main = App.Current.MainWindow as MainWindow;
             main.OverlayText_Refresh();
+            //Deploy Overlay
             this.Close();
         }
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)

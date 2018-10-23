@@ -9,14 +9,16 @@ namespace DAR
 {
     public class CategoryWrapper
     {
-        public ObservableCollection<Category> CategoryList { get; set; }
+        public Category CategoryItem { get; set; }
         public ObservableCollection<OverlayText> OverlayTexts { get; set; }
         public ObservableCollection<OverlayTimer> OverlayTimers {get; set; }
+        public CharacterOverride SelectedOverride { get; set; }
         public CategoryWrapper()
         {
-            CategoryList = new ObservableCollection<Category>();
+            CategoryItem = new Category();
             OverlayTexts = new ObservableCollection<OverlayText>();
             OverlayTimers = new ObservableCollection<OverlayTimer>();
+            SelectedOverride = new CharacterOverride();
         }
     }
 }

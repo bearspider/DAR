@@ -21,6 +21,10 @@ namespace DAR
             TimerOverlay = "Default";
             TimerColorFont = "Aquamarine";
             TimerColorBar = "Blue";
+            TextOverlayId = 0;
+            TextColorId = 0;
+            TimerOverlayId = 0;
+            TimerColorId = 0;
         }
         public string ProfileName { get; set; }
         public string TextOverlaySelection { get; set; }
@@ -32,6 +36,9 @@ namespace DAR
         public string TimerOverlay { get; set; }
         public string TimerColorFont { get; set; }
         public string TimerColorBar { get; set; }
-
+        public int TextOverlayId{ get; set; }
+        public int TextColorId { get; set; }
+        public int TimerOverlayId { get; set; }
+        public int TimerColorId { get; set; }
     }
 }

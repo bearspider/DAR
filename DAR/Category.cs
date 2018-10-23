@@ -20,6 +20,8 @@ namespace DAR
         public String timerFontColor;
         public String timerBarColor;
         public Boolean defaultCategory;
+        public Boolean textColors;
+        public Boolean timerColors;
         public ObservableCollection<CharacterOverride> characteroverrides;
         public ObservableCollection<OverlayText> availabletextoverlays;
         public ObservableCollection<OverlayTimer> availabletimeroverlays;
@@ -33,6 +35,8 @@ namespace DAR
             TimerFontColor = "Gray";
             TimerBarColor = "Blue";
             DefaultCategory = false;
+            textColors = false;
+            timerColors = false;
             CharacterOverrides = new ObservableCollection<CharacterOverride>();
             AvailableTextOverlays = new ObservableCollection<OverlayText>();
             AvailableTimerOverlays = new ObservableCollection<OverlayTimer>();

@@ -27,6 +27,7 @@ using System.Windows.Shapes;
 using Xceed.Wpf.AvalonDock;
 using System.Media;
 using Microsoft.Windows.Controls.Ribbon;
+using System.Windows.Controls.Primitives;
 
 namespace DAR
 {
@@ -46,7 +47,7 @@ namespace DAR
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
             String rString = "";
-            if((Boolean)value)
+            if ((Boolean)value)
             {
                 rString = "Images/Knob-Remove-icon.png";
             }
@@ -83,6 +84,48 @@ namespace DAR
             throw new NotImplementedException();
         }
     }
+    public class BorderConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            String rString = "";
+            if ((Boolean)value)
+            {
+                rString = "";
+            }
+            else
+            {
+                rString = "Red";
+            }
+            return rString;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+    public class RadioOverride : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            String rString = "";
+            if ((Boolean)value)
+            {
+                rString = "";
+            }
+            else
+            {
+                rString = "";
+            }
+            return rString;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
     #endregion
     public partial class MainWindow : Window
     {
@@ -91,14 +134,15 @@ namespace DAR
         private List<TreeViewModel> treeView;
         public ObservableCollection<CharacterProfile> characterProfiles = new ObservableCollection<CharacterProfile>();
         private String currentSelection;
+        private CharacterProfile currentprofile;
         private Dictionary<String, FileSystemWatcher> watchers = new Dictionary<String, FileSystemWatcher>();
-        private Dictionary<Trigger,ArrayList> activeTriggers = new Dictionary<Trigger,ArrayList>();
+        private Dictionary<Trigger, ArrayList> activeTriggers = new Dictionary<Trigger, ArrayList>();
         private ObservableCollection<OverlayTextWindow> textWindows = new ObservableCollection<OverlayTextWindow>();
         private ObservableCollection<OverlayTimerWindow> timerWindows = new ObservableCollection<OverlayTimerWindow>();
         private ObservableCollection<Category> categorycollection = new ObservableCollection<Category>();
         private ObservableCollection<OverlayTimer> availoverlaytimers = new ObservableCollection<OverlayTimer>();
         private ObservableCollection<OverlayText> availoverlaytexts = new ObservableCollection<OverlayText>();
-        private CategoryWrapper categoryWrapper = new CategoryWrapper();
+        private ObservableCollection<CategoryWrapper> CategoryTab = new ObservableCollection<CategoryWrapper>();
         #endregion
         public MainWindow()
         {
@@ -111,9 +155,9 @@ namespace DAR
             }
             //Prep and/or load database
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {                
+            {
                 LiteCollection<CharacterProfile> dbcharacterProfiles = db.GetCollection<CharacterProfile>("profiles");
-                LiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");                
+                LiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");
                 LiteCollection<TriggerGroup> triggerGroups = db.GetCollection<TriggerGroup>("triggergroups");
                 LiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
                 LiteCollection<Category> categories = db.GetCollection<Category>("categories");
@@ -139,7 +183,7 @@ namespace DAR
                 Trigger testtrigger = triggers.FindById(14);
 
                 IEnumerable<Category> availcategories = categoriescol.FindAll();
-                if(availcategories.Count<Category>() == 0)
+                if (availcategories.Count<Category>() == 0)
                 {
                     Category defaultcategory = new Category();
                     defaultcategory.DefaultCategory = true;
@@ -163,10 +207,8 @@ namespace DAR
                     timerWindows.Add(newWindow);
                     //newWindow.Show();
                 }
-                Refresh_Categories();                
             }
             //Start Monitoring Enabled Profiles
-            
             foreach (CharacterProfile character in characterProfiles)
             {
                 RibbonSplitMenuItem characterStopAlerts = new RibbonSplitMenuItem();
@@ -175,8 +217,8 @@ namespace DAR
                 characterResetCounters.Header = character.Name;
                 rbnStopAlerts.Items.Add(characterStopAlerts);
                 rbnResetCounters.Items.Add(characterResetCounters);
-                if(File.Exists(character.LogFile) && character.Monitor)
-                {                    
+                if (File.Exists(character.LogFile) && character.Monitor)
+                {
                     MonitorCharacter(character);
                 }
                 else
@@ -206,75 +248,6 @@ namespace DAR
             }
             Environment.Exit(Environment.ExitCode);
         }
-        public void OverlayTimer_Refresh()
-        {
-            categoryWrapper.OverlayTimers.Clear();
-            availoverlaytimers.Clear();
-            for (int i = ribbongroupTimerOverlays.Items.Count; i > 1; i--)
-            {
-                ribbongroupTimerOverlays.Items.RemoveAt(i - 1);
-            }
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");
-                foreach (var overlay in overlaytimers.FindAll())
-                {
-                    categoryWrapper.OverlayTimers.Add(overlay);
-                    availoverlaytimers.Add(overlay);
-                    RibbonSplitButton overlaytimer = new RibbonSplitButton();
-                    overlaytimer.Label = overlay.Name;
-                    overlaytimer.LargeImageSource = new BitmapImage(new Uri(@"Images/Google-Noto-Emoji-Travel-Places-42608-stopwatch.ico", UriKind.RelativeOrAbsolute));
-                    overlaytimer.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("Gray"));
-                    RibbonSplitMenuItem timerProperties = new RibbonSplitMenuItem();
-                    timerProperties.Name = overlay.Name;
-                    timerProperties.Header = "Properties";
-                    timerProperties.AddHandler(Button.ClickEvent, new RoutedEventHandler(TimerOverlayProperties_Click));
-                    RibbonSplitMenuItem timerDelete = new RibbonSplitMenuItem();
-                    timerDelete.Header = "Delete";
-                    timerDelete.Name = overlay.Name;
-                    timerDelete.AddHandler(Button.ClickEvent, new RoutedEventHandler(TimerOverlayDelete_Click));
-                    overlaytimer.Items.Add(timerProperties);
-                    overlaytimer.Items.Add(timerDelete);
-                    ribbongroupTimerOverlays.Items.Add(overlaytimer);
-                }
-            }
-            Refresh_Categories();
-        }
-
-        public void OverlayText_Refresh()
-        {
-            categoryWrapper.OverlayTexts.Clear();
-            availoverlaytexts.Clear();
-            for(int i = ribbongroupTextOverlays.Items.Count; i > 1 ; i--)
-            {
-                ribbongroupTextOverlays.Items.RemoveAt(i-1);
-            }
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
-                foreach (var overlay in overlaytexts.FindAll())
-                {
-                    categoryWrapper.OverlayTexts.Add(overlay);
-                    availoverlaytexts.Add(overlay);
-                    RibbonSplitButton overlaytext = new RibbonSplitButton();
-                    overlaytext.Label = overlay.Name;
-                    overlaytext.LargeImageSource = new BitmapImage(new Uri(@"Images/Oxygen-Icons.org-Oxygen-Actions-document-new.ico", UriKind.RelativeOrAbsolute));
-                    overlaytext.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("Gray"));
-                    RibbonSplitMenuItem textProperties = new RibbonSplitMenuItem();
-                    textProperties.Name = overlay.Name;
-                    textProperties.Header = "Properties";
-                    textProperties.AddHandler(Button.ClickEvent, new RoutedEventHandler(TextOverlayProperties_Click));
-                    RibbonSplitMenuItem textDelete = new RibbonSplitMenuItem();
-                    textDelete.Header = "Delete";
-                    textDelete.Name = overlay.Name;
-                    textDelete.AddHandler(Button.ClickEvent, new RoutedEventHandler(TextOverlayDelete_Click));
-                    overlaytext.Items.Add(textProperties);
-                    overlaytext.Items.Add(textDelete);
-                    ribbongroupTextOverlays.Items.Add(overlaytext);
-                }
-            }
-            Refresh_Categories();
-        }
         #endregion
         #region Character Profiles
         private void RibbonButtonEdit_Click(object sender, RoutedEventArgs e)
@@ -303,19 +276,19 @@ namespace DAR
                 {
                     var dbdelete = col.Delete(Query.EQ("ProfileName", selectedCharacter));
                     currentSelection = null;
-                    foreach(var trigger in triggers.FindAll())
+                    foreach (var trigger in triggers.FindAll())
                     {
-                        if(trigger.Profiles.Contains(profileid))
+                        if (trigger.Profiles.Contains(profileid))
                         {
                             trigger.Profiles.Remove(profileid);
                             triggers.Update(trigger);
                         }
                     }
-                    foreach(var category in categories.FindAll())
+                    foreach (var category in categories.FindAll())
                     {
                         var profile = from p in category.CharacterOverrides where p.ProfileName == selectedCharacter select p;
                         var collection = new ObservableCollection<CharacterOverride>(profile);
-                        category.CharacterOverrides.Remove(collection[0]);                                
+                        category.CharacterOverrides.Remove(collection[0]);
                         categories.Update(category);
                     }
                     UpdateView();
@@ -336,8 +309,10 @@ namespace DAR
             if (listviewCharacters.Items.Count > 0)
             {
                 CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
+                currentprofile = selectedCharacter;
                 currentSelection = selectedCharacter.ProfileName;
                 UpdateTriggerView();
+                Refresh_Categories();
             }
         }
         private void ListviewCharacters_MouseDoubleClick(object sender, MouseButtonEventArgs e)
@@ -378,16 +353,16 @@ namespace DAR
                                 using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                                 {
                                     var triggerCollection = db.GetCollection<Trigger>("triggers");
-                                    foreach(var doc in triggerCollection.FindAll())
+                                    foreach (var doc in triggerCollection.FindAll())
                                     {
-                                        MatchCollection matches = Regex.Matches(capturedLine,doc.SearchText, RegexOptions.IgnoreCase);
+                                        MatchCollection matches = Regex.Matches(capturedLine, doc.SearchText, RegexOptions.IgnoreCase);
                                         if (matches.Count > 0)
                                         {
                                             foreach (Match tMatch in matches)
                                             {
-                                                if(doc.AudioSettings.AudioType == "tts")
+                                                if (doc.AudioSettings.AudioType == "tts")
                                                 { character.Speak(doc.AudioSettings.TTS); }
-                                                if(doc.AudioSettings.AudioType == "file")
+                                                if (doc.AudioSettings.AudioType == "file")
                                                 { PlaySound(doc.AudioSettings.SoundFileId); }
                                                 //Add Timer code
 
@@ -411,22 +386,22 @@ namespace DAR
         {
             //Check line with trigger and then speak.
             CharacterProfile fromLog = characterProfiles.Single<CharacterProfile>(i => i.LogFile == e.FullPath);
-            String lastline = File.ReadLines(e.FullPath).Last();            
-            foreach(KeyValuePair<Trigger,ArrayList> entry in activeTriggers)
+            String lastline = File.ReadLines(e.FullPath).Last();
+            foreach (KeyValuePair<Trigger, ArrayList> entry in activeTriggers)
             {
                 Trigger toCompare = entry.Key;
                 MatchCollection matches = Regex.Matches(lastline, toCompare.SearchText, RegexOptions.IgnoreCase);
-                if(matches.Count > 0)
+                if (matches.Count > 0)
                 {
-                    foreach(CharacterProfile character in entry.Value)
+                    foreach (CharacterProfile character in entry.Value)
                     {
-                        if(character.Monitor)
+                        if (character.Monitor)
                         {
                             character.Speak(lastline);
                         }
                     }
                 }
-            }            
+            }
         }
         #endregion
         #region Triggers
@@ -481,7 +456,7 @@ namespace DAR
                 }
                 colTriggers.Update(currentTrigger);
                 colProfiles.Update(currentProfile);
-            }            
+            }
         }
         private void TriggerRemove_Click(object sender, RoutedEventArgs e)
         {
@@ -496,7 +471,7 @@ namespace DAR
                 if (result == MessageBoxResult.Yes)
                 {
                     var colProfiles = db.GetCollection<CharacterProfile>("profiles");
-                    var profiles = colProfiles.FindAll();                    
+                    var profiles = colProfiles.FindAll();
                     foreach (CharacterProfile profile in profiles)
                     {
                         profile.Triggers.Remove(getTrigger.Id);
@@ -518,6 +493,13 @@ namespace DAR
                 var currentTrigger = triggerCollection.FindOne(Query.EQ("Name", root.Name));
                 TriggerEditor triggerDialog = new TriggerEditor(currentTrigger.Id);
                 triggerDialog.Show();
+            }
+        }
+        private void Availabletriggers_IsSelectedChanged(object sender, EventArgs e)
+        {
+            if (availabletriggers.IsSelected == true)
+            {
+                ribbonMain.SelectedIndex = 0;
             }
         }
         #endregion
@@ -564,7 +546,7 @@ namespace DAR
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 var col = db.GetCollection<TriggerGroup>("triggergroups");
-                TriggerGroup result = col.FindOne(Query.And(Query.EQ("TriggerGroupName", root.Name),Query.EQ("_id",root.Id)));
+                TriggerGroup result = col.FindOne(Query.And(Query.EQ("TriggerGroupName", root.Name), Query.EQ("_id", root.Id)));
                 TriggerGroupEdit triggerDialog = new TriggerGroupEdit(result);
                 triggerDialog.Show();
             }
@@ -629,9 +611,9 @@ namespace DAR
         {
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                    var col = db.GetCollection<TriggerGroup>("triggergroups");
-                    var record = col.FindById(id);
-                    return record;
+                var col = db.GetCollection<TriggerGroup>("triggergroups");
+                var record = col.FindById(id);
+                return record;
             }
         }
         private void TreeViewTriggers_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
@@ -674,6 +656,24 @@ namespace DAR
         }
         #endregion
         #region Functions
+        private void LoadCategories()
+        {
+            CategoryTab.Clear();
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                var colCategories = db.GetCollection<Category>("categories");
+                foreach (var category in colCategories.FindAll())
+                {
+                    CategoryWrapper newcat = new CategoryWrapper();
+                    newcat.CategoryItem = category;
+                    newcat.OverlayTexts = availoverlaytexts;
+                    newcat.OverlayTimers = availoverlaytimers;
+                    newcat.SelectedOverride = (category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First();
+                    CategoryTab.Add(newcat);
+                }
+            }
+
+        }
         private void PlaySound(string soundid)
         {
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
@@ -692,7 +692,7 @@ namespace DAR
             Refresh_Categories();
         }
         public void UpdateTriggerView()
-        {                
+        {
             //root of the Trigger Tree
             treeView = new List<TreeViewModel>();
             tv = new TreeViewModel("All Triggers");
@@ -744,7 +744,7 @@ namespace DAR
                         {
                             tv.Children.Add(rTree);
                         }
-                    }                  
+                    }
                 }
             }
             //Build Tree
@@ -761,6 +761,11 @@ namespace DAR
                 var col = db.GetCollection<CharacterProfile>("profiles");
                 foreach (var doc in col.FindAll())
                 {
+                    //Check if the file exists and mark the fileexists boolean
+                    if(File.Exists(doc.LogFile))
+                    {
+                        doc.FileExists = true;
+                    }
                     characterProfiles.Add(doc);
                     foreach (int triggerID in doc.Triggers)
                     {
@@ -781,7 +786,7 @@ namespace DAR
                             {
                                 doc
                             };
-                            activeTriggers.Add(addedTrigger,newList);
+                            activeTriggers.Add(addedTrigger, newList);
                         }
                     }
                 }
@@ -789,7 +794,7 @@ namespace DAR
             listviewCharacters.ItemsSource = characterProfiles;
             if (listviewCharacters.SelectedItem == null && listviewCharacters.Items.Count > 0)
             {
-                if(currentSelection == null)
+                if (currentSelection == null)
                 {
                     listviewCharacters.SelectedIndex = 0;
                     currentSelection = ((CharacterProfile)listviewCharacters.Items[0]).ProfileName;
@@ -810,7 +815,7 @@ namespace DAR
                     }
                 }
             }
-            
+
         }
         #endregion
         #region Overlays
@@ -826,7 +831,7 @@ namespace DAR
         }
         private void TextOverlayProperties_Click(object sender, RoutedEventArgs e)
         {
-            String overlayname = (sender as RibbonSplitMenuItem).Name;            
+            String overlayname = (sender as RibbonSplitMenuItem).Name;
             OverlayTextEditor newOverlayEditor = new OverlayTextEditor(overlayname);
             newOverlayEditor.Show();
         }
@@ -845,9 +850,9 @@ namespace DAR
                 overlaytexts.Delete(Query.EQ("Name", overlayname));
             }
             //Kill current overlay if running
-            foreach(OverlayTextWindow overlay in textWindows)
+            foreach (OverlayTextWindow overlay in textWindows)
             {
-                if(overlay.Name == overlayname)
+                if (overlay.Name == overlayname)
                 {
                     textWindows.Remove(overlay);
                     overlay.Close();
@@ -877,30 +882,101 @@ namespace DAR
         private void NotifySaveOverlay_OverlayTextEditor(object sender, RoutedEventArgs e)
         {
             OverlayText_Refresh();
-        }        
+        }
+        public void OverlayTimer_Refresh()
+        {
+            availoverlaytimers.Clear();
+            for (int i = ribbongroupTimerOverlays.Items.Count; i > 1; i--)
+            {
+                ribbongroupTimerOverlays.Items.RemoveAt(i - 1);
+            }
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                LiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");
+                foreach (var overlay in overlaytimers.FindAll())
+                {
+                    availoverlaytimers.Add(overlay);
+                    RibbonSplitButton overlaytimer = new RibbonSplitButton();
+                    overlaytimer.Label = overlay.Name;
+                    overlaytimer.LargeImageSource = new BitmapImage(new Uri(@"Images/Google-Noto-Emoji-Travel-Places-42608-stopwatch.ico", UriKind.RelativeOrAbsolute));
+                    overlaytimer.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("Gray"));
+                    RibbonSplitMenuItem timerProperties = new RibbonSplitMenuItem();
+                    timerProperties.Name = overlay.Name;
+                    timerProperties.Header = "Properties";
+                    timerProperties.AddHandler(Button.ClickEvent, new RoutedEventHandler(TimerOverlayProperties_Click));
+                    RibbonSplitMenuItem timerDelete = new RibbonSplitMenuItem();
+                    timerDelete.Header = "Delete";
+                    timerDelete.Name = overlay.Name;
+                    timerDelete.AddHandler(Button.ClickEvent, new RoutedEventHandler(TimerOverlayDelete_Click));
+                    overlaytimer.Items.Add(timerProperties);
+                    overlaytimer.Items.Add(timerDelete);
+                    ribbongroupTimerOverlays.Items.Add(overlaytimer);
+                }
+            }
+            Refresh_Categories();
+        }
+        public void OverlayText_Refresh()
+        {
+            availoverlaytexts.Clear();
+            for (int i = ribbongroupTextOverlays.Items.Count; i > 1; i--)
+            {
+                ribbongroupTextOverlays.Items.RemoveAt(i - 1);
+            }
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                LiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
+                foreach (var overlay in overlaytexts.FindAll())
+                {
+                    availoverlaytexts.Add(overlay);
+                    RibbonSplitButton overlaytext = new RibbonSplitButton();
+                    overlaytext.Label = overlay.Name;
+                    overlaytext.LargeImageSource = new BitmapImage(new Uri(@"Images/Oxygen-Icons.org-Oxygen-Actions-document-new.ico", UriKind.RelativeOrAbsolute));
+                    overlaytext.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("Gray"));
+                    RibbonSplitMenuItem textProperties = new RibbonSplitMenuItem();
+                    textProperties.Name = overlay.Name;
+                    textProperties.Header = "Properties";
+                    textProperties.AddHandler(Button.ClickEvent, new RoutedEventHandler(TextOverlayProperties_Click));
+                    RibbonSplitMenuItem textDelete = new RibbonSplitMenuItem();
+                    textDelete.Header = "Delete";
+                    textDelete.Name = overlay.Name;
+                    textDelete.AddHandler(Button.ClickEvent, new RoutedEventHandler(TextOverlayDelete_Click));
+                    overlaytext.Items.Add(textProperties);
+                    overlaytext.Items.Add(textDelete);
+                    ribbongroupTextOverlays.Items.Add(overlaytext);
+                }
+            }
+            Refresh_Categories();
+        }
         #endregion
-
+        #region Categories
         public void Refresh_Categories()
         {
-            categoryWrapper.CategoryList.Clear();
+            //regenerate category wrappers?
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
                 foreach (var category in categoriescol.FindAll())
                 {
-                    categoryWrapper.CategoryList.Add(category);
                     category.AvailableTextOverlays = availoverlaytexts;
                     category.AvailableTimerOverlays = availoverlaytimers;
                     categoriescol.Update(category);
                     categorycollection.Add(category);
                 }
             }
-            tabcontrolCategory.DataContext = categoryWrapper;
+            LoadCategories();
+            tabcontrolCategory.DataContext = CategoryTab;
             tabcontrolCategory.SelectedIndex = 0;
+        }
+        private void Categories_IsSelectedChanged(object sender, EventArgs e)
+        {
+            if (categoriesDocument.IsSelected == true)
+            {
+                ribbonMain.SelectedIndex = 3;
+            }
         }
         private void RibbonMain_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if(ribbonMain.SelectedIndex == 3)
+            if (ribbonMain.SelectedIndex == 3)
             {
                 categoriesDocument.IsSelected = true;
             }
@@ -909,30 +985,40 @@ namespace DAR
                 availabletriggers.IsSelected = true;
             }
         }
-
-        private void Categories_IsSelectedChanged(object sender, EventArgs e)
-        {
-            if(categoriesDocument.IsSelected == true)
-            {
-                ribbonMain.SelectedIndex = 3;
-            }
-        }
-
-        private void Availabletriggers_IsSelectedChanged(object sender, EventArgs e)
-        {
-            if(availabletriggers.IsSelected == true)
-            {
-                ribbonMain.SelectedIndex = 0;
-            }
-        }
-
         private void TabcontrolCategory_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
         }
-
         private void ExpanderText_Expanded(object sender, RoutedEventArgs e)
         {
-           
         }
+        private void CategoryName_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            //String stop = (sender as TextBox).Text;
+        }
+        private void CategoryAdd_Click(object sender, RoutedEventArgs e)
+        {
+            NewCategory addcategory = new NewCategory();
+            if (addcategory.ShowDialog() == true)
+            {
+                Category newcategory = new Category();
+                newcategory.Name = addcategory.textboxName.Text;
+                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                {
+                    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+                    LiteCollection<CharacterProfile> profilecol = db.GetCollection<CharacterProfile>("profiles");
+                    foreach(var profile in profilecol.FindAll())
+                    {
+                        CharacterOverride newoverride = new CharacterOverride();
+                        newoverride.ProfileName = profile.ProfileName;
+                        newcategory.CharacterOverrides.Add(newoverride);
+                    }
+                    categoriescol.Insert(newcategory);
+                }
+                Refresh_Categories();
+            }            
+        }
+        #endregion
+
+
     }
 }

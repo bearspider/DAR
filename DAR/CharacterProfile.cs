@@ -16,6 +16,7 @@ namespace DAR
         public string profileName;
         public bool monitor;
         public bool monitorAtStartup;
+        public bool fileexists;
         public string textFontColor;
         public string timerFontColor;
         public string timerBarColor;
@@ -31,6 +32,7 @@ namespace DAR
             characterName = "Beastmaster";
             monitor = true;
             monitorAtStartup = true;
+            fileexists = false;
             textFontColor = "Black";
             timerFontColor = "Blue";
             timerBarColor = "Lime";
@@ -115,6 +117,11 @@ namespace DAR
         public void AddTrigger(int triggerId)
         {
             triggers.Add(triggerId);
+        }
+        public Boolean FileExists
+        {
+            get { return fileexists; }
+            set {fileexists = value;}
         }
     }
 

@@ -20,8 +20,10 @@ namespace DAR
     /// </summary>
     public partial class OverlayTextWindow : Window
     {
-        public OverlayText windowproperties {get; set;}
+        public OverlayText windowproperties { get; set; }
         private ObservableCollection<Trigger> triggers = new ObservableCollection<Trigger>();
+        public int FSize {get; set;}
+        public FontFamily FontName { get; set; }
         public OverlayTextWindow()
         {
             InitializeComponent();
@@ -29,6 +31,8 @@ namespace DAR
         }
         public void SetProperties(OverlayText overlay)
         {
+            FSize = overlay.Size;
+            FontName = new FontFamily(overlay.Font);
             windowproperties = overlay;
             this.Name = overlay.Name;
             this.Left = windowproperties.WindowX;

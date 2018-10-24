@@ -180,7 +180,7 @@ namespace DAR
                 LiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
                 LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
                 LiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
-                Trigger testtrigger = triggers.FindById(14);
+                Trigger testtrigger = triggers.FindById(15);
 
                 IEnumerable<Category> availcategories = categoriescol.FindAll();
                 if (availcategories.Count<Category>() == 0)
@@ -196,8 +196,8 @@ namespace DAR
                     newWindow.SetProperties(overlay);
                     newWindow.ShowInTaskbar = false;
                     textWindows.Add(newWindow);
-                    //newWindow.AddTrigger(testtrigger);
-                    //newWindow.Show();
+                    newWindow.AddTrigger(testtrigger);
+                    newWindow.Show();
                 }
                 foreach (var overlay in overlaytimers.FindAll())
                 {
@@ -205,7 +205,7 @@ namespace DAR
                     newWindow.SetProperties(overlay);
                     newWindow.ShowInTaskbar = false;
                     timerWindows.Add(newWindow);
-                    //newWindow.Show();
+                    newWindow.Show();
                 }
             }
             //Start Monitoring Enabled Profiles

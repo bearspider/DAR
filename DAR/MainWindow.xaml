@@ -16,6 +16,7 @@
             <local:FileStatusConverter x:Key="fileconverter"/>
             <local:RadioOverride x:Key="radioconverter"/>
             <local:BorderConverter x:Key="borderconverter"/>
+            <local:DefaultCategoryConverter x:Key="defaultcategoryconverter"/>
             
             <Style x:Key="TreeViewItemStyle" TargetType="TreeViewItem">
                 <Setter Property="IsExpanded" Value="True" />
@@ -130,8 +131,8 @@
                 <Custom:RibbonTab Header="Categories">
                     <Custom:RibbonGroup Header="Actions">
                         <Custom:RibbonButton Click="CategoryAdd_Click" Label="Add" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-document-new.ico"/>
-                        <Custom:RibbonButton Label="Remove" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-document-close.ico"/>
-                        <Custom:RibbonButton Label="Set As Default" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-dialog-ok-apply.ico"/>
+                        <Custom:RibbonButton Click="CategoryRemove_Click" Label="Remove" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-document-close.ico"/>
+                        <Custom:RibbonButton Name="button_CategorySetDefault" Click="CategoryDefault_Click" Label="Set As Default" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-dialog-ok-apply.ico"/>
                     </Custom:RibbonGroup>
                 </Custom:RibbonTab>
             </Custom:Ribbon>
@@ -199,7 +200,19 @@
                                             <ContentControl Content="{Binding}">
                                                 <ContentControl.Resources>
                                                     <DataTemplate DataType="{x:Type local:CategoryWrapper}">
-                                                        <TextBlock Text="{Binding CategoryItem.Name}"/>
+                                                        <StackPanel>
+                                                            <Grid>
+                                                                <Grid.RowDefinitions>
+                                                                    <RowDefinition Height="15" />
+                                                                </Grid.RowDefinitions>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                    <ColumnDefinition Width="35"/>
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding CategoryItem.Name}"/>
+                                                                <Image Grid.Row="0" Grid.Column="1" Source="{Binding CategoryItem.DefaultCategory, Converter={StaticResource defaultcategoryconverter}}"/>
+                                                            </Grid>
+                                                        </StackPanel>
                                                     </DataTemplate>
                                                 </ContentControl.Resources>
                                             </ContentControl>
@@ -219,7 +232,7 @@
                                                                 <ColumnDefinition Width="Auto"/>
                                                             </Grid.ColumnDefinitions>
                                                             <TextBlock Margin="10,0,10,0" HorizontalAlignment="Right" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Text="Name"/>
-                                                            <TextBox Text="{Binding CategoryItem.Name}" Grid.Row="0" Grid.Column="1" Name="categoryName" Width="300" Height="25" TextChanged="CategoryName_TextChanged"/>
+                                                            <TextBox Text="{Binding CategoryItem.Name}" Grid.Row="0" Grid.Column="1" Name="categoryName" Width="300" Height="25" LostFocus="CategoryName_LostFocus" TextChanged="CategoryName_TextChanged"/>
                                                         </Grid>
                                                         <Line Margin="0,8" SnapsToDevicePixels="True" Stroke="{Binding ElementName=groupboxSettings,Path=BorderBrush}" Stretch="Fill" X1="0" X2="1"/>
                                                         <Grid>
@@ -237,7 +250,7 @@
                                                             </Grid.ColumnDefinitions>
                                                             <TextBlock HorizontalAlignment="Right" Grid.Row="0" Grid.Column="0" Margin="10,0,10,0" VerticalAlignment="Center" Text="Text"/>
                                                             <TextBlock Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Text="Overlay:"/>
-                                                            <ComboBox SelectedValuePath="Name" SelectedValue="{Binding CategoryItem.TextOverlay}" ItemsSource="{Binding OverlayTexts}" Margin="10,0,0,0" Grid.Row="0" Grid.Column="2" Width="100" Name="categoryTextOverlay">
+                                                            <ComboBox SelectedValuePath="Name" SelectedValue="{Binding CategoryItem.TextOverlay}" ItemsSource="{Binding OverlayTexts}" Margin="10,0,0,0" Grid.Row="0" Grid.Column="2" Width="100" Name="categoryTextOverlay" SelectionChanged="CategoryTextOverlay_SelectionChanged">
                                                                 <ComboBox.ItemTemplate>
                                                                     <DataTemplate>
                                                                         <TextBlock Text="{Binding Name}"/>
@@ -245,10 +258,10 @@
                                                                 </ComboBox.ItemTemplate>
                                                             </ComboBox>
                                                             <TextBlock Margin="0,10,0,0" Grid.Row="1" Grid.Column="1" Text="Colors:"/>
-                                                            <RadioButton Margin="0,10,0,0" Grid.Row="1" Grid.Column="2" GroupName="textcolors" Content="Use Character Colors" IsChecked="False"/>
-                                                            <RadioButton GroupName="textcolors" Grid.Row="2" Grid.Column="2" Content="Use These Colors:" IsChecked="True"/>
+                                                            <RadioButton Margin="0,10,0,0" Grid.Row="1" Grid.Column="2" GroupName="textcolors" Content="Use Character Colors" IsChecked="{Binding CategoryItem.TextColors}" Checked="CategoryColor_Checked" Unchecked="CategoryColor_Unchecked"/>
+                                                            <RadioButton Grid.Row="2" Grid.Column="2" GroupName="textcolors" Content="Use These Colors:" IsChecked="{Binding CategoryItem.TextThis}"  Checked="CategoryColorThis_Checked" Unchecked="CategoryColorThis_Unchecked" />
                                                             <TextBlock Grid.Row="2" Grid.Column="3" Text="Font:"/>
-                                                            <xctk:ColorPicker Grid.Row="2" Grid.Column="4" Width="100" Name="clrpckrText" SelectedColor="{Binding CategoryItem.TextFontColor}"/>
+                                                            <xctk:ColorPicker Grid.Row="2" Grid.Column="4" Width="100" Name="clrpckrText" SelectedColor="{Binding CategoryItem.TextFontColor}" SelectedColorChanged="ClrpckrText_SelectedColorChanged"/>
                                                         </Grid>
                                                         <Line Margin="0,8" SnapsToDevicePixels="True" Stroke="{Binding ElementName=groupboxSettings,Path=BorderBrush}" Stretch="Fill" X1="0" X2="1"/>
                                                         <Grid>
@@ -268,7 +281,7 @@
                                                             </Grid.ColumnDefinitions>
                                                             <TextBlock Margin="10,0,10,0" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Right" Text="Timers"/>
                                                             <TextBlock Grid.Row="0" Grid.Column="1" Text="Overlay:"/>
-                                                            <ComboBox SelectedValuePath="Name" SelectedValue="{Binding CategoryItem.TimerOverlay}" ItemsSource="{Binding OverlayTimers}" Margin="10,0,0,0" Grid.Row="0" Grid.Column="2" Width="100" Name="categoryTimerOverlay">
+                                                            <ComboBox SelectedValuePath="Name" SelectedValue="{Binding CategoryItem.TimerOverlay}" ItemsSource="{Binding OverlayTimers}" Margin="10,0,0,0" Grid.Row="0" Grid.Column="2" Width="100" Name="categoryTimerOverlay" SelectionChanged="CategoryTimerOverlay_SelectionChanged">
                                                             <ComboBox.ItemTemplate>
                                                                 <DataTemplate>
                                                                     <TextBlock Text="{Binding Name}"/>
@@ -276,12 +289,12 @@
                                                             </ComboBox.ItemTemplate>
                                                             </ComboBox>
                                                             <TextBlock Grid.Row="1" Grid.Column="1" Text="Colors:"/>
-                                                            <RadioButton Grid.Row="1" Grid.Column="2" GroupName="timercolors" Content="Use Character Colors" IsChecked="False"/>
-                                                            <RadioButton Grid.Row="2" Grid.Column="2" GroupName="timercolors" Content="Use These Colors:" IsChecked="True"/>
+                                                            <RadioButton Grid.Row="1" Grid.Column="2" GroupName="timercolors" Content="Use Character Colors" IsChecked="{Binding CategoryItem.TimerColors}" Checked="TimerColors_Checked" Unchecked="TimerColors_Unchecked"/>
+                                                            <RadioButton Grid.Row="2" Grid.Column="2" GroupName="timercolors" Content="Use These Colors:" IsChecked="{Binding CategoryItem.TimerThis}" Checked="TimerThis_Checked" Unchecked="TimerThis_Unchecked"/>
                                                             <TextBlock Grid.Row="2" Grid.Column="3" Text="Font:"/>
-                                                            <xctk:ColorPicker Margin="10,0,0,0" Width="100" Grid.Row="2" Grid.Column="4" Name="clrpckrTimerText" SelectedColor="{Binding CategoryItem.TimerFontColor}"/>
+                                                            <xctk:ColorPicker Margin="10,0,0,0" Width="100" Grid.Row="2" Grid.Column="4" Name="clrpckrTimerText" SelectedColor="{Binding CategoryItem.TimerFontColor}" SelectedColorChanged="ClrpckrTimerText_SelectedColorChanged"/>
                                                             <TextBlock Margin="10,0,0,0" Grid.Row="2" Grid.Column="5" Text="Timer Bar:"/>
-                                                            <xctk:ColorPicker Margin="10,0,0,0" Width="100" Grid.Row="2" Grid.Column="6" Name="clrpckrTimerBar" SelectedColor="{Binding CategoryItem.TimerBarColor}"/>
+                                                            <xctk:ColorPicker Margin="10,0,0,0" Width="100" Grid.Row="2" Grid.Column="6" Name="clrpckrTimerBar" SelectedColor="{Binding CategoryItem.TimerBarColor}" SelectedColorChanged="ClrpckrTimerBar_SelectedColorChanged"/>
                                                         </Grid>
                                                     </StackPanel>
                                                 </GroupBox>
@@ -290,7 +303,7 @@
                                                         <StackPanel>
                                                             <Expander Header="{Binding SelectedOverride.ProfileName}" Style="{StaticResource profileexpander}">
                                                                 <StackPanel>
-                                                                    <Expander Name="expanderText" Header="Text Overrides" Style="{StaticResource overrideexpander}" Expanded="ExpanderText_Expanded">
+                                                                    <Expander Name="expanderText" Header="Text Overrides" Style="{StaticResource overrideexpander}">
                                                                         <StackPanel>
                                                                             <Grid>
                                                                                 <Grid.RowDefinitions>
@@ -309,9 +322,9 @@
                                                                                     <ColumnDefinition Width="Auto"/>
                                                                                 </Grid.ColumnDefinitions>
                                                                                 <TextBlock HorizontalAlignment="Right" Grid.Row="0" Grid.Column="0" Margin="10,0,0,0" Text="Overlay"/>
-                                                                                <RadioButton  Grid.Row="0" Grid.Column="1" GroupName="textoverlay" Margin="10,0,0,0" Content="Use Category Overlay" />
-                                                                                <RadioButton  Grid.Row="1" Grid.Column="1" GroupName="textoverlay" VerticalAlignment="Center" Margin="10,0,0,0" Content="Use This Overlay:"/>
-                                                                                <ComboBox SelectedValuePath="Name" SelectedValue="{Binding SelectedOverride.TextOverlay}" ItemsSource="{Binding OverlayTexts}" Grid.Row="1" Grid.Column="2" VerticalAlignment="Center" Width="100" Name="comboOverrideTextOverlay">
+                                                                                <RadioButton  Grid.Row="0" Grid.Column="1" GroupName="textoverlay" Margin="10,0,0,0" Content="Use Category Overlay" IsChecked="{Binding SelectedOverride.TextOverlayCategory}" Checked="OverrideOverlayCategory_Checked" Unchecked="OverrideOverlayCategory_Unchecked"/>
+                                                                                <RadioButton  Grid.Row="1" Grid.Column="1" GroupName="textoverlay" VerticalAlignment="Center" Margin="10,0,0,0" Content="Use This Overlay:" IsChecked="{Binding SelectedOverride.TextOverlayThis}" Checked="OverrideTextThis_Checked" Unchecked="OverrideTextThis_Unchecked"/>
+                                                                                <ComboBox SelectedValuePath="Name" SelectedValue="{Binding SelectedOverride.TextOverlay}" ItemsSource="{Binding OverlayTexts}" Grid.Row="1" Grid.Column="2" VerticalAlignment="Center" Width="100" Name="comboOverrideTextOverlay" SelectionChanged="ComboOverrideTextOverlay_SelectionChanged">
                                                                                     <ComboBox.ItemTemplate>
                                                                                         <DataTemplate>
                                                                                             <TextBlock Text="{Binding Name}"/>
@@ -320,11 +333,11 @@
                                                                                 </ComboBox>
                                                                                 <TextBlock Grid.Row="2" Grid.Column="0" Text=""/>
                                                                                 <TextBlock HorizontalAlignment="Right" Grid.Row="3" Grid.Column="0" Margin="10,0,0,0" VerticalAlignment="Center" Text="Colors"/>
-                                                                                <RadioButton Grid.Row="3" Grid.Column="1" GroupName="textcolors" Margin="10,0,0,0" Content="Use Category Colors"/>
-                                                                                <RadioButton Grid.Row="4" Grid.Column="1" GroupName="textcolors" Margin="10,0,0,0" Content="Use Character Colors"/>
-                                                                                <RadioButton Grid.Row="5" Grid.Column="1" GroupName="textcolors" Margin="10,0,0,0" Content="Use These Colors:"/>
+                                                                                <RadioButton Grid.Row="3" Grid.Column="1" GroupName="overlaytextcolors" Margin="10,0,0,0" Content="Use Category Colors" IsChecked="{Binding SelectedOverride.TextColorCategory}" Checked="OverrideTextColorCategory_Checked" Unchecked="OverrideTextColorCategory_Unchecked"/>
+                                                                                <RadioButton Grid.Row="4" Grid.Column="1" GroupName="overlaytextcolors" Margin="10,0,0,0" Content="Use Character Colors" IsChecked="{Binding SelectedOverride.TextColorCharacter}" Checked="OverrideTextColorCharacter_Checked" Unchecked="OverrideTextColorCharacter_Unchecked"/>
+                                                                                <RadioButton Grid.Row="5" Grid.Column="1" GroupName="overlaytextcolors" Margin="10,0,0,0" Content="Use These Colors:" IsChecked="{Binding SelectedOverride.TextColorThis}" Checked="OverrideTextColorThis_Checked" Unchecked="OverrideTextColorThis_Unchecked"/>
                                                                                 <TextBlock HorizontalAlignment="Right" Grid.Row="5" Grid.Column="2" Margin="0,0,10,0" Text="Font:"/>
-                                                                                <xctk:ColorPicker  Width="100" Grid.Row="5" Grid.Column="3" Name="clrpckrTextOverride" SelectedColor="{Binding SelectedOverride.TextColorFont}"/>
+                                                                                <xctk:ColorPicker  Width="100" Grid.Row="5" Grid.Column="3" Name="clrpckrTextOverride" SelectedColor="{Binding SelectedOverride.TextColorFont}" SelectedColorChanged="ClrpckrTextOverride_SelectedColorChanged"/>
                                                                             </Grid>
                                                                         </StackPanel>
                                                                     </Expander>
@@ -349,9 +362,9 @@
                                                                                     <ColumnDefinition Width="Auto"/>
                                                                                 </Grid.ColumnDefinitions>
                                                                                 <TextBlock HorizontalAlignment="Right" Grid.Row="0" Grid.Column="0" Margin="10,0,0,0" VerticalAlignment="Center" Text="Overlay"/>
-                                                                                <RadioButton Grid.Row="0" Grid.Column="1" GroupName="timeroverlay" Margin="10,0,0,0" Content="Use Category Overlay"/>
-                                                                                <RadioButton Grid.Row="1" Grid.Column="1" GroupName="timeroverlay" VerticalAlignment="Center" Margin="10,0,0,0" Content="Use This Overlay"/>
-                                                                                <ComboBox SelectedValuePath="Name" SelectedValue="{Binding SelectedOverride.TimerOverlay}" ItemsSource="{Binding OverlayTimers}" Grid.Row="1" Grid.Column="2" Margin="0,0,0,0" Width="100" Name="comboTimerOverlayOverride">
+                                                                                <RadioButton Grid.Row="0" Grid.Column="1" GroupName="timeroverlay" Margin="10,0,0,0" Content="Use Category Overlay" IsChecked="{Binding SelectedOverride.TimerOverlayCategory}" Checked="OverrideTimerCategory_Checked" Unchecked="OverrideTimerCategory_Unchecked"/>
+                                                                                <RadioButton Grid.Row="1" Grid.Column="1" GroupName="timeroverlay" VerticalAlignment="Center" Margin="10,0,0,0" Content="Use This Overlay" IsChecked="{Binding SelectedOverride.TimerOverlayThis}" Checked="OverrideTimerThis_Checked" Unchecked="OverrideTimerThis_Unchecked"/>
+                                                                                <ComboBox SelectedValuePath="Name" SelectedValue="{Binding SelectedOverride.TimerOverlay}" ItemsSource="{Binding OverlayTimers}" Grid.Row="1" Grid.Column="2" Margin="0,0,0,0" Width="100" Name="comboTimerOverlayOverride" SelectionChanged="ComboTimerOverlayOverride_SelectionChanged">
                                                                                 <ComboBox.ItemTemplate>
                                                                                     <DataTemplate>
                                                                                         <TextBlock Text="{Binding Name}"/>
@@ -360,13 +373,13 @@
                                                                                 </ComboBox>
                                                                                 <TextBlock Grid.Row="2" Grid.Column="0" Text=""/>
                                                                                 <TextBlock HorizontalAlignment="Right" Grid.Row="3" Grid.Column="0" Margin="10,0,0,0" VerticalAlignment="Center" Text="Colors"/>
-                                                                                <RadioButton Grid.Row="3" Grid.Column="1" GroupName="timercolors" Margin="10,0,0,0" Content="Use Category Colors"/>
-                                                                                <RadioButton Grid.Row="4" Grid.Column="1" GroupName="timercolors" Margin="10,0,0,0" Content="Use Character Colors"/>
-                                                                                <RadioButton Grid.Row="5" Grid.Column="1" GroupName="timercolors" Margin="10,0,0,0" Content="Use These Colors:"/>
+                                                                                <RadioButton Grid.Row="3" Grid.Column="1" GroupName="timeroverlaycolors" Margin="10,0,0,0" Content="Use Category Colors" IsChecked="{Binding SelectedOverride.TimerColorCategory}" Checked="OverrideTimerColorCat_Checked" Unchecked="OverrideTimerColorCat_Unchecked"/>
+                                                                                <RadioButton Grid.Row="4" Grid.Column="1" GroupName="timeroverlaycolors" Margin="10,0,0,0" Content="Use Character Colors" IsChecked="{Binding SelectedOverride.TimerColorCharacter}" Checked="OverrideTimerColorChar_Checked" Unchecked="OverrideTimerColorChar_Unchecked"/>
+                                                                                <RadioButton Grid.Row="5" Grid.Column="1" GroupName="timeroverlaycolors" Margin="10,0,0,0" Content="Use These Colors:" IsChecked="{Binding SelectedOverride.TimerColorThis}" Checked="OverrideTimerColorThis_Checked" Unchecked="OverrideTimerColorThis_Unchecked"/>
                                                                                 <TextBlock HorizontalAlignment="Right" Grid.Row="5" Grid.Column="2" Margin="0,0,10,0" Text="Font:"/>
-                                                                                <xctk:ColorPicker Grid.Row="5" Grid.Column="3" Width="100" Margin="0,0,0,0" Name="clrpckrTimerFontOverride" SelectedColor="{Binding SelectedOverride.TimerColorFont}"/>
+                                                                                <xctk:ColorPicker Grid.Row="5" Grid.Column="3" Width="100" Margin="0,0,0,0" Name="clrpckrTimerFontOverride" SelectedColor="{Binding SelectedOverride.TimerColorFont}" SelectedColorChanged="ClrpckrTimerFontOverride_SelectedColorChanged"/>
                                                                                 <TextBlock Grid.Row="5" Grid.Column="4" Margin="10,0,0,0" Text="Timer Bar:"/>
-                                                                                <xctk:ColorPicker Grid.Row="5" Grid.Column="5" Width="100" Margin="10,0,0,0" Name="clrpckrTimerBarOverride" SelectedColor="{Binding SelectedOverride.TimerColorBar}"/>
+                                                                                <xctk:ColorPicker Grid.Row="5" Grid.Column="5" Width="100" Margin="10,0,0,0" Name="clrpckrTimerBarOverride" SelectedColor="{Binding SelectedOverride.TimerColorBar}" SelectedColorChanged="ClrpckrTimerBarOverride_SelectedColorChanged"/>
                                                                             </Grid>
                                                                         </StackPanel>
                                                                     </Expander>

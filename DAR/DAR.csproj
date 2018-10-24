@@ -251,6 +251,7 @@
   <ItemGroup>
     <Resource Include="Images\Knob-Remove-icon.png" />
     <Resource Include="Images\Knob-Remove-Red-icon.png" />
+    <Resource Include="Images\Paomedia-Small-N-Flat-Sign-check.ico" />
     <Content Include="LiteDB.dll" />
     <Resource Include="Images\Oxygen-Icons.org-Oxygen-Status-image-missing.ico" />
     <Content Include="Xceed.Wpf.AvalonDock.dll" />

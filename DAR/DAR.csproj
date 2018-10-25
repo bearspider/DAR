@@ -113,6 +113,7 @@
     <Compile Include="ProfileEditor.xaml.cs">
       <DependentUpon>ProfileEditor.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Pushback.cs" />
     <Compile Include="SearchText.cs" />
     <Compile Include="TriggerEditor.xaml.cs">
       <DependentUpon>TriggerEditor.xaml</DependentUpon>
@@ -252,6 +253,9 @@
     <Resource Include="Images\Knob-Remove-icon.png" />
     <Resource Include="Images\Knob-Remove-Red-icon.png" />
     <Resource Include="Images\Paomedia-Small-N-Flat-Sign-check.ico" />
+    <Resource Include="Images\Icons8-Windows-8-Hands-Clenched-Fist.ico" />
+    <Resource Include="Images\Hopstarter-Soft-Scraps-Button-Blank-Green.ico" />
+    <Resource Include="Images\Hopstarter-Soft-Scraps-Button-Blank-Red.ico" />
     <Content Include="LiteDB.dll" />
     <Resource Include="Images\Oxygen-Icons.org-Oxygen-Status-image-missing.ico" />
     <Content Include="Xceed.Wpf.AvalonDock.dll" />

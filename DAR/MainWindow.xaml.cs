@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Diagnostics;
+using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -147,6 +148,27 @@ namespace DAR
             throw new NotImplementedException();
         }
     }
+    public class PushbackConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            String rString = "";
+            if ((Boolean)value)
+            {
+                rString = "Images/Hopstarter-Soft-Scraps-Button-Blank-Green.ico";
+            }
+            else
+            {
+                rString = "Images/Hopstarter-Soft-Scraps-Button-Blank-Red.ico";
+            }
+            return rString;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
     #endregion
     public partial class MainWindow : Window
     {
@@ -158,6 +180,10 @@ namespace DAR
         private CharacterProfile currentprofile;
         private String selectedcategory;
         private int categoryindex = 0;
+        private Boolean pushbackToggle = false;
+        private object _itemsLock = new object();
+        Regex basicregex = new Regex(@"\[(?<EQTIME>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\]\s(?<DATA>.*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        Regex spellregex = new Regex(@"\[(?<EQTIME>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\]\s(?<CHARACTER>\w+)\sbegins\sto\scast\sa\sspell\.\s\<(?<SPELL>.+)\>", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private Dictionary<String, FileSystemWatcher> watchers = new Dictionary<String, FileSystemWatcher>();
         private Dictionary<Trigger, ArrayList> activeTriggers = new Dictionary<Trigger, ArrayList>();
         private ObservableCollection<OverlayTextWindow> textWindows = new ObservableCollection<OverlayTextWindow>();
@@ -166,16 +192,26 @@ namespace DAR
         private ObservableCollection<OverlayTimer> availoverlaytimers = new ObservableCollection<OverlayTimer>();
         private ObservableCollection<OverlayText> availoverlaytexts = new ObservableCollection<OverlayText>();
         private ObservableCollection<CategoryWrapper> CategoryTab = new ObservableCollection<CategoryWrapper>();
+        private ObservableCollection<Pushback> pushbackList = new ObservableCollection<Pushback>();
+        private ObservableCollection<String> masterpushbacklist = new ObservableCollection<string>();
+        private ObservableCollection<String> masterpushuplist = new ObservableCollection<string>();
+
         #endregion
         public MainWindow()
         {
             InitializeComponent();
+            image_pushbackindicator.DataContext = pushbackToggle;
+            datagrid_pushback.ItemsSource = pushbackList;            
+            BindingOperations.EnableCollectionSynchronization(pushbackList, _itemsLock);
+            
             //Check if EQAudioTriggers folder exists, if not create.
             bool mainPath = Directory.Exists(GlobalVariables.defaultPath);
             if (!mainPath)
             {
                 Directory.CreateDirectory(GlobalVariables.defaultPath);
-            }
+            }            
+            InitializePushback();
+            InitializePushup();
             //Prep and/or load database
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -383,6 +419,45 @@ namespace DAR
         }
         #endregion
         #region Monitoring
+        private void InitializePushback()
+        {
+            if (!File.Exists(GlobalVariables.defaultPath + @"\pushback-list.csv"))
+            {
+                //Get file from github
+                using (var client = new WebClient())
+                {                    
+                    client.DownloadFile("https://raw.githubusercontent.com/bearspider/EQ-LogParsers/master/pushback-list.csv", GlobalVariables.defaultPath + @"\pushback-list.csv");
+                }
+
+            }
+            using (var reader = new StreamReader(@"C:\eqaudiotriggers\pushback-list.csv"))
+            {
+                while(!reader.EndOfStream)
+                {
+                    var line = reader.ReadLine();
+                    masterpushbacklist.Add(line);
+                }
+            }
+        }
+        private void InitializePushup()
+        {
+            if (!File.Exists(GlobalVariables.defaultPath + @"\pushup-list.csv"))
+            {
+                //Get file from github
+                using (var client = new WebClient())
+                {
+                    client.DownloadFile("https://raw.githubusercontent.com/bearspider/EQ-LogParsers/master/pushup-list.csv", GlobalVariables.defaultPath + @"\pushup-list.csv");
+                }
+            }
+            using (var reader = new StreamReader(@"C:\eqaudiotriggers\pushup-list.csv"))
+            {
+                while (!reader.EndOfStream)
+                {
+                    var line = reader.ReadLine();
+                    masterpushuplist.Add(line);
+                }
+            }
+        }
         private void MonitorCharacter(CharacterProfile character)
         {
             //Look into doing Parallel.Foreach with semaphores by cpu core count inspection
@@ -399,23 +474,77 @@ namespace DAR
                             String capturedLine = streamReader.ReadToEnd();
                             if (capturedLine.Length > 0)
                             {
-                                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                                String[] delimiter = new string[] { "\r\n" };
+                                String[] lines = capturedLine.Split(delimiter, StringSplitOptions.RemoveEmptyEntries);
+                                foreach (string line in lines)
                                 {
-                                    var triggerCollection = db.GetCollection<Trigger>("triggers");
-                                    foreach (var doc in triggerCollection.FindAll())
+                                    using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                                     {
-                                        MatchCollection matches = Regex.Matches(capturedLine, doc.SearchText, RegexOptions.IgnoreCase);
-                                        if (matches.Count > 0)
+                                        var triggerCollection = db.GetCollection<Trigger>("triggers");
+                                        foreach (var doc in triggerCollection.FindAll())
                                         {
-                                            foreach (Match tMatch in matches)
+                                            MatchCollection matches = Regex.Matches(line, doc.SearchText, RegexOptions.IgnoreCase);
+                                            if (matches.Count > 0)
                                             {
-                                                if (doc.AudioSettings.AudioType == "tts")
-                                                { character.Speak(doc.AudioSettings.TTS); }
-                                                if (doc.AudioSettings.AudioType == "file")
-                                                { PlaySound(doc.AudioSettings.SoundFileId); }
-                                                //Add Timer code
+                                                foreach (Match tMatch in matches)
+                                                {
+                                                    if (doc.AudioSettings.AudioType == "tts")
+                                                    { character.Speak(doc.AudioSettings.TTS); }
+                                                    if (doc.AudioSettings.AudioType == "file")
+                                                    { PlaySound(doc.AudioSettings.SoundFileId); }
+                                                    //Add Timer code
 
+                                                }
                                             }
+                                        }
+                                        if (pushbackToggle)
+                                        {
+                                            Match pushmatch = spellregex.Match(line);
+                                            foreach (String spell in masterpushbacklist)
+                                            {
+                                                MatchCollection matches = Regex.Matches(pushmatch.Groups["SPELL"].Value, spell, RegexOptions.IgnoreCase);
+                                                if (matches.Count > 0)
+                                                {
+                                                    foreach (Match spellmatch in matches)
+                                                    {
+                                                        Pushback pushback = new Pushback
+                                                        {
+                                                            Character = pushmatch.Groups["CHARACTER"].Value,
+                                                            PushType = "Pushback",
+                                                            Spell = pushmatch.Groups["SPELL"].Value,
+                                                            FromCharacter = character.ProfileName
+                                                        };
+                                                        lock (_itemsLock)
+                                                        {
+                                                            pushbackList.Add(pushback);
+                                                        }
+                                                    }
+                                                    break;
+                                                }
+                                            }
+                                            foreach (String spell in masterpushuplist)
+                                            {
+                                                MatchCollection matches = Regex.Matches(pushmatch.Groups["SPELL"].Value, spell, RegexOptions.IgnoreCase);
+                                                if (matches.Count > 0)
+                                                {
+                                                    foreach (Match spellmatch in matches)
+                                                    {
+                                                        Pushback pushback = new Pushback
+                                                        {
+                                                            Character = pushmatch.Groups["CHARACTER"].Value,
+                                                            PushType = "Pushup",
+                                                            Spell = pushmatch.Groups["SPELL"].Value,
+                                                            FromCharacter = character.ProfileName
+                                                        };
+                                                        lock (_itemsLock)
+                                                        {
+                                                            pushbackList.Add(pushback);
+                                                        }
+                                                    }
+                                                    break;
+                                                }
+                                            }
+
                                         }
                                     }
                                 }
@@ -1658,8 +1787,13 @@ namespace DAR
             Refresh_Categories();
             tabcontrolCategory.SelectedIndex = tabindex;
         }
+
         #endregion
 
-
+        private void Button_pushbacktoggle_Click(object sender, RoutedEventArgs e)
+        {
+            pushbackToggle = !pushbackToggle;
+            image_pushbackindicator.DataContext = pushbackToggle;
+        }
     }
 }

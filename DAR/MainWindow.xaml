@@ -17,7 +17,8 @@
             <local:RadioOverride x:Key="radioconverter"/>
             <local:BorderConverter x:Key="borderconverter"/>
             <local:DefaultCategoryConverter x:Key="defaultcategoryconverter"/>
-            
+            <local:PushbackConverter x:Key="pushbackconverter" />
+
             <Style x:Key="TreeViewItemStyle" TargetType="TreeViewItem">
                 <Setter Property="IsExpanded" Value="True" />
                 <Setter Property="IsSelected" Value="{Binding IsInitiallySelected, Mode=OneTime}" />
@@ -97,6 +98,22 @@
                             <Custom:RibbonSplitMenuItem Header="Log File"/>
                             <Custom:RibbonSplitMenuItem Header="Triggers"/>
                         </Custom:RibbonSplitButton>
+                    </Custom:RibbonGroup>
+                    <Custom:RibbonGroup Header="Pushback Monitor">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition />
+                                    <ColumnDefinition Width="40"/>
+                                </Grid.ColumnDefinitions>
+                                <Custom:RibbonButton Grid.Row="0" Grid.Column="0" HorizontalAlignment="Center" Name="button_pushbacktoggle" IsEnabled="True" Label="Monitor" Click="Button_pushbacktoggle_Click" LargeImageSource="Images/Icons8-Windows-8-Hands-Clenched-Fist.ico"/>
+                                <Image Name="image_pushbackindicator" Margin="5,0,0,0" Grid.Row="0" Grid.Column="1" Source="{Binding Converter={StaticResource pushbackconverter}}"/>
+                            </Grid>
+                        </StackPanel>
                     </Custom:RibbonGroup>
                 </Custom:RibbonTab>
                 <Custom:RibbonTab Header="Sharing">
@@ -191,6 +208,16 @@
                         </xcad:LayoutDocument>
                         <xcad:LayoutDocument x:Name="firedtriggers" Title="Activated Triggers" ContentId="activatedPane">
                             <TextBox AcceptsReturn="True" TextWrapping="Wrap"></TextBox>
+                        </xcad:LayoutDocument>
+                        <xcad:LayoutDocument x:Name="pushbacklist" Title="Pushback Monitor" ContentId="pushbackPane">
+                            <DataGrid Name="datagrid_pushback" AutoGenerateColumns="False">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Character" Binding="{Binding Character}"  IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="Spell" Binding="{Binding Spell}" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="Push Type" Binding="{Binding PushType}" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="From Log" Binding="{Binding FromCharacter}" IsReadOnly="True"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
                         </xcad:LayoutDocument>
                         <xcad:LayoutDocument  x:Name="categoriesDocument" Title="Categories" ContentId="categoriesPane" IsEnabled="True" CanClose="False" IsSelectedChanged="Categories_IsSelectedChanged">
                             <ScrollViewer VerticalScrollBarVisibility="Auto">

@@ -95,7 +95,7 @@
                         </Custom:RibbonSplitButton>
                         <Custom:RibbonButton Label="Pronunciations" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Apps-konversation.ico"/>
                         <Custom:RibbonSplitButton Label="Search" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-edit-find.ico">
-                            <Custom:RibbonSplitMenuItem Header="Log File"/>
+                            <Custom:RibbonSplitMenuItem Click="LogfileSearch_Click" Header="Log File"/>
                             <Custom:RibbonSplitMenuItem Header="Triggers"/>
                         </Custom:RibbonSplitButton>
                     </Custom:RibbonGroup>

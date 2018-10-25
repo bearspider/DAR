@@ -28,7 +28,7 @@ namespace DAR
     public partial class TriggerEditor : Window
     {
         private CharacterProfile selectedCharacter;
-        private Category selectedCategory;
+        private String selectedCategory;
         private int selectedGroupId;
         private BindingList<SearchText> endEarlyCases = new BindingList<SearchText>();
         private DataTable dt = new DataTable();
@@ -70,14 +70,16 @@ namespace DAR
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 LiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
+                LiteCollection<Category> categories = db.GetCollection<Category>("categories");                
                 Trigger trigger = triggers.FindById(selectedTrigger);
+                Category category = categories.FindById(trigger.TriggerCategory);
                 textboxName.Text = trigger.Name;
                 textboxSearch.Text = trigger.SearchText;
                 textboxComments.Text = trigger.Comments;
                 checkboxRegex.IsChecked = trigger.Regex;
                 checkboxFast.IsChecked = trigger.Fastcheck;
                 selectedGroupId = trigger.Parent;
-                //(Category)comboCategory.SelectedItem = trigger.TriggerCategory;
+                comboCategory.SelectedItem = category.Name;
                 datagridEarly.DataContext = trigger.EndEarlyText;
                 textboxBasicDisplay.Text = trigger.Displaytext;
                 if(textboxBasicDisplay.Text != "")
@@ -218,7 +220,7 @@ namespace DAR
                 if (comboCategory.Items.Count > 0)
                 {
                     comboCategory.SelectedIndex = 0;
-                    selectedCategory = categories.ElementAt<Category>(0);
+                    selectedCategory = comboCategory.SelectedValue.ToString();
                 }
             }
         }
@@ -429,6 +431,8 @@ namespace DAR
                 LiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
                 LiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
                 LiteCollection<CharacterProfile> profiles = db.GetCollection<CharacterProfile>("profiles");
+                LiteCollection<Category> categories = db.GetCollection<Category>("categories");
+                int categoryid = (categories.FindOne(Query.EQ("Name", comboCategory.SelectedItem.ToString()))).Id;
                 var existingTrigger = triggers.FindOne(Query.EQ("Name", textboxName.Text));
                 var characters = profiles.FindAll();
                 if (existingTrigger != null)
@@ -444,7 +448,7 @@ namespace DAR
                         existingTrigger.Regex = (Boolean)checkboxRegex.IsChecked;
                         existingTrigger.Fastcheck = (Boolean)checkboxFast.IsChecked;
                         existingTrigger.Parent = selectedGroupId;
-                        existingTrigger.TriggerCategory = (Category)comboCategory.SelectedItem;
+                        existingTrigger.TriggerCategory = categoryid;
                         existingTrigger.Displaytext = textboxBasicDisplay.Text;
                         existingTrigger.Clipboardtext = textboxBasicClipboard.Text;
                         existingTrigger.AudioSettings = basicAudioSettings;
@@ -481,7 +485,7 @@ namespace DAR
                         Regex = (Boolean)checkboxRegex.IsChecked,
                         Fastcheck = (Boolean)checkboxFast.IsChecked,
                         Parent = selectedGroupId,
-                        TriggerCategory = (Category)comboCategory.SelectedItem,
+                        TriggerCategory = categoryid,
                         Displaytext = textboxBasicDisplay.Text,
                         Clipboardtext = textboxBasicClipboard.Text,
                         AudioSettings = basicAudioSettings,

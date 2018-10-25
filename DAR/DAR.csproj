@@ -90,6 +90,9 @@
     <Compile Include="Category.cs" />
     <Compile Include="CategoryWrapper.cs" />
     <Compile Include="CharacterOverride.cs" />
+    <Compile Include="LogSearch.xaml.cs">
+      <DependentUpon>LogSearch.xaml</DependentUpon>
+    </Compile>
     <Compile Include="NewCategory.xaml.cs">
       <DependentUpon>NewCategory.xaml</DependentUpon>
     </Compile>
@@ -114,6 +117,7 @@
       <DependentUpon>ProfileEditor.xaml</DependentUpon>
     </Compile>
     <Compile Include="Pushback.cs" />
+    <Compile Include="SearchResult.cs" />
     <Compile Include="SearchText.cs" />
     <Compile Include="TriggerEditor.xaml.cs">
       <DependentUpon>TriggerEditor.xaml</DependentUpon>
@@ -126,6 +130,10 @@
     <Compile Include="Trigger.cs" />
     <Compile Include="TriggerGroup.cs" />
     <Compile Include="UIHelper.cs" />
+    <Page Include="LogSearch.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

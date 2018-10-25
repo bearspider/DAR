@@ -19,7 +19,7 @@ namespace DAR
         public Boolean regex;
         public Boolean fastcheck;
         public int parent;
-        public Category triggerCategory;
+        public int triggerCategory;
         public String displaytext;
         public String clipboardtext;
         public Audio audioSettings;
@@ -56,7 +56,7 @@ namespace DAR
             regex = false;
             fastcheck = false;
             parent = 0;
-            triggerCategory = new Category();
+            triggerCategory = 0;
             displaytext = "";
             clipboardtext = "";
             audioSettings = new Audio();
@@ -123,7 +123,7 @@ namespace DAR
             get { return parent; }
             set { parent = value; }
         }
-        public Category TriggerCategory
+        public int TriggerCategory
         {
             get { return triggerCategory; }
             set { triggerCategory = value; }

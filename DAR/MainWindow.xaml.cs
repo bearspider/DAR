@@ -245,20 +245,22 @@ namespace DAR
                 if (availoverlaytexts.Count<OverlayText>() == 0)
                 {
                     OverlayTextEditor newOverlayEditor = new OverlayTextEditor();
+                    newOverlayEditor.Topmost = true;
                     newOverlayEditor.Show();
                 }
                 if (availoverlaytimers.Count<OverlayTimer>() == 0)
                 {
                     OverlayTimerEditor newOverlayEditor = new OverlayTimerEditor();
+                    newOverlayEditor.Topmost = true;
                     newOverlayEditor.Show();
                 }
                 if (characterProfiles.Count<CharacterProfile>() == 0)
                 {
                     ProfileEditor newProfile = new ProfileEditor();
+                    newProfile.Topmost = true;
                     newProfile.Show();
                     UpdateView();
                 }
-
                 IEnumerable<Category> availcategories = categoriescol.FindAll();
                 if (availcategories.Count<Category>() == 0)
                 {
@@ -1209,12 +1211,14 @@ namespace DAR
                 {
                     LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
                     LiteCollection<Trigger> triggerscol = db.GetCollection<Trigger>("triggers");
+                    Category category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+                    Category defaultcategory = categoriescol.FindOne(Query.EQ("Name", "Default"));
                     //If a trigger is in this category, reset it's category to default
                     foreach (var trigger in triggerscol.FindAll())
                     {
-                        if (trigger.TriggerCategory.Name == selectedcategory)
+                        if (trigger.TriggerCategory == category.Id)
                         {
-                            trigger.TriggerCategory.Name = "Default";
+                            trigger.TriggerCategory = defaultcategory.id;
                             triggerscol.Update(trigger);
                         }
                     }
@@ -1789,11 +1793,18 @@ namespace DAR
         }
 
         #endregion
-
+        #region Pushback Monitor
         private void Button_pushbacktoggle_Click(object sender, RoutedEventArgs e)
         {
             pushbackToggle = !pushbackToggle;
             image_pushbackindicator.DataContext = pushbackToggle;
+        }
+        #endregion
+
+        private void LogfileSearch_Click(object sender, RoutedEventArgs e)
+        {
+            LogSearch logsearch = new LogSearch();
+            logsearch.Show();
         }
     }
 }

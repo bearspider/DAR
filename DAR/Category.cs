@@ -37,10 +37,10 @@ namespace DAR
             TimerFontColor = "Gray";
             TimerBarColor = "Blue";
             DefaultCategory = false;
-            TextColors = true;
-            TextThis = false;
-            TimerColors = true;
-            TimerThis = false;
+            TextColors = false;
+            TextThis = true;
+            TimerColors = false;
+            TimerThis = true;
             CharacterOverrides = new ObservableCollection<CharacterOverride>();
             AvailableTextOverlays = new ObservableCollection<OverlayText>();
             AvailableTimerOverlays = new ObservableCollection<OverlayTimer>();

@@ -195,6 +195,7 @@ namespace DAR
         private ObservableCollection<Pushback> pushbackList = new ObservableCollection<Pushback>();
         private ObservableCollection<String> masterpushbacklist = new ObservableCollection<string>();
         private ObservableCollection<String> masterpushuplist = new ObservableCollection<string>();
+        
 
         #endregion
         public MainWindow()
@@ -1803,7 +1804,7 @@ namespace DAR
 
         private void LogfileSearch_Click(object sender, RoutedEventArgs e)
         {
-            LogSearch logsearch = new LogSearch();
+            LogSearch logsearch = new LogSearch(characterProfiles);
             logsearch.Show();
         }
     }

@@ -182,6 +182,9 @@ namespace DAR
         private int categoryindex = 0;
         private Boolean pushbackToggle = false;
         private object _itemsLock = new object();
+        private object _timersLock = new object();
+        private object _textsLock = new object();
+        private object _categoryLock = new object();
         Regex basicregex = new Regex(@"\[(?<EQTIME>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\]\s(?<DATA>.*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         Regex spellregex = new Regex(@"\[(?<EQTIME>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\]\s(?<CHARACTER>\w+)\sbegins\sto\scast\sa\sspell\.\s\<(?<SPELL>.+)\>", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private Dictionary<String, FileSystemWatcher> watchers = new Dictionary<String, FileSystemWatcher>();
@@ -196,7 +199,6 @@ namespace DAR
         private ObservableCollection<String> masterpushbacklist = new ObservableCollection<string>();
         private ObservableCollection<String> masterpushuplist = new ObservableCollection<string>();
         
-
         #endregion
         public MainWindow()
         {
@@ -204,7 +206,9 @@ namespace DAR
             image_pushbackindicator.DataContext = pushbackToggle;
             datagrid_pushback.ItemsSource = pushbackList;            
             BindingOperations.EnableCollectionSynchronization(pushbackList, _itemsLock);
-            
+            BindingOperations.EnableCollectionSynchronization(timerWindows, _timersLock);
+            BindingOperations.EnableCollectionSynchronization(textWindows, _textsLock);
+            BindingOperations.EnableCollectionSynchronization(categorycollection, _categoryLock);
             //Check if EQAudioTriggers folder exists, if not create.
             bool mainPath = Directory.Exists(GlobalVariables.defaultPath);
             if (!mainPath)
@@ -242,7 +246,7 @@ namespace DAR
                 LiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
                 LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
                 LiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
-                Trigger testtrigger = triggers.FindById(15);
+                Trigger testtrigger = triggers.FindById(1);
                 if (availoverlaytexts.Count<OverlayText>() == 0)
                 {
                     OverlayTextEditor newOverlayEditor = new OverlayTextEditor();
@@ -283,9 +287,9 @@ namespace DAR
                     OverlayTextWindow newWindow = new OverlayTextWindow();
                     newWindow.SetProperties(overlay);
                     newWindow.ShowInTaskbar = false;
-                    textWindows.Add(newWindow);
-                    newWindow.AddTrigger(testtrigger);
-                    //newWindow.Show();
+                    textWindows.Add(newWindow);                    
+                    //newWindow.AddTrigger(testtrigger);
+                    newWindow.Show();
                 }
                 foreach (var overlay in overlaytimers.FindAll())
                 {
@@ -293,7 +297,8 @@ namespace DAR
                     newWindow.SetProperties(overlay);
                     newWindow.ShowInTaskbar = false;
                     timerWindows.Add(newWindow);
-                    //newWindow.Show();
+                    //newWindow.Add(testtrigger);
+                    newWindow.Show();
                 }
             }
             //Start Monitoring Enabled Profiles
@@ -496,7 +501,31 @@ namespace DAR
                                                     if (doc.AudioSettings.AudioType == "file")
                                                     { PlaySound(doc.AudioSettings.SoundFileId); }
                                                     //Add Timer code
-
+                                                    Category triggeredcategory = categorycollection.Single<Category>(i => i.Id == doc.TriggerCategory);
+                                                    if (doc.Displaytext != null)
+                                                    {
+                                                        //find the text overlay from category
+                                                        //OverlayTextWindow overlayText = textWindows.Single<OverlayTextWindow>(i => i.Name == triggeredcategory.TextOverlay);
+                                                        //overlayText.AddTrigger(doc);
+                                                    }
+                                                    lock (_timersLock)
+                                                    {
+                                                        List<OverlayTimerWindow> test = timerWindows.ToList<OverlayTimerWindow>();
+                                                        OverlayTimerWindow overlayWindow = timerWindows.Single<OverlayTimerWindow>(i => i.Name == triggeredcategory.TimerOverlay);
+                                                        switch (doc.TimerType)
+                                                        {
+                                                            case "Timer(Count Down)":
+                                                                overlayWindow.AddTimer(doc.TimerName, doc.TimerDuration, false);
+                                                                break;
+                                                            case "Stopwatch(Count Up)":
+                                                                overlayWindow.AddTimer(doc.TimerName, doc.TimerDuration, true);
+                                                                break;
+                                                            case "Repeating Timer":
+                                                                break;
+                                                            default:
+                                                                break;
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
@@ -1115,7 +1144,7 @@ namespace DAR
         public void Refresh_Categories()
         {
             CategoryTab.Clear();
-
+            categorycollection.Clear();
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");

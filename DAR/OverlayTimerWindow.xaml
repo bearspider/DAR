@@ -1,12 +1,39 @@
 ﻿<Window x:Class="DAR.OverlayTimerWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DAR"
+        xmlns:componentModel="clr-namespace:System.ComponentModel;assembly=WindowsBase"
         mc:Ignorable="d"
-        Title="OverlayTimerWindow" Height="450" Width="800" WindowStyle="None" Topmost="True" AllowsTransparency="True" ShowInTaskbar="False">
-    <Grid>
+        Title="OverlayTimers" Name="overlays" Height="450" Width="800" AllowsTransparency="True" WindowStyle="None" MouseDown="Window_MouseDown" Opacity="1" MouseUp="Window_MouseUp">
+    <Window.Resources>
+        <ResourceDictionary>
+            <local:TimeConverter x:Key="converter" />
+            <CollectionViewSource x:Key='src' Source="{Binding Path=TimerBars, ElementName=overlays}">
+                <CollectionViewSource.SortDescriptions>
+                    <componentModel:SortDescription PropertyName="TimerDuration"/>
+                </CollectionViewSource.SortDescriptions>
+            </CollectionViewSource>
+        </ResourceDictionary>
+    </Window.Resources>
 
-    </Grid>
+
+    <ListBox HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Name="listviewTimers" ItemsSource="{Binding Source={StaticResource src}}">
+        <ListBox.ItemTemplate>
+            <DataTemplate>
+                <WrapPanel>
+                    <Grid Margin="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <ProgressBar Foreground="AliceBlue" Width="500" HorizontalContentAlignment="Stretch" Name="pb"  Value="{Binding Progress.Value}" Minimum="{Binding Minimum}" Maximum="{Binding Maximum}"/>
+                        <TextBlock VerticalAlignment="Center" HorizontalAlignment="Right" Text="{Binding ElementName=pb, Path=Value, Converter={StaticResource converter}}" FontSize="30" Foreground="DarkMagenta"/>
+                        <TextBlock Text="{Binding TimerDescription}" FontSize="30" Foreground="DarkMagenta" HorizontalAlignment="Left"/>
+                    </Grid>
+                </WrapPanel>
+            </DataTemplate>
+        </ListBox.ItemTemplate>
+    </ListBox>
 </Window>

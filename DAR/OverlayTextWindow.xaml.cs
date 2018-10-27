@@ -22,7 +22,7 @@ namespace DAR
     {
         public OverlayText windowproperties { get; set; }
         private ObservableCollection<Trigger> triggers = new ObservableCollection<Trigger>();
-        public int FSize {get; set;}
+        public int FSize { get; set; }
         public FontFamily FontName { get; set; }
         public OverlayTextWindow()
         {

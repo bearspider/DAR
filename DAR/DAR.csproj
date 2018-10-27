@@ -107,9 +107,6 @@
     <Compile Include="OverlayTimerEditor.xaml.cs">
       <DependentUpon>OverlayTimerEditor.xaml</DependentUpon>
     </Compile>
-    <Compile Include="OverlayTimers.xaml.cs">
-      <DependentUpon>OverlayTimers.xaml</DependentUpon>
-    </Compile>
     <Compile Include="OverlayTimerWindow.xaml.cs">
       <DependentUpon>OverlayTimerWindow.xaml</DependentUpon>
     </Compile>
@@ -160,10 +157,6 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="OverlayTimerEditor.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="OverlayTimers.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

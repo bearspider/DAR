@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LiteDB;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -21,7 +22,7 @@ namespace DAR
     public partial class OverlayTextWindow : Window
     {
         public OverlayText windowproperties { get; set; }
-        private ObservableCollection<Trigger> triggers = new ObservableCollection<Trigger>();
+        private ObservableCollection<OverlayTextItem> triggers = new ObservableCollection<OverlayTextItem>();
         public int FSize { get; set; }
         public FontFamily FontName { get; set; }
         public OverlayTextWindow()
@@ -49,7 +50,21 @@ namespace DAR
         }
         public void AddTrigger(Trigger newtrigger)
         {
-            triggers.Add(newtrigger);
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                var categoryCollection = db.GetCollection<Category>("categories");
+                Category selectedcategory = categoryCollection.FindById(newtrigger.TriggerCategory);
+                OverlayTextItem oti = new OverlayTextItem();
+                oti.TriggerObject = newtrigger;
+                oti.FontColor = selectedcategory.TextFontColor;
+                oti.FontSize = windowproperties.Size;
+                oti.FontFamily = windowproperties.Font;
+                triggers.Add(oti);
+                icTriggers.DataContext = triggers;
+
+                //Async job wait windowproperties.Delay, then remove item from triggers.
+                
+            }
         }
     }
 }

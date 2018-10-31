@@ -1,16 +1,18 @@
 ﻿using LiteDB;
+using Microsoft.Windows.Controls.Ribbon;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing.Text;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Diagnostics;
+using System.Media;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -18,6 +20,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
@@ -26,14 +29,11 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Xceed.Wpf.AvalonDock;
-using System.Media;
-using Microsoft.Windows.Controls.Ribbon;
-using System.Windows.Controls.Primitives;
 
 namespace DAR
 {
     /// <summary>
-    /// Interaction logic for MainWindow.xaml
+    /// Global Variables that are used throughout the program
     /// </summary>
     public class GlobalVariables
     {
@@ -43,6 +43,10 @@ namespace DAR
         public static string pathRegex = @"(?<logdir>.*\\)(?<logname>eqlog_.*\.txt)";
     }
     #region Converters
+    /// <summary>
+    /// Convert a Boolean value to icon which will display the monitoring status of the character
+    /// </summary>
+    /// <returns>Returns the image to be used on the form, Monitoring or not monitoring</returns>
     public class MonitoringStatusConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
@@ -64,6 +68,10 @@ namespace DAR
             throw new NotImplementedException();
         }
     }
+    /// <summary>
+    /// Convert a Boolean value to icon which will display the status of if a log file exists for a character
+    /// </summary>
+    /// <returns>When false, there is not a logfile to monitor and an icon will be displayed indicating the missing file</returns>
     public class FileStatusConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
@@ -85,6 +93,11 @@ namespace DAR
             throw new NotImplementedException();
         }
     }
+    /// <summary>
+    /// Convert a Boolean value which monitors the logfile of the CharacterProfile.  Complements MonitoringStatusConverter by putting a red border 
+    /// around the Character
+    /// </summary>
+    /// <returns>When false, there is not a logfile to monitor and a red border will be displayed indicating the missing file</returns>
     public class BorderConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
@@ -127,6 +140,10 @@ namespace DAR
             throw new NotImplementedException();
         }
     }
+    /// <summary>
+    /// Convert a Boolean value to icon which will display the whether a category is DEFAULT
+    /// </summary>
+    /// <returns>When true, an icon will displayed which indicates the DEFAULT category</returns>
     public class DefaultCategoryConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
@@ -148,6 +165,10 @@ namespace DAR
             throw new NotImplementedException();
         }
     }
+    /// <summary>
+    /// Convert a Boolean value to icon which will display the monitoring status of the Pushback Monitor
+    /// </summary>
+    /// <returns>When true, a green icon is displayed.  When false, a red icon is displayed</returns>
     public class PushbackConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
@@ -185,16 +206,19 @@ namespace DAR
         private object _timersLock = new object();
         private object _textsLock = new object();
         private object _categoryLock = new object();
+        //basicregex should be used for all character monitoring
         Regex basicregex = new Regex(@"\[(?<EQTIME>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\]\s(?<DATA>.*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        //spellregex sould ONLY be used for the Pushback Monitor Feature
         Regex spellregex = new Regex(@"\[(?<EQTIME>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\]\s(?<CHARACTER>\w+)\sbegins\sto\scast\sa\sspell\.\s\<(?<SPELL>.+)\>", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private Dictionary<String, FileSystemWatcher> watchers = new Dictionary<String, FileSystemWatcher>();
         private Dictionary<Trigger, ArrayList> activeTriggers = new Dictionary<Trigger, ArrayList>();
         private ObservableCollection<OverlayTextWindow> textWindows = new ObservableCollection<OverlayTextWindow>();
         private ObservableCollection<OverlayTimerWindow> timerWindows = new ObservableCollection<OverlayTimerWindow>();
-        private ObservableCollection<Category> categorycollection = new ObservableCollection<Category>();
-        private ObservableCollection<OverlayTimer> availoverlaytimers = new ObservableCollection<OverlayTimer>();
         private ObservableCollection<OverlayText> availoverlaytexts = new ObservableCollection<OverlayText>();
+        private ObservableCollection<OverlayTimer> availoverlaytimers = new ObservableCollection<OverlayTimer>();
+        private ObservableCollection<Category> categorycollection = new ObservableCollection<Category>();
         private ObservableCollection<CategoryWrapper> CategoryTab = new ObservableCollection<CategoryWrapper>();
+        //These collections are used for the Pushback Monitor feature
         private ObservableCollection<Pushback> pushbackList = new ObservableCollection<Pushback>();
         private ObservableCollection<String> masterpushbacklist = new ObservableCollection<string>();
         private ObservableCollection<String> masterpushuplist = new ObservableCollection<string>();
@@ -214,9 +238,12 @@ namespace DAR
             if (!mainPath)
             {
                 Directory.CreateDirectory(GlobalVariables.defaultPath);
-            }            
+            }
+
+            //Load the Pushback and Pushup data from CSV files.  If the CSV files do not exist, they will be downloaded.
             InitializePushback();
             InitializePushup();
+
             //Prep and/or load database
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -247,6 +274,7 @@ namespace DAR
                 LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
                 LiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
                 Trigger testtrigger = triggers.FindById(1);
+                //Check if no overlays or character profiles exist.  If none exist, prompt the editors to create the first entries.
                 if (availoverlaytexts.Count<OverlayText>() == 0)
                 {
                     OverlayTextEditor newOverlayEditor = new OverlayTextEditor();
@@ -266,6 +294,7 @@ namespace DAR
                     newProfile.Show();
                     UpdateView();
                 }
+                //If no categories exist(Blank Database), create a default category. DEFAULT category is immutable.
                 IEnumerable<Category> availcategories = categoriescol.FindAll();
                 if (availcategories.Count<Category>() == 0)
                 {
@@ -282,6 +311,7 @@ namespace DAR
                     categoriescol.Insert(defaultcategory);
                     availcategories = categoriescol.FindAll();
                 }
+                //Deploy all text overlays
                 foreach (var overlay in overlaytexts.FindAll())
                 {
                     OverlayTextWindow newWindow = new OverlayTextWindow();
@@ -291,6 +321,7 @@ namespace DAR
                     //newWindow.AddTrigger(testtrigger);
                     newWindow.Show();
                 }
+                //Deply all timer overlays
                 foreach (var overlay in overlaytimers.FindAll())
                 {
                     OverlayTimerWindow newWindow = new OverlayTimerWindow();
@@ -321,6 +352,7 @@ namespace DAR
             }
         }
         #region Form Functions
+        //Redadjust the ribbon size if the main window is resized
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             ribbonMain.Width = ActualWidth;
@@ -330,6 +362,8 @@ namespace DAR
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 var colProfiles = db.GetCollection<CharacterProfile>("profiles");
+                ///If a charcter is set to default monitor on startup and monitoring was stopped during the program.
+                ///reflag the monitor Boolean in the database for the character.
                 foreach (CharacterProfile doc in colProfiles.FindAll())
                 {
                     if (doc.MonitorAtStartup != doc.Monitor)
@@ -488,7 +522,7 @@ namespace DAR
                                 {
                                     using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                                     {
-                                        var triggerCollection = db.GetCollection<Trigger>("triggers");
+                                        var triggerCollection = db.GetCollection<Trigger>("triggers");                                        
                                         foreach (var doc in triggerCollection.FindAll())
                                         {
                                             MatchCollection matches = Regex.Matches(line, doc.SearchText, RegexOptions.IgnoreCase);
@@ -505,20 +539,35 @@ namespace DAR
                                                     if (doc.Displaytext != null)
                                                     {
                                                         //find the text overlay from category
-                                                        //OverlayTextWindow overlayText = textWindows.Single<OverlayTextWindow>(i => i.Name == triggeredcategory.TextOverlay);
-                                                        //overlayText.AddTrigger(doc);
+                                                        Dispatcher.BeginInvoke((Action)(() =>
+                                                        {
+                                                            OverlayTextWindow otw = textWindows.Single<OverlayTextWindow>(i => i.Name == triggeredcategory.TextOverlay);
+                                                            otw.AddTrigger(doc);
+                                                            otw.DataContext = otw;
+                                                        }));
+
                                                     }
                                                     lock (_timersLock)
                                                     {
-                                                        List<OverlayTimerWindow> test = timerWindows.ToList<OverlayTimerWindow>();
-                                                        OverlayTimerWindow overlayWindow = timerWindows.Single<OverlayTimerWindow>(i => i.Name == triggeredcategory.TimerOverlay);
+                                                        
                                                         switch (doc.TimerType)
                                                         {
                                                             case "Timer(Count Down)":
-                                                                overlayWindow.AddTimer(doc.TimerName, doc.TimerDuration, false);
+                                                                Dispatcher.BeginInvoke((Action)(() =>
+                                                                {
+
+                                                                    OverlayTimerWindow otw = timerWindows.Single<OverlayTimerWindow>(i => i.Name == triggeredcategory.TimerOverlay);
+                                                                    otw.AddTimer(doc.TimerName, doc.TimerDuration, false);
+                                                                    otw.DataContext = otw;
+                                                                }));
                                                                 break;
                                                             case "Stopwatch(Count Up)":
-                                                                overlayWindow.AddTimer(doc.TimerName, doc.TimerDuration, true);
+                                                                Dispatcher.BeginInvoke((Action)(() =>
+                                                                {
+                                                                    OverlayTimerWindow otw = timerWindows.Single<OverlayTimerWindow>(i => i.Name == triggeredcategory.TimerOverlay);
+                                                                    otw.AddTimer(doc.TimerName, doc.TimerDuration, true);
+                                                                    (timerWindows.Single<OverlayTimerWindow>(i => i.Name == triggeredcategory.TimerOverlay)).DataContext = otw;
+                                                                }));
                                                                 break;
                                                             case "Repeating Timer":
                                                                 break;
@@ -1835,6 +1884,12 @@ namespace DAR
         {
             LogSearch logsearch = new LogSearch(characterProfiles);
             logsearch.Show();
+        }
+
+        private void Settings_Click(object sender, RoutedEventArgs e)
+        {
+            Settings settingswindow = new Settings();
+            settingswindow.Show();
         }
     }
 }

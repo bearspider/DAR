@@ -10,7 +10,7 @@ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     <Window.Resources>
         <ResourceDictionary>
             <local:TimeConverter x:Key="converter" />
-            <CollectionViewSource x:Key='src' Source="{Binding Path=TimerBars, ElementName=overlays}">
+            <CollectionViewSource x:Name="timerSource" x:Key='src' Source="{Binding Path=TimerBars, ElementName=overlays}">
                 <CollectionViewSource.SortDescriptions>
                     <componentModel:SortDescription PropertyName="TimerDuration"/>
                 </CollectionViewSource.SortDescriptions>

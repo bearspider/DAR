@@ -11,7 +11,7 @@
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
                     <Grid Margin="0,0,0,5">
-                        <TextBlock FontSize="{Binding FSize}" Foreground="{Binding TriggerCategory.TextFontColor}" FontFamily="{Binding FontFamily}" Text="{Binding Displaytext}"/>
+                        <TextBlock FontSize="{Binding FontSize}" Foreground="{Binding FontColor}" FontFamily="{Binding FontFamily}" Text="{Binding TriggerObject.Displaytext}"/>
                     </Grid>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>

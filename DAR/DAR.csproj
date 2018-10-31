@@ -97,6 +97,7 @@
       <DependentUpon>NewCategory.xaml</DependentUpon>
     </Compile>
     <Compile Include="OverlayText.cs" />
+    <Compile Include="OverlayTextItem.cs" />
     <Compile Include="OverlayTextWindow.xaml.cs">
       <DependentUpon>OverlayTextWindow.xaml</DependentUpon>
     </Compile>
@@ -116,6 +117,9 @@
     <Compile Include="Pushback.cs" />
     <Compile Include="SearchResult.cs" />
     <Compile Include="SearchText.cs" />
+    <Compile Include="Settings.xaml.cs">
+      <DependentUpon>Settings.xaml</DependentUpon>
+    </Compile>
     <Compile Include="TriggerEditor.xaml.cs">
       <DependentUpon>TriggerEditor.xaml</DependentUpon>
     </Compile>
@@ -165,6 +169,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ProfileEditor.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Settings.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

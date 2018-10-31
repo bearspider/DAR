@@ -12,6 +12,7 @@ namespace DAR
         {
             Name = "default";
             Font = "Segoe UI";
+            FontColor = "Black";
             Size = 20;
             Delay = 10;
             BG = "Blue";
@@ -24,6 +25,7 @@ namespace DAR
         public int Id { get; set; }
         public String Name { get; set; }
         public String Font { get; set; }
+        public String FontColor { get; set; }
         public int Size { get; set; }
         public int Delay { get; set; }
         public String BG { get; set; }

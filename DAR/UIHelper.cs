@@ -4,9 +4,6 @@ using System.Windows.Media;
 
 namespace DAR
 {
-    /// <summary>
-    /// Helper methods for UI-related tasks.
-    /// </summary>
     public static class TreeHelper
     {
         #region find parent

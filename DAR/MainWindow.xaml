@@ -62,7 +62,7 @@
             <Custom:Ribbon x:Name="ribbonMain" HorizontalAlignment="Left" VerticalAlignment="Top" FontFamily="Global User Interface" RenderTransformOrigin="0.512,1.045" Width="1170" SelectionChanged="RibbonMain_SelectionChanged">
                 <Custom:Ribbon.ApplicationMenu>
                     <Custom:RibbonApplicationMenu>
-                        <Custom:RibbonApplicationMenuItem Header="Settings"/>
+                        <Custom:RibbonApplicationMenuItem Header="Settings" Click="Settings_Click"/>
                         <Custom:RibbonApplicationMenuItem Header="Check For Update"/>
                         <Custom:RibbonApplicationMenuItem Header="About"/>
                     </Custom:RibbonApplicationMenu>

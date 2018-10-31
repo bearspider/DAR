@@ -61,6 +61,7 @@ namespace DAR
         public void SetProperties(OverlayTimer overlay)
         {
             windowproperties = overlay;
+            Name = overlay.Name;
             this.Left = windowproperties.WindowX;
             this.Top = windowproperties.WindowY;
             this.Height = windowproperties.WindowHeight;

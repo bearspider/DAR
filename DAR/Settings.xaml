@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DAR"
         mc:Ignorable="d"
-        Title="Settings" Height="370" Width="530" ResizeMode="NoResize" Background="#FFF1F1F1">
+        Title="Settings" Height="380" Width="530" ResizeMode="NoResize" Background="#FFF1F1F1">
     <StackPanel>
         <Grid>
             <Grid.RowDefinitions>
@@ -19,7 +19,7 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <TabControl Margin="5,0,0,0" Grid.Row="0" Grid.Column="0" Name="settingsTabs">
+            <TabControl Margin="5,5,0,0" Grid.Row="0" Grid.Column="0" Name="settingsTabs">
                 <TabItem Header="General">
                     <StackPanel>
                         <Grid>
@@ -29,7 +29,7 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <CheckBox Grid.Row="0" Grid.Column="0" Name="checkboxUpdate" Content="Check for application update during launch" IsChecked="True"/>
+                            <CheckBox Grid.Row="0" Grid.Column="0" Name="checkboxUpdate" Content="Check for application update during launch" IsChecked="true" Unchecked="CheckboxUpdate_Unchecked" Checked="CheckboxUpdate_Checked"/>
                         </Grid>
                         <Grid>
                             <Grid.RowDefinitions>
@@ -42,17 +42,18 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" MinWidth="206"/>
+                                <ColumnDefinition Width="48.112"/>
+                                <ColumnDefinition Width="158.888"/>
                                 <ColumnDefinition Width="Auto" MinWidth="152"/>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <CheckBox Margin="0,5,0,0" Grid.Row="0" Grid.Column="0" Name="checkboxSoundEnable" Content="Enable Sound" IsChecked="True"/>
-                            <CheckBox Margin="0,5,0,0" Grid.Row="1" Grid.Column="0" Name="checkboxTextEnable" Content="Enable Text" IsChecked="True"/>
-                            <CheckBox Margin="0,5,0,0" Grid.Row="2" Grid.Column="0" Name="checkboxMinimize" Content="Minimize to System Tray" IsChecked="False"/>
-                            <CheckBox Margin="0,5,0,0" Grid.Row="3" Grid.Column="0" Name="checkboxMatchLog" Content="Display Match Log" IsChecked="True"/>
-                            <Grid Margin="0,5,0,0" Grid.Row="0" Grid.Column="1">
+                            <CheckBox Margin="0,5,0,0" Grid.Row="0" Grid.Column="0" Name="checkboxSoundEnable" Content="Enable Sound" IsChecked="True" Grid.ColumnSpan="2" Unchecked="CheckboxSoundEnable_Unchecked" Checked="CheckboxSoundEnable_Checked"/>
+                            <CheckBox Margin="0,5,0,0" Grid.Row="1" Grid.Column="0" Name="checkboxTextEnable" Content="Enable Text" IsChecked="True" Grid.ColumnSpan="2" Unchecked="CheckboxTextEnable_Unchecked" Checked="CheckboxTextEnable_Checked"/>
+                            <CheckBox Margin="0,5,0,0" Grid.Row="2" Grid.Column="0" Name="checkboxMinimize" Content="Minimize to System Tray" IsChecked="False" Grid.ColumnSpan="2" Unchecked="CheckboxMinimize_Unchecked" Checked="CheckboxMinimize_Checked"/>
+                            <CheckBox Margin="0,5,0,0" Grid.Row="3" Grid.Column="0" Name="checkboxMatchLog" Content="Display Match Log" IsChecked="True" Grid.ColumnSpan="2" Unchecked="CheckboxMatchLog_Unchecked" Checked="CheckboxMatchLog_Checked"/>
+                            <Grid Margin="0,5,0,0" Grid.Row="0" Grid.Column="2">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
@@ -62,12 +63,12 @@
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Margin="0,0,0,0" HorizontalAlignment="Left" Grid.Row="0" Grid.Column="0" Text="Master Volume" />
-                                <Slider Margin="5,0,0,0" Name="sliderMaster" Grid.Row="0" Grid.Column="1" Width="180" Minimum="0" Maximum="100" TickFrequency="1" IsSnapToTickEnabled="True"/>
+                                <Slider Margin="5,0,0,0" Name="sliderMaster" Grid.Row="0" Grid.Column="1" Width="180" Minimum="0" Maximum="100" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="SliderMaster_ValueChanged"/>
                                 <TextBlock Text="{Binding ElementName=sliderMaster, Path=Value, UpdateSourceTrigger=PropertyChanged}" Grid.Row="0" Grid.Column="2"/>
                             </Grid>
-                            <CheckBox HorizontalAlignment="Left" Name="checkboxTimers" Grid.Row="1" Grid.Column="1" Content="Enable Timers"/>
-                            <CheckBox Name="checkboxStopTrigger" Grid.Row="2" Grid.Column="1" Content="Stop Trigger Search After First Match" IsChecked="False"/>
-                            <Grid Grid.Row="3" Grid.Column="1">
+                            <CheckBox HorizontalAlignment="Left" Name="checkboxTimers" Grid.Row="1" Grid.Column="2" Content="Enable Timers" Unchecked="CheckboxTimers_Unchecked" Checked="CheckboxTimers_Checked"/>
+                            <CheckBox Name="checkboxStopTrigger" Grid.Row="2" Grid.Column="2" Content="Stop Trigger Search After First Match" IsChecked="False" Unchecked="CheckboxStopTrigger_Unchecked" Checked="CheckboxStopTrigger_Checked"/>
+                            <Grid Grid.Row="3" Grid.Column="2">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
@@ -77,8 +78,8 @@
                                     <ColumnDefinition Width="40"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Maximum Log Entries"/>
-                                <TextBox Margin="5,0,0,0" Name="textboxLogEntries" Grid.Row="0" Grid.Column="1" />
-                            </Grid>                            
+                                <TextBox Margin="5,0,0,0" Name="textboxLogEntries" Grid.Row="0" Grid.Column="1" TextChanged="TextboxLogEntries_TextChanged"/>
+                            </Grid>
                         </Grid>
                         <Grid Margin="0,5,0,0">
                             <Grid.RowDefinitions>
@@ -101,7 +102,7 @@
                             <TextBox Margin="0,0,0,0" Grid.Row="0" Grid.Column="1" Name="textboxLogToFile" IsEnabled="False"/>
                             <Button Margin="5,0,0,0" Grid.Row="0" Grid.Column="2" Content="..." Name="buttonLogToFile" IsEnabled="False" Click="ButtonLogToFile_Click"/>
                             <TextBlock Margin="0,5,0,0" Grid.Row="1" Grid.Column="0" Text="Clipboard Replacement for {C}"/>
-                            <TextBox Margin="0,5,0,0" Grid.Row="1" Grid.Column="1" Name="textboxClipboard" />
+                            <TextBox Margin="0,5,0,0" Grid.Row="1" Grid.Column="1" Name="textboxClipboard" TextChanged="TextboxClipboard_TextChanged" />
                             <TextBlock Margin="0,5,0,0" Grid.Row="2" Grid.Column="0" Text="Everquest Folder"/>
                             <TextBox Margin="0,5,0,0" Grid.Row="2" Grid.Column="1" Name="textboxEQFolder"/>
                             <Button Margin="5,5,0,0" Name="buttonEQFolder" Grid.Row="2" Grid.Column="2" Content="..." Click="ButtonEQFolder_Click"/>
@@ -128,20 +129,20 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <CheckBox Content="Enable Sharing" Name="checkboxEnableSharing" IsChecked="True" Grid.Row="0" Grid.Column="0"/>
-                            <CheckBox Content="Enable Incoming Sharing" Name="checkboxEnableIncoming" IsChecked="True" Grid.Row="0" Grid.Column="1"/>
+                            <CheckBox Content="Enable Sharing" Name="checkboxEnableSharing" IsChecked="True" Grid.Row="0" Grid.Column="0" Unchecked="CheckboxEnableSharing_Unchecked" Checked="CheckboxEnableSharing_Checked"/>
+                            <CheckBox Content="Enable Incoming Sharing" Name="checkboxEnableIncoming" IsChecked="True" Grid.Row="0" Grid.Column="1" Unchecked="CheckboxEnableIncoming_Unchecked" Checked="CheckboxEnableIncoming_Checked"/>
                             <GroupBox Header="Accept Share Invitations From" Grid.Row="1" Grid.Column="0">
                                 <StackPanel>
-                                    <RadioButton GroupName="accept" Name="radioNobody" IsChecked="False" Content="Nobody"/>
-                                    <RadioButton GroupName="accept" Name="radioTrusted" IsChecked="False" Content="Trusted List"/>
-                                    <RadioButton GroupName="accept" Name="radioAnybody" IsChecked="True" Content="Anybody"/>
+                                    <RadioButton GroupName="accept" Name="radioNobody" IsChecked="False" Content="Nobody" Checked="RadioNobody_Checked"/>
+                                    <RadioButton GroupName="accept" Name="radioTrusted" IsChecked="False" Content="Trusted List" Checked="RadioTrusted_Checked"/>
+                                    <RadioButton GroupName="accept" Name="radioAnybody" IsChecked="True" Content="Anybody" Checked="RadioAnybody_Checked"/>
                                 </StackPanel>
                             </GroupBox>
                             <GroupBox Header="Automatically Merge Invitations From" Grid.Row="2" Grid.Column="0">
                                 <StackPanel>
-                                    <RadioButton GroupName="merge" Name="radioMergeNobody" IsChecked="False" Content="Nobody"/>
-                                    <RadioButton GroupName="merge" Name="radioMergeTrusted" IsChecked="False" Content="Trusted List"/>
-                                    <RadioButton GroupName="merge" Name="radioMergeAnybody" IsChecked="True" Content="Anybody"/>
+                                    <RadioButton GroupName="merge" Name="radioMergeNobody" IsChecked="False" Content="Nobody" Checked="RadioMergeNobody_Checked"/>
+                                    <RadioButton GroupName="merge" Name="radioMergeTrusted" IsChecked="False" Content="Trusted List" Checked="RadioMergeTrusted_Checked"/>
+                                    <RadioButton GroupName="merge" Name="radioMergeAnybody" IsChecked="True" Content="Anybody" Checked="RadioMergeAnybody_Checked"/>
                                 </StackPanel>
                             </GroupBox>
                             <GroupBox Header="Trusted Sender List" Grid.Row="1" Grid.RowSpan="2" Grid.Column="1">
@@ -156,7 +157,7 @@
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="150"/>
                                         <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="Auto"/>                                        
+                                        <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
 
                                     <TextBlock Margin="0,0,5,0" VerticalAlignment="Center" HorizontalAlignment="Right" Grid.Row="0" Grid.Column="0" Text="Name"/>
@@ -172,18 +173,18 @@
                 <TabItem Header="Log Maintenance">
                     <StackPanel>
                         <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="200"/>
-                                    <ColumnDefinition Width="30"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock VerticalAlignment="Center" Grid.Row="0" Grid.Column="0" Text="Log Archive Folder"/>
-                                <TextBox Margin="5,0,0,0" Name="textboxLogArchive" Grid.Row="0" Grid.Column="1"/>
-                                <Button VerticalAlignment="Center" Margin="5,0,0,0" Name="buttonLogArchive" Content="..." Grid.Row="0" Grid.Column="2" Click="ButtonLogArchive_Click"/>
-                            </Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="200"/>
+                                <ColumnDefinition Width="30"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock VerticalAlignment="Center" Grid.Row="0" Grid.Column="0" Text="Log Archive Folder"/>
+                            <TextBox Margin="5,0,0,0" Name="textboxLogArchive" Grid.Row="0" Grid.Column="1"/>
+                            <Button VerticalAlignment="Center" Margin="5,0,0,0" Name="buttonLogArchive" Content="..." Grid.Row="0" Grid.Column="2" Click="ButtonLogArchive_Click"/>
+                        </Grid>
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -192,8 +193,8 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <CheckBox Name="checkboxAutoArchive" Grid.Row="0" Grid.Column="0" Content="Auto-Archive Log Files" IsChecked="False"/>
-                            <CheckBox Name="checkboxCompress" Grid.Row="1" Grid.Column="0" Content="Compress Archived Log Files" IsEnabled="False" IsChecked="False"/>
+                            <CheckBox Name="checkboxAutoArchive" Grid.Row="0" Grid.Column="0" Content="Auto-Archive Log Files" IsChecked="False" Unchecked="CheckboxAutoArchive_Unchecked" Checked="CheckboxAutoArchive_Checked"/>
+                            <CheckBox Name="checkboxCompress" Grid.Row="1" Grid.Column="0" Content="Compress Archived Log Files" IsEnabled="False" IsChecked="False" Unchecked="CheckboxCompress_Unchecked" Checked="CheckboxCompress_Checked"/>
                         </Grid>
                         <Grid Margin="0,10,0,0">
                             <Grid.RowDefinitions>
@@ -204,7 +205,7 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock VerticalAlignment="Center" Grid.Row="0" Grid.Column="0" Text="Archive Method" IsEnabled="False"/>
-                            <ComboBox Margin="5,0,0,0" Name="comboArchiveMethod" Grid.Row="0" Grid.Column="1" SelectedIndex="0">
+                            <ComboBox Margin="5,0,0,0" Name="comboArchiveMethod" Grid.Row="0" Grid.Column="1" SelectedIndex="0" SelectionChanged="ComboArchiveMethod_SelectionChanged">
                                 <ComboBoxItem Content="Size Threshold"/>
                             </ComboBox>
                         </Grid>
@@ -218,7 +219,7 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock VerticalAlignment="Center" Grid.Row="0" Grid.Column="0" Text="Log File Size:"/>
-                            <TextBox Margin="5,0,0,0" Name="textboxLogSize" Grid.Row="0" Grid.Column="1"/>
+                            <TextBox Margin="5,0,0,0" Name="textboxLogSize" Grid.Row="0" Grid.Column="1" TextChanged="TextboxLogSize_TextChanged"/>
                             <TextBlock VerticalAlignment="Center" Margin="5,0,0,0" Grid.Row="0" Grid.Column="2" Text="MB"/>
                         </Grid>
                         <Grid Margin="0,10,0,0">
@@ -230,8 +231,8 @@
                                 <ColumnDefinition Width="40"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <CheckBox VerticalAlignment="Center" Name="checkboxDelete" Grid.Row="0" Grid.Column="0" Content="Delete Archived Log Files Over" IsEnabled="False" IsChecked="False"/>
-                            <TextBox Name="textboxDeleteDays" Margin="5,0,0,0" Grid.Row="0" Grid.Column="1"/>
+                            <CheckBox VerticalAlignment="Center" Name="checkboxDelete" Grid.Row="0" Grid.Column="0" Content="Delete Archived Log Files Over" IsEnabled="False" IsChecked="False" Unchecked="CheckboxDelete_Unchecked" Checked="CheckboxDelete_Checked"/>
+                            <TextBox Name="textboxDeleteDays" Margin="5,0,0,0" Grid.Row="0" Grid.Column="1" TextChanged="TextboxDeleteDays_TextChanged"/>
                             <TextBlock VerticalAlignment="Center" Margin="5,0,0,0" Grid.Row="0" Grid.Column="2" Text="days old"/>
                         </Grid>
                     </StackPanel>
@@ -247,7 +248,7 @@
                                 <ColumnDefinition Width="300"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock VerticalAlignment="Center" Grid.Row="0" Grid.Column="0" Text="Share Service URI"/>
-                            <TextBox Margin="5,0,0,0" Grid.Row="0" Grid.Column="1" Name="textboxShareURI" />
+                            <TextBox Margin="5,0,0,0" Grid.Row="0" Grid.Column="1" Name="textboxShareURI" TextChanged="TextboxShareURI_TextChanged"/>
                         </Grid>
                         <Grid Margin="0,5,0,0">
                             <Grid.RowDefinitions>
@@ -258,7 +259,7 @@
                                 <ColumnDefinition Width="60"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock VerticalAlignment="Center" Text="Reference to Self" Grid.Row="0" Grid.Column="0"/>
-                            <TextBox Margin="5,0,0,0" Name="textboxReference" Grid.Row="0" Grid.Column="1"/>
+                            <TextBox Margin="5,0,0,0" Name="textboxReference" Grid.Row="0" Grid.Column="1" TextChanged="TextboxReference_TextChanged"/>
                         </Grid>
                         <Grid>
                             <Grid.RowDefinitions>
@@ -268,7 +269,7 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <CheckBox Margin="0,5,0,5"  Name="checkboxDebug" Content="Enable Debug Logging" IsChecked="false" Grid.Row="0" Grid.Column="0"/>
+                            <CheckBox Margin="0,5,0,5"  Name="checkboxDebug" Content="Enable Debug Logging" IsChecked="false" Grid.Row="0" Grid.Column="0" Unchecked="CheckboxDebug_Unchecked" Checked="CheckboxDebug_Checked"/>
                         </Grid>
                     </StackPanel>
                 </TabItem>
@@ -284,8 +285,8 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-        <Button Width="50" Grid.Row="1" Grid.Column="0" Name="buttonSave" Content="Save" Click="ButtonSave_Click"/>
-        <Button Margin="5,0,20,0" Width="50" Grid.Row="1" Grid.Column="1" Name="buttonCancel" Content="Cancel" IsCancel="True" Click="ButtonCancel_Click"/>
+            <Button Width="50" Grid.Row="1" Grid.Column="0" Name="buttonSave" Content="Save" Click="ButtonSave_Click"/>
+            <Button Margin="5,0,20,0" Width="50" Grid.Row="1" Grid.Column="1" Name="buttonCancel" Content="Cancel" IsCancel="True" Click="ButtonCancel_Click"/>
         </Grid>
     </StackPanel>
 

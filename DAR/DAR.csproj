@@ -117,6 +117,7 @@
     <Compile Include="Pushback.cs" />
     <Compile Include="SearchResult.cs" />
     <Compile Include="SearchText.cs" />
+    <Compile Include="Setting.cs" />
     <Compile Include="Settings.xaml.cs">
       <DependentUpon>Settings.xaml</DependentUpon>
     </Compile>

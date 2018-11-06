@@ -247,13 +247,15 @@ namespace DAR
             //Prep and/or load database
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<CharacterProfile> dbcharacterProfiles = db.GetCollection<CharacterProfile>("profiles");
+                LiteCollection<CharacterProfile> dbcharacterProfiles = db.GetCollection<CharacterProfile>("profiles");                
                 LiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");
                 LiteCollection<TriggerGroup> triggerGroups = db.GetCollection<TriggerGroup>("triggergroups");
                 LiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
                 LiteCollection<Category> categories = db.GetCollection<Category>("categories");
+                LiteCollection<Setting> settings = db.GetCollection<Setting>("settings");
                 LiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
                 dbcharacterProfiles.EnsureIndex((CharacterProfile x) => x.Id, true);
+                settings.EnsureIndex((Setting t) => t.Id, true);
                 overlaytimers.EnsureIndex((OverlayTimer v) => v.Id, true);
                 triggerGroups.EnsureIndex((TriggerGroup y) => y.Id, true);
                 overlaytexts.EnsureIndex((OverlayText u) => u.Id, true);
@@ -268,10 +270,11 @@ namespace DAR
             //Deploy Overlays
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<CharacterProfile> dbcharacterProfiles = db.GetCollection<CharacterProfile>("profiles");
+                LiteCollection<CharacterProfile> dbcharacterProfiles = db.GetCollection<CharacterProfile>("profiles");                
                 LiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");
                 LiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
                 LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+                LiteCollection<Setting> settings = db.GetCollection<Setting>("settings");
                 LiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
                 Trigger testtrigger = triggers.FindById(1);
                 //Check if no overlays or character profiles exist.  If none exist, prompt the editors to create the first entries.
@@ -293,6 +296,11 @@ namespace DAR
                     newProfile.Topmost = true;
                     newProfile.Show();
                     UpdateView();
+                }
+                if(settings.Count() == 0)
+                {
+                    //populate default settings
+                    DefaultSettings();
                 }
                 //If no categories exist(Blank Database), create a default category. DEFAULT category is immutable.
                 IEnumerable<Category> availcategories = categoriescol.FindAll();
@@ -915,6 +923,193 @@ namespace DAR
         }
         #endregion
         #region Functions
+        private void DefaultSettings()
+        {
+            Setting mastervolume = new Setting
+            {
+                Name = "MasterVolume",
+                Value = "100"
+            };
+            Setting update = new Setting
+            {
+                Name = "ApplicationUpdate",
+                Value = "true"
+            };
+            Setting enablesound = new Setting
+            {
+                Name = "EnableSound",
+                Value = "true"
+            };
+            Setting enabletext = new Setting
+            {
+                Name = "EnableText",
+                Value = "true"
+            };
+            Setting enabletimers = new Setting
+            {
+                Name = "EnableTimers",
+                Value = "true"
+            };
+            Setting minimize = new Setting
+            {
+                Name = "Minimize",
+                Value = "false"
+            };
+            Setting stoptrigger = new Setting
+            {
+                Name = "StopTriggerSearch",
+                Value = "false"
+            };
+            Setting displaymatchlog = new Setting
+            {
+                Name = "DisplayMatchLog",
+                Value = "true"
+            };
+            Setting maxlogentry = new Setting
+            {
+                Name = "MaxLogEntry",
+                Value = "100"
+            };
+            Setting logmatchtofile = new Setting
+            {
+                Name = "LogMatchesToFile",
+                Value = "false"
+            };
+            Setting logmatchfilename = new Setting
+            {
+                Name = "LogMatchFilename",
+                Value = ""
+            };
+            Setting clipboard = new Setting
+            {
+                Name = "Clipboard",
+                Value = "{C}"
+            };
+            Setting eqfolder = new Setting
+            {
+                Name = "EQFolder",
+                Value = @"C:\EQ"
+            };
+            Setting importedmedia = new Setting
+            {
+                Name = "ImportedMediaFolder",
+                Value = @"C:\EQAudioTriggers\ImportedMedia"
+            };
+            Setting datafolder = new Setting
+            {
+                Name = "DataFolder",
+                Value = @"C:\EQAudioTriggers"
+            };
+            Setting enablesharing = new Setting
+            {
+                Name = "SharingEnabled",
+                Value = "true"
+            };
+            Setting enableincoming = new Setting
+            {
+                Name = "EnableIncomingTriggers",
+                Value = "true"
+            };
+            Setting acceptfrom = new Setting
+            {
+                Name = "AcceptInvitationsFrom",
+                Value = "2"
+            };
+            Setting mergefrom = new Setting
+            {
+                Name = "MergeFrom",
+                Value = "2"
+            };
+            Setting senderlist = new Setting
+            {
+                Name = "TrustedSenderList",
+                Value = ""
+            };
+            Setting logarchive = new Setting
+            {
+                Name = "LogArchiveFolder",
+                Value = @"C:\EQAudioTriggers\Archive"
+            };
+            Setting autoarchive = new Setting
+            {
+                Name = "AutoArchive",
+                Value = "true"
+            };
+            Setting compress = new Setting
+            {
+                Name = "CompressArchive",
+                Value = "true"
+            };
+            Setting archivemethod = new Setting
+            {
+                Name = "ArchiveMethod",
+                Value = "Size Threshold"
+            };
+            Setting logsize = new Setting
+            {
+                Name = "LogSize",
+                Value = "50"
+            };
+            Setting autodelete = new Setting
+            {
+                Name = "AutoDelete",
+                Value = "true"
+            };
+            Setting deletearchive = new Setting
+            {
+                Name = "DeleteArchives",
+                Value = "90"
+            };
+            Setting shareuri = new Setting
+            {
+                Name = "ShareServiceURI",
+                Value = @"http:\\shareservice.com"
+            };
+            Setting reference = new Setting
+            {
+                Name = "Reference",
+                Value = "You"
+            };
+            Setting enabledebug = new Setting
+            {
+                Name = "EnableDebug",
+                Value = "false"
+            };
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                LiteCollection<Setting> settings = db.GetCollection<Setting>("settings");
+                settings.Insert(mastervolume);
+                settings.Insert(update);
+                settings.Insert(enablesound);
+                settings.Insert(enabletext);
+                settings.Insert(enabletimers);
+                settings.Insert(minimize);
+                settings.Insert(stoptrigger);
+                settings.Insert(displaymatchlog);
+                settings.Insert(maxlogentry);
+                settings.Insert(logmatchtofile);
+                settings.Insert(logmatchfilename);
+                settings.Insert(clipboard);
+                settings.Insert(eqfolder);
+                settings.Insert(importedmedia);
+                settings.Insert(datafolder);
+                settings.Insert(enablesharing);
+                settings.Insert(enableincoming);
+                settings.Insert(acceptfrom);
+                settings.Insert(mergefrom);
+                settings.Insert(senderlist);
+                settings.Insert(logarchive);
+                settings.Insert(autoarchive);
+                settings.Insert(compress);
+                settings.Insert(archivemethod);
+                settings.Insert(logsize);
+                settings.Insert(autodelete);
+                settings.Insert(deletearchive);
+                settings.Insert(shareuri);
+                settings.Insert(reference);
+                settings.Insert(enabledebug);
+            }
+        }
         private void PlaySound(string soundid)
         {
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))

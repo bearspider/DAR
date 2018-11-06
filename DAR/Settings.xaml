@@ -29,7 +29,7 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <CheckBox Grid.Row="0" Grid.Column="0" Name="checkUpdate" Content="Check for application update during launch" IsChecked="True"/>
+                            <CheckBox Grid.Row="0" Grid.Column="0" Name="checkboxUpdate" Content="Check for application update during launch" IsChecked="True"/>
                         </Grid>
                         <Grid>
                             <Grid.RowDefinitions>
@@ -48,10 +48,10 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <CheckBox Margin="0,5,0,0" Grid.Row="0" Grid.Column="0" Name="checkSoundEnable" Content="Enable Sound" IsChecked="True"/>
-                            <CheckBox Margin="0,5,0,0" Grid.Row="1" Grid.Column="0" Name="checkTextEnable" Content="Enable Text" IsChecked="True"/>
-                            <CheckBox Margin="0,5,0,0" Grid.Row="2" Grid.Column="0" Name="checkMinimize" Content="Minimize to System Tray" IsChecked="False"/>
-                            <CheckBox Margin="0,5,0,0" Grid.Row="3" Grid.Column="0" Name="checkMatchLog" Content="Display Match Log" IsChecked="True"/>
+                            <CheckBox Margin="0,5,0,0" Grid.Row="0" Grid.Column="0" Name="checkboxSoundEnable" Content="Enable Sound" IsChecked="True"/>
+                            <CheckBox Margin="0,5,0,0" Grid.Row="1" Grid.Column="0" Name="checkboxTextEnable" Content="Enable Text" IsChecked="True"/>
+                            <CheckBox Margin="0,5,0,0" Grid.Row="2" Grid.Column="0" Name="checkboxMinimize" Content="Minimize to System Tray" IsChecked="False"/>
+                            <CheckBox Margin="0,5,0,0" Grid.Row="3" Grid.Column="0" Name="checkboxMatchLog" Content="Display Match Log" IsChecked="True"/>
                             <Grid Margin="0,5,0,0" Grid.Row="0" Grid.Column="1">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
@@ -97,7 +97,7 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <CheckBox Grid.Row="0" Grid.Column="0" Margin="0,0,0,0" Name="checkLogToFile" Content="Log Matches to File" IsChecked="False" Unchecked="CheckLogToFile_Unchecked" Checked="CheckLogToFile_Checked"/>
+                            <CheckBox Grid.Row="0" Grid.Column="0" Margin="0,0,0,0" Name="checkboxLogToFile" Content="Log Matches to File" IsChecked="False" Unchecked="CheckLogToFile_Unchecked" Checked="CheckLogToFile_Checked"/>
                             <TextBox Margin="0,0,0,0" Grid.Row="0" Grid.Column="1" Name="textboxLogToFile" IsEnabled="False"/>
                             <Button Margin="5,0,0,0" Grid.Row="0" Grid.Column="2" Content="..." Name="buttonLogToFile" IsEnabled="False" Click="ButtonLogToFile_Click"/>
                             <TextBlock Margin="0,5,0,0" Grid.Row="1" Grid.Column="0" Text="Clipboard Replacement for {C}"/>
@@ -231,7 +231,7 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <CheckBox VerticalAlignment="Center" Name="checkboxDelete" Grid.Row="0" Grid.Column="0" Content="Delete Archived Log Files Over" IsEnabled="False" IsChecked="False"/>
-                            <TextBox Margin="5,0,0,0" Name="textboxDays" Grid.Row="0" Grid.Column="1"/>
+                            <TextBox Name="textboxDeleteDays" Margin="5,0,0,0" Grid.Row="0" Grid.Column="1"/>
                             <TextBlock VerticalAlignment="Center" Margin="5,0,0,0" Grid.Row="0" Grid.Column="2" Text="days old"/>
                         </Grid>
                     </StackPanel>

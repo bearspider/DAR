@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LiteDB;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -23,6 +24,133 @@ namespace DAR
         public Settings()
         {
             InitializeComponent();
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                LiteCollection<Setting> settings = db.GetCollection<Setting>("settings");
+                foreach(Setting appsetting in settings.FindAll())
+                {
+                    switch (appsetting.Name)
+                    {
+                        case "MasterVolume":
+                            sliderMaster.Value = Convert.ToInt32(appsetting.Value);
+                            break;
+                        case "ApplicationUpdate":
+                            checkboxUpdate.IsChecked = Convert.ToBoolean(appsetting.Value);
+                            break;
+                        case "EnableSound":
+                            checkboxSoundEnable.IsChecked = Convert.ToBoolean(appsetting.Value);
+                            break;
+                        case "EnableText":
+                            checkboxTextEnable.IsChecked = Convert.ToBoolean(appsetting.Value);
+                            break;
+                        case "EnableTimers":
+                            checkboxTimers.IsChecked = Convert.ToBoolean(appsetting.Value);
+                            break;
+                        case "Minimize":
+                            checkboxMinimize.IsChecked = Convert.ToBoolean(appsetting.Value);
+                            break;
+                        case "StopTriggerSearch":
+                            checkboxStopTrigger.IsChecked = Convert.ToBoolean(appsetting.Value);
+                            break;
+                        case "DisplayMatchLog":
+                            checkboxMatchLog.IsChecked = Convert.ToBoolean(appsetting.Value);
+                            break;
+                        case "MaxLogEntry":
+                            textboxLogEntries.Text = appsetting.Value;
+                            break;
+                        case "LogMatchesToFile":
+                            checkboxLogToFile.IsChecked = Convert.ToBoolean(appsetting.Value);
+                            break;
+                        case "LogMatchFilename":
+                            textboxLogToFile.Text = appsetting.Value;
+                            break;
+                        case "Clipboard":
+                            textboxClipboard.Text = appsetting.Value;
+                            break;
+                        case "EQFolder":
+                            textboxEQFolder.Text = appsetting.Value;
+                            break;
+                        case "ImportedMediaFolder":
+                            textboxImportedMedia.Text = appsetting.Value;
+                            break;
+                        case "DataFolder":
+                            textboxDataFolder.Text = appsetting.Value;
+                            break;
+                        case "SharingEnabled":
+                            checkboxEnableSharing.IsChecked = Convert.ToBoolean(appsetting.Value);
+                            break;
+                        case "EnableIncomingTriggers":
+                            checkboxEnableIncoming.IsChecked = Convert.ToBoolean(appsetting.Value);
+                            break;
+                        case "AcceptInvitationsFrom":
+                            switch(appsetting.Value)
+                            {
+                                case "0":
+                                    radioNobody.IsChecked = true;
+                                    break;
+                                case "1":
+                                    radioTrusted.IsChecked = true;
+                                    break;
+                                case "2":
+                                    radioAnybody.IsChecked = true;
+                                    break;
+                                default:
+                                    radioNobody.IsChecked = true;
+                                    break;
+                            }
+                            break;
+                        case "MergeFrom":
+                            switch (appsetting.Value)
+                            {
+                                case "0":
+                                    radioNobody.IsChecked = true;
+                                    break;
+                                case "1":
+                                    radioTrusted.IsChecked = true;
+                                    break;
+                                case "2":
+                                    radioAnybody.IsChecked = true;
+                                    break;
+                                default:
+                                    radioNobody.IsChecked = true;
+                                    break;
+                            }
+                            break;
+                        case "TrustedSenderList":
+                            break;
+                        case "LogArchiveFolder":
+                            textboxLogArchive.Text = appsetting.Value;
+                            break;
+                        case "AutoArchive":
+                            checkboxAutoArchive.IsChecked = Convert.ToBoolean(appsetting.Value);
+                            break;
+                        case "CompressArchive":
+                            checkboxCompress.IsChecked = Convert.ToBoolean(appsetting.Value);
+                            break;
+                        case "ArchiveMethod":
+                            comboArchiveMethod.SelectedValue = appsetting.Value;
+                            break;
+                        case "LogSize":
+                            textboxLogSize.Text = appsetting.Value;
+                            break;
+                        case "DeleteArchives":
+                            textboxDeleteDays.Text = appsetting.Value;                            
+                            break;
+                        case "AutoDelete":
+                            checkboxDelete.IsEnabled = Convert.ToBoolean(appsetting.Value);
+                            break;
+                        case "ShareServiceURI":
+                            textboxShareURI.Text = appsetting.Value;
+                            break;
+                        case "Reference":
+                            textboxReference.Text = appsetting.Value;
+                            break;
+                        case "EnableDebug":
+                            checkboxDebug.IsChecked = Convert.ToBoolean(appsetting.Value);
+                            break;
+                    }
+                }
+            }
         }
 
         private void ButtonCancel_Click(object sender, RoutedEventArgs e)

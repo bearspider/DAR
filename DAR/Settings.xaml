@@ -77,7 +77,7 @@
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="40"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Maximum Log Entries"/>
+                                <TextBlock VerticalAlignment="Center" Name="textblockLogEntries" Grid.Row="0" Grid.Column="0" Text="Maximum Log Entries"/>
                                 <TextBox Margin="5,0,0,0" Name="textboxLogEntries" Grid.Row="0" Grid.Column="1" TextChanged="TextboxLogEntries_TextChanged"/>
                             </Grid>
                         </Grid>
@@ -131,21 +131,21 @@
                             </Grid.ColumnDefinitions>
                             <CheckBox Content="Enable Sharing" Name="checkboxEnableSharing" IsChecked="True" Grid.Row="0" Grid.Column="0" Unchecked="CheckboxEnableSharing_Unchecked" Checked="CheckboxEnableSharing_Checked"/>
                             <CheckBox Content="Enable Incoming Sharing" Name="checkboxEnableIncoming" IsChecked="True" Grid.Row="0" Grid.Column="1" Unchecked="CheckboxEnableIncoming_Unchecked" Checked="CheckboxEnableIncoming_Checked"/>
-                            <GroupBox Header="Accept Share Invitations From" Grid.Row="1" Grid.Column="0">
+                            <GroupBox Name="groupboxShareFrom" Header="Accept Share Invitations From" Grid.Row="1" Grid.Column="0">
                                 <StackPanel>
                                     <RadioButton GroupName="accept" Name="radioNobody" IsChecked="False" Content="Nobody" Checked="RadioNobody_Checked"/>
                                     <RadioButton GroupName="accept" Name="radioTrusted" IsChecked="False" Content="Trusted List" Checked="RadioTrusted_Checked"/>
                                     <RadioButton GroupName="accept" Name="radioAnybody" IsChecked="True" Content="Anybody" Checked="RadioAnybody_Checked"/>
                                 </StackPanel>
                             </GroupBox>
-                            <GroupBox Header="Automatically Merge Invitations From" Grid.Row="2" Grid.Column="0">
+                            <GroupBox Name="groupboxMergeFrom" Header="Automatically Merge Invitations From" Grid.Row="2" Grid.Column="0">
                                 <StackPanel>
                                     <RadioButton GroupName="merge" Name="radioMergeNobody" IsChecked="False" Content="Nobody" Checked="RadioMergeNobody_Checked"/>
                                     <RadioButton GroupName="merge" Name="radioMergeTrusted" IsChecked="False" Content="Trusted List" Checked="RadioMergeTrusted_Checked"/>
                                     <RadioButton GroupName="merge" Name="radioMergeAnybody" IsChecked="True" Content="Anybody" Checked="RadioMergeAnybody_Checked"/>
                                 </StackPanel>
                             </GroupBox>
-                            <GroupBox Header="Trusted Sender List" Grid.Row="1" Grid.RowSpan="2" Grid.Column="1">
+                            <GroupBox Name="groupboxSenderList" Header="Trusted Sender List" Grid.Row="1" Grid.RowSpan="2" Grid.Column="1">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
@@ -162,9 +162,9 @@
 
                                     <TextBlock Margin="0,0,5,0" VerticalAlignment="Center" HorizontalAlignment="Right" Grid.Row="0" Grid.Column="0" Text="Name"/>
                                     <TextBox Name="textboxSenderList" Grid.Row="0" Grid.Column="1"/>
-                                    <Button Margin="5,0,0,0" Name="buttonAddSender" Grid.Row="0" Grid.Column="2" Content="Add"/>
+                                    <Button Margin="5,0,0,0" Name="buttonAddSender" Grid.Row="0" Grid.Column="2" Content="Add" Click="ButtonAddSender_Click"/>
                                     <ListBox Margin="0,5,0,0" Name="listboxSenders" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3"/>
-                                    <Button Margin="0,5,0,0" Name="buttonRemoveSender" Grid.Row="2" Grid.Column="0" Content="Remove"/>
+                                    <Button Margin="0,5,0,0" Name="buttonRemoveSender" Grid.Row="2" Grid.Column="0" Content="Remove" Click="ButtonRemoveSender_Click"/>
                                 </Grid>
                             </GroupBox>
                         </Grid>
@@ -180,6 +180,8 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="200"/>
                                 <ColumnDefinition Width="30"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock VerticalAlignment="Center" Grid.Row="0" Grid.Column="0" Text="Log Archive Folder"/>
                             <TextBox Margin="5,0,0,0" Name="textboxLogArchive" Grid.Row="0" Grid.Column="1"/>
@@ -203,10 +205,27 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock VerticalAlignment="Center" Grid.Row="0" Grid.Column="0" Text="Archive Method" IsEnabled="False"/>
-                            <ComboBox Margin="5,0,0,0" Name="comboArchiveMethod" Grid.Row="0" Grid.Column="1" SelectedIndex="0" SelectionChanged="ComboArchiveMethod_SelectionChanged">
+                            <TextBlock Name="textblockArchiveMethod" VerticalAlignment="Center" Grid.Row="0" Grid.Column="0" Text="Archive Method" IsEnabled="False"/>
+                            <ComboBox IsEnabled="False" Margin="5,0,0,0" Name="comboArchiveMethod" Grid.Row="0" Grid.Column="1" SelectedIndex="0" SelectionChanged="ComboArchiveMethod_SelectionChanged">
                                 <ComboBoxItem Content="Size Threshold"/>
+                                <ComboBoxItem Content="Scheduled"/>
+                            </ComboBox>
+                            <TextBlock Name="textblockArchiveSchedule" Margin="5,0,0,0" VerticalAlignment="Center" Grid.Row="0" Grid.Column="2" Text="Archive Schedule" Visibility="Hidden"/>
+                            <ComboBox Margin="5,0,0,0" Name="comboArchiveSchedule" Grid.Row="0" Grid.Column="3" SelectedIndex="0" Visibility="Hidden" SelectionChanged="ComboArchiveSchedule_SelectionChanged" IsVisibleChanged="ComboArchiveSchedule_IsVisibleChanged">
+                                <ComboBoxItem Content="Daily"/>
+                                <ComboBoxItem Content="Weekly(Sunday)"/>
+                                <ComboBoxItem Content="Weekly(Monday)"/>
+                                <ComboBoxItem Content="Weekly(Tuesday)"/>
+                                <ComboBoxItem Content="Weekly(Wednesday)"/>
+                                <ComboBoxItem Content="Weekly(Thursday)"/>
+                                <ComboBoxItem Content="Weekly(Friday)"/>
+                                <ComboBoxItem Content="Weekly(Saturday)"/>
+                                <ComboBoxItem Content="Monthly"/>
+                                <ComboBoxItem Content="Quarterly"/>
+                                <ComboBoxItem Content="Yearly"/>
                             </ComboBox>
                         </Grid>
                         <Grid Margin="0,10,0,0">
@@ -218,9 +237,9 @@
                                 <ColumnDefinition Width="40"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock VerticalAlignment="Center" Grid.Row="0" Grid.Column="0" Text="Log File Size:"/>
-                            <TextBox Margin="5,0,0,0" Name="textboxLogSize" Grid.Row="0" Grid.Column="1" TextChanged="TextboxLogSize_TextChanged"/>
-                            <TextBlock VerticalAlignment="Center" Margin="5,0,0,0" Grid.Row="0" Grid.Column="2" Text="MB"/>
+                            <TextBlock Name="textblockLogSize" IsEnabled="False" VerticalAlignment="Center" Grid.Row="0" Grid.Column="0" Text="Log File Size:"/>
+                            <TextBox IsEnabled="False" Margin="5,0,0,0" Name="textboxLogSize" Grid.Row="0" Grid.Column="1" TextChanged="TextboxLogSize_TextChanged"/>
+                            <TextBlock Name="textblockMB" IsEnabled="False" VerticalAlignment="Center" Margin="5,0,0,0" Grid.Row="0" Grid.Column="2" Text="MB"/>
                         </Grid>
                         <Grid Margin="0,10,0,0">
                             <Grid.RowDefinitions>
@@ -232,8 +251,8 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <CheckBox VerticalAlignment="Center" Name="checkboxDelete" Grid.Row="0" Grid.Column="0" Content="Delete Archived Log Files Over" IsEnabled="False" IsChecked="False" Unchecked="CheckboxDelete_Unchecked" Checked="CheckboxDelete_Checked"/>
-                            <TextBox Name="textboxDeleteDays" Margin="5,0,0,0" Grid.Row="0" Grid.Column="1" TextChanged="TextboxDeleteDays_TextChanged"/>
-                            <TextBlock VerticalAlignment="Center" Margin="5,0,0,0" Grid.Row="0" Grid.Column="2" Text="days old"/>
+                            <TextBox IsEnabled="False" Name="textboxDeleteDays" Margin="5,0,0,0" Grid.Row="0" Grid.Column="1" TextChanged="TextboxDeleteDays_TextChanged"/>
+                            <TextBlock Name="textblockDeleteDays" IsEnabled="False" VerticalAlignment="Center" Margin="5,0,0,0" Grid.Row="0" Grid.Column="2" Text="days old"/>
                         </Grid>
                     </StackPanel>
                 </TabItem>

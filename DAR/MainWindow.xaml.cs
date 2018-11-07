@@ -1075,6 +1075,11 @@ namespace DAR
                 Name = "EnableDebug",
                 Value = "false"
             };
+            Setting archiveschedule = new Setting
+            {
+                Name = "ArchiveSchedule",
+                Value = ""
+            };
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 LiteCollection<Setting> settings = db.GetCollection<Setting>("settings");
@@ -1108,6 +1113,7 @@ namespace DAR
                 settings.Insert(shareuri);
                 settings.Insert(reference);
                 settings.Insert(enabledebug);
+                settings.Insert(archiveschedule);
             }
         }
         private void PlaySound(string soundid)
@@ -2085,6 +2091,11 @@ namespace DAR
         {
             Settings settingswindow = new Settings();
             settingswindow.Show();
+        }
+        private void About_Click(object sender, RoutedEventArgs e)
+        {
+            About aboutwindow = new About();
+            aboutwindow.Show();
         }
     }
 }

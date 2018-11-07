@@ -25,6 +25,8 @@ namespace DAR
     public partial class Settings : Window
     {
         private Dictionary<String,Setting> settinglist = new Dictionary<string, Setting>();
+        private ObservableCollection<String> sharinglist = new ObservableCollection<string>();
+
         public Settings()
         {
             InitializeComponent();
@@ -122,6 +124,15 @@ namespace DAR
                             }
                             break;
                         case "TrustedSenderList":
+                            if (appsetting.Value != "")
+                            {
+                                string[] members = appsetting.Value.Split(',');
+                                foreach (string member in members)
+                                {
+                                    sharinglist.Add(member);
+                                }
+                            }
+                            listboxSenders.ItemsSource = sharinglist;
                             break;
                         case "LogArchiveFolder":
                             textboxLogArchive.Text = appsetting.Value;
@@ -133,7 +144,13 @@ namespace DAR
                             checkboxCompress.IsChecked = Convert.ToBoolean(appsetting.Value);
                             break;
                         case "ArchiveMethod":
-                            comboArchiveMethod.SelectedValue = appsetting.Value;
+                            comboArchiveMethod.Text = appsetting.Value;
+                            break;
+                        case "ArchiveSchedule":
+                            if(appsetting.Value != "")
+                            {
+                                comboArchiveSchedule.Text = appsetting.Value;
+                            }
                             break;
                         case "LogSize":
                             textboxLogSize.Text = appsetting.Value;
@@ -169,6 +186,11 @@ namespace DAR
                 LiteCollection<Setting> settings = db.GetCollection<Setting>("settings");
                 foreach (KeyValuePair<String,Setting> appsetting in settinglist)
                 {
+                    if (appsetting.Key == "TrustedSenderList")
+                    {
+                        appsetting.Value.Value = string.Join(",", sharinglist);
+                        string stop = "";
+                    }
                     settings.Update(appsetting.Value);
                 }
             }
@@ -281,12 +303,20 @@ namespace DAR
         private void CheckboxMatchLog_Unchecked(object sender, RoutedEventArgs e)
         {
             if (checkboxMatchLog != null && settinglist.Count > 0)
-            { settinglist["DisplayMatchLog"].Value = checkboxMatchLog.IsChecked.ToString(); }
+            {
+                settinglist["DisplayMatchLog"].Value = checkboxMatchLog.IsChecked.ToString();
+                textblockLogEntries.IsEnabled = false;
+                textboxLogEntries.IsEnabled = false;
+            }
         }
         private void CheckboxMatchLog_Checked(object sender, RoutedEventArgs e)
         {
             if (checkboxMatchLog != null && settinglist.Count > 0)
-            { settinglist["DisplayMatchLog"].Value = checkboxMatchLog.IsChecked.ToString(); }
+            {
+                settinglist["DisplayMatchLog"].Value = checkboxMatchLog.IsChecked.ToString();
+                textblockLogEntries.IsEnabled = true;
+                textboxLogEntries.IsEnabled = true;
+            }
         }
         private void SliderMaster_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
@@ -326,12 +356,22 @@ namespace DAR
         private void CheckboxEnableSharing_Unchecked(object sender, RoutedEventArgs e)
         {
             if (checkboxEnableSharing != null && settinglist.Count > 0)
-            { settinglist["SharingEnabled"].Value = checkboxEnableSharing.IsChecked.ToString(); }
+            {
+                settinglist["SharingEnabled"].Value = checkboxEnableSharing.IsChecked.ToString();
+                groupboxMergeFrom.IsEnabled = false;
+                groupboxSenderList.IsEnabled = false;
+                groupboxShareFrom.IsEnabled = false;
+            }
         }
         private void CheckboxEnableSharing_Checked(object sender, RoutedEventArgs e)
         {
             if (checkboxEnableSharing != null && settinglist.Count > 0)
-            { settinglist["SharingEnabled"].Value = checkboxEnableSharing.IsChecked.ToString(); }
+            {
+                settinglist["SharingEnabled"].Value = checkboxEnableSharing.IsChecked.ToString();
+                groupboxMergeFrom.IsEnabled = true;
+                groupboxSenderList.IsEnabled = true;
+                groupboxShareFrom.IsEnabled = true;
+            }
         }
         private void CheckboxEnableIncoming_Unchecked(object sender, RoutedEventArgs e)
         {
@@ -381,6 +421,15 @@ namespace DAR
                 settinglist["AutoArchive"].Value = checkboxAutoArchive.IsChecked.ToString();
                 checkboxDelete.IsEnabled = true;
                 checkboxCompress.IsEnabled = true;
+                textblockArchiveMethod.IsEnabled = true;
+                comboArchiveMethod.IsEnabled = true;
+                textblockArchiveSchedule.IsEnabled = true;
+                comboArchiveSchedule.IsEnabled = true;
+                textblockLogSize.IsEnabled = true;
+                textboxLogSize.IsEnabled = true;
+                textblockMB.IsEnabled = true;
+                textboxDeleteDays.IsEnabled = true;
+                textblockDeleteDays.IsEnabled = true;
             }
         }
         private void CheckboxAutoArchive_Unchecked(object sender, RoutedEventArgs e)
@@ -392,6 +441,15 @@ namespace DAR
                 checkboxCompress.IsEnabled = false;
                 checkboxDelete.IsChecked = false;
                 checkboxCompress.IsChecked = false;
+                textblockArchiveMethod.IsEnabled = false;
+                comboArchiveMethod.IsEnabled = false;
+                textblockArchiveSchedule.IsEnabled = false;
+                comboArchiveSchedule.IsEnabled = false;
+                textblockLogSize.IsEnabled = false;
+                textboxLogSize.IsEnabled = false;
+                textblockMB.IsEnabled = false;
+                textboxDeleteDays.IsEnabled = false;
+                textblockDeleteDays.IsEnabled = false;
             }
         }
         private void CheckboxCompress_Unchecked(object sender, RoutedEventArgs e)
@@ -410,7 +468,17 @@ namespace DAR
             {
                 if (comboArchiveMethod.SelectedItem != null)
                 {
-                    settinglist["ArchiveMethod"].Value = comboArchiveMethod.SelectedItem.ToString();
+                    settinglist["ArchiveMethod"].Value = (e.AddedItems[0] as ComboBoxItem).Content as string;
+                }
+                if((e.AddedItems[0] as ComboBoxItem).Content as string == "Scheduled")
+                {
+                    textblockArchiveSchedule.Visibility = Visibility.Visible;
+                    comboArchiveSchedule.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    textblockArchiveSchedule.Visibility = Visibility.Hidden;
+                    comboArchiveSchedule.Visibility = Visibility.Hidden;
                 }
             }
         }
@@ -456,6 +524,42 @@ namespace DAR
         {
             if (checkboxDebug != null && settinglist.Count > 0)
             { settinglist["EnableDebug"].Value = checkboxDebug.IsChecked.ToString(); }
+        }
+
+        private void ComboArchiveSchedule_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (comboArchiveSchedule != null && settinglist.Count > 0)
+            {
+                if (comboArchiveSchedule.Text != null)
+                { settinglist["ArchiveSchedule"].Value = (e.AddedItems[0] as ComboBoxItem).Content as string; }
+            }
+        }
+        private void ComboArchiveSchedule_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if(comboArchiveSchedule != null && settinglist.Count > 0)
+            {
+                if (settinglist["ArchiveSchedule"].Value == "")
+                {
+                    settinglist["ArchiveSchedule"].Value = "Daily";
+                    comboArchiveSchedule.Text = "Daily";
+                }
+            }           
+        }
+        private void ButtonAddSender_Click(object sender, RoutedEventArgs e)
+        {
+            Boolean duplicate = false;
+            foreach(String member in sharinglist)
+            {
+                if(member.ToUpper() == textboxSenderList.Text.ToUpper())
+                { duplicate = true; }
+            }
+            if(!duplicate)
+            { sharinglist.Add(textboxSenderList.Text); }
+            textboxSenderList.Text = "";
+        }
+        private void ButtonRemoveSender_Click(object sender, RoutedEventArgs e)
+        {
+            sharinglist.Remove(listboxSenders.SelectedValue.ToString());
         }
     }
 }

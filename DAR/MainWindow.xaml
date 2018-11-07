@@ -64,7 +64,7 @@
                     <Custom:RibbonApplicationMenu>
                         <Custom:RibbonApplicationMenuItem Header="Settings" Click="Settings_Click"/>
                         <Custom:RibbonApplicationMenuItem Header="Check For Update"/>
-                        <Custom:RibbonApplicationMenuItem Header="About"/>
+                        <Custom:RibbonApplicationMenuItem Header="About" Click="About_Click"/>
                     </Custom:RibbonApplicationMenu>
                 </Custom:Ribbon.ApplicationMenu>
                 <Custom:RibbonTab Header="Home">

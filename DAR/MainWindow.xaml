@@ -168,7 +168,32 @@
                     <xcad:LayoutAnchorablePaneGroup DockWidth="200">
                         <xcad:LayoutAnchorablePane Name="characterpane">
                             <xcad:LayoutAnchorable x:Name="characters" Title="Characters" ContentId="charactersPane" CanHide="False">
-                                <ListView MouseDoubleClick="ListviewCharacters_MouseDoubleClick" SelectionChanged="ListviewCharacters_SelectionChanged" x:Name="listviewCharacters" IsSynchronizedWithCurrentItem="True">
+                                <ListView ContextMenuOpening="ListviewCharacters_ContextMenuOpening" MouseDoubleClick="ListviewCharacters_MouseDoubleClick" SelectionChanged="ListviewCharacters_SelectionChanged" x:Name="listviewCharacters" IsSynchronizedWithCurrentItem="True">
+                                    <ListView.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="Edit Character" Click="MenuItemCharEdit_Click">
+                                                <MenuItem.Icon>
+                                                    <Image Height="20" Source="Images\Oxygen-Icons.org-Oxygen-Actions-draw-freehand.ico"/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Header="Delete Character" Click="MenuItemCharDelete_Click">
+                                                <MenuItem.Icon>
+                                                    <Image Height="20" Source="Images\Oxygen-Icons.org-Oxygen-Actions-edit-delete.ico"/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <Separator/>
+                                            <MenuItem Name="cmStartMonitor" Header="Start Monitoring" Click="MenuItemStartMonitor_Click">
+                                                <MenuItem.Icon>
+                                                    <Image Height="20" Source="Images\Oxygen-Icons.org-Oxygen-Actions-media-playback-start.ico"/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Name="cmStopMonitor" Header="Stop Monitoring" Click="MenuItemStopMonitor_Click">
+                                                <MenuItem.Icon>
+                                                    <Image Height="20" Source="Images\Oxygen-Icons.org-Oxygen-Actions-media-playback-stop.ico"/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                        </ContextMenu>
+                                    </ListView.ContextMenu>
                                     <ListView.ItemTemplate>
                                         <DataTemplate>
                                             <WrapPanel>
@@ -190,7 +215,7 @@
                                                     </Grid.ColumnDefinitions>                                                    
                                                     <Image HorizontalAlignment="Left" Grid.Row="0" Grid.Column="0" Source="{Binding Monitor, Converter={StaticResource converter}}" />
                                                     <TextBlock Margin="5,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" Grid.Row="0" Grid.Column="1" Text="{Binding ProfileName}" />
-                                                <Image HorizontalAlignment="Right" Grid.Row="0" Grid.Column="2" Source="{Binding FileExists, Converter={StaticResource fileconverter}}"/>
+                                                    <Image HorizontalAlignment="Right" Grid.Row="0" Grid.Column="2" Source="{Binding FileExists, Converter={StaticResource fileconverter}}"/>
                                                 </Grid>
                                                 </Border>
                                             </WrapPanel>
@@ -202,9 +227,30 @@
                     </xcad:LayoutAnchorablePaneGroup>
                     <xcad:LayoutDocumentPane>
                         <xcad:LayoutDocument x:Name="availabletriggers" CanClose="False" Title="Triggers" ContentId="triggersPane" IsSelectedChanged="Availabletriggers_IsSelectedChanged">
-                            <TreeView SelectedItemChanged="TreeViewTriggers_SelectedItemChanged" HorizontalAlignment="Left" Margin="12,12,0,0" x:Name="treeViewTriggers" VerticalAlignment="Top"
+                            <TreeView ContextMenuOpening="TreeViewTriggers_ContextMenuOpening" SelectedItemChanged="TreeViewTriggers_SelectedItemChanged" HorizontalAlignment="Left" Margin="12,12,0,0" x:Name="treeViewTriggers" VerticalAlignment="Top"
                   ItemContainerStyle="{StaticResource TreeViewItemStyle}"
-                  ItemTemplate="{StaticResource CheckBoxItemTemplate}" />
+                  ItemTemplate="{StaticResource CheckBoxItemTemplate}" >
+                                <TreeView.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Name="cmTreeCopy" Header="Copy" Click="MenuItemTriggerCopy_Click">
+                                            <MenuItem.Icon>
+                                                <Image Height="20" Source="Images\Oxygen-Icons.org-Oxygen-Actions-edit-copy.ico"/>
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Name="cmTreePaste" Header="Paste" Click="MenuItemTriggerPaste_Click">
+                                            <MenuItem.Icon>
+                                                <Image Height="20" Source="Images\Oxygen-Icons.org-Oxygen-Actions-edit-paste.ico"/>
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                        <Separator/>
+                                        <MenuItem Name="cmTreeDelete" Header="Delete" Click="MenuItemTriggerDelete_Click">
+                                            <MenuItem.Icon>
+                                                <Image Height="20" Source="Images\Oxygen-Icons.org-Oxygen-Actions-edit-delete.ico"/>
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                    </ContextMenu>
+                                </TreeView.ContextMenu>
+                            </TreeView>
                         </xcad:LayoutDocument>
                         <xcad:LayoutDocument x:Name="firedtriggers" Title="Activated Triggers" ContentId="activatedPane">
                             <TextBox AcceptsReturn="True" TextWrapping="Wrap"></TextBox>

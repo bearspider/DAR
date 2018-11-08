@@ -273,6 +273,13 @@
     <Resource Include="Images\Icons8-Windows-8-Hands-Clenched-Fist.ico" />
     <Resource Include="Images\Hopstarter-Soft-Scraps-Button-Blank-Green.ico" />
     <Resource Include="Images\Hopstarter-Soft-Scraps-Button-Blank-Red.ico" />
+    <Resource Include="Images\Oxygen-Icons.org-Oxygen-Actions-edit-cut.ico" />
+    <Resource Include="Images\Oxygen-Icons.org-Oxygen-Actions-edit-paste.ico" />
+    <Resource Include="Images\Oxygen-Icons.org-Oxygen-Actions-window-close.ico" />
+    <Resource Include="Images\Oxygen-Icons.org-Oxygen-Actions-edit-delete.ico" />
+    <Resource Include="Images\Oxygen-Icons.org-Oxygen-Actions-media-playback-start.ico" />
+    <Resource Include="Images\Oxygen-Icons.org-Oxygen-Actions-media-playback-stop.ico" />
+    <Resource Include="Images\Oxygen-Icons.org-Oxygen-Actions-edit-copy.ico" />
     <Content Include="LiteDB.dll" />
     <Resource Include="Images\Oxygen-Icons.org-Oxygen-Status-image-missing.ico" />
     <Content Include="Xceed.Wpf.AvalonDock.dll" />

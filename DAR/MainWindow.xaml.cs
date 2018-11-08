@@ -222,17 +222,20 @@ namespace DAR
         private ObservableCollection<Pushback> pushbackList = new ObservableCollection<Pushback>();
         private ObservableCollection<String> masterpushbacklist = new ObservableCollection<string>();
         private ObservableCollection<String> masterpushuplist = new ObservableCollection<string>();
-        
+        //Trigger Clipboard
+        private Trigger triggerclipboard = new Trigger();
+        private TriggerGroup triggergroupclip = new TriggerGroup();
         #endregion
         public MainWindow()
         {
             InitializeComponent();
+            //Load settings
+            /*Add Code*/
+
+            //Initialize pushback monitor
             image_pushbackindicator.DataContext = pushbackToggle;
-            datagrid_pushback.ItemsSource = pushbackList;            
-            BindingOperations.EnableCollectionSynchronization(pushbackList, _itemsLock);
-            BindingOperations.EnableCollectionSynchronization(timerWindows, _timersLock);
-            BindingOperations.EnableCollectionSynchronization(textWindows, _textsLock);
-            BindingOperations.EnableCollectionSynchronization(categorycollection, _categoryLock);
+            datagrid_pushback.ItemsSource = pushbackList;
+
             //Check if EQAudioTriggers folder exists, if not create.
             bool mainPath = Directory.Exists(GlobalVariables.defaultPath);
             if (!mainPath)
@@ -244,33 +247,16 @@ namespace DAR
             InitializePushback();
             InitializePushup();
 
-            //Prep and/or load database
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<CharacterProfile> dbcharacterProfiles = db.GetCollection<CharacterProfile>("profiles");                
-                LiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");
-                LiteCollection<TriggerGroup> triggerGroups = db.GetCollection<TriggerGroup>("triggergroups");
-                LiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
-                LiteCollection<Category> categories = db.GetCollection<Category>("categories");
-                LiteCollection<Setting> settings = db.GetCollection<Setting>("settings");
-                LiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
-                dbcharacterProfiles.EnsureIndex((CharacterProfile x) => x.Id, true);
-                settings.EnsureIndex((Setting t) => t.Id, true);
-                overlaytimers.EnsureIndex((OverlayTimer v) => v.Id, true);
-                triggerGroups.EnsureIndex((TriggerGroup y) => y.Id, true);
-                overlaytexts.EnsureIndex((OverlayText u) => u.Id, true);
-                categories.EnsureIndex((Category z) => z.Id, true);
-                triggers.EnsureIndex((Trigger w) => w.Id, true);
-
-            }
+            //Prep Views
             UpdateListView();
             UpdateTriggerView();
             OverlayText_Refresh();
             OverlayTimer_Refresh();
+
             //Deploy Overlays
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<CharacterProfile> dbcharacterProfiles = db.GetCollection<CharacterProfile>("profiles");                
+                LiteCollection<CharacterProfile> dbcharacterProfiles = db.GetCollection<CharacterProfile>("profiles");
                 LiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");
                 LiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
                 LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
@@ -297,7 +283,7 @@ namespace DAR
                     newProfile.Show();
                     UpdateView();
                 }
-                if(settings.Count() == 0)
+                if (settings.Count() == 0)
                 {
                     //populate default settings
                     DefaultSettings();
@@ -311,7 +297,7 @@ namespace DAR
                     foreach (var profile in dbcharacterProfiles.FindAll())
                     {
                         CharacterOverride newoverride = new CharacterOverride();
-                        newoverride.ProfileName = profile.ProfileName;                        
+                        newoverride.ProfileName = profile.ProfileName;
                         defaultcategory.CharacterOverrides.Add(newoverride);
                     }
                     defaultcategory.AvailableTimerOverlays = availoverlaytimers;
@@ -325,7 +311,7 @@ namespace DAR
                     OverlayTextWindow newWindow = new OverlayTextWindow();
                     newWindow.SetProperties(overlay);
                     newWindow.ShowInTaskbar = false;
-                    textWindows.Add(newWindow);                    
+                    textWindows.Add(newWindow);
                     //newWindow.AddTrigger(testtrigger);
                     newWindow.Show();
                 }
@@ -360,7 +346,7 @@ namespace DAR
             }
         }
         #region Form Functions
-        //Redadjust the ribbon size if the main window is resized
+        //Re-adjust the ribbon size if the main window is resized
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             ribbonMain.Width = ActualWidth;
@@ -382,6 +368,16 @@ namespace DAR
                 }
             }
             Environment.Exit(Environment.ExitCode);
+        }
+        private void Settings_Click(object sender, RoutedEventArgs e)
+        {
+            Settings settingswindow = new Settings();
+            settingswindow.Show();
+        }
+        private void About_Click(object sender, RoutedEventArgs e)
+        {
+            About aboutwindow = new About();
+            aboutwindow.Show();
         }
         #endregion
         #region Character Profiles
@@ -467,6 +463,93 @@ namespace DAR
 
             UpdateListView();
         }
+        private void MenuItemCharEdit_Click(object sender, RoutedEventArgs e)
+        {
+            CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                var col = db.GetCollection<CharacterProfile>("profiles");
+                CharacterProfile result = col.FindOne(Query.EQ("ProfileName", selectedCharacter.ProfileName));
+                ProfileEditor editCharacter = new ProfileEditor(result);
+                editCharacter.Show();
+            }
+            UpdateView();
+        }
+        private void MenuItemCharDelete_Click(object sender, RoutedEventArgs e)
+        {
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                var col = db.GetCollection<CharacterProfile>("profiles");
+                var triggers = db.GetCollection<Trigger>("triggers");
+                var categories = db.GetCollection<Category>("categories");
+                String selectedCharacter = ((CharacterProfile)listviewCharacters.SelectedItem).ProfileName;
+                int profileid = ((CharacterProfile)listviewCharacters.SelectedItem).Id;
+                MessageBoxResult result = MessageBox.Show($"Are you sure you want to Delete {selectedCharacter}", "Confirmation", MessageBoxButton.YesNo);
+                if (result == MessageBoxResult.Yes)
+                {
+                    var dbdelete = col.Delete(Query.EQ("ProfileName", selectedCharacter));
+                    currentSelection = null;
+                    foreach (var trigger in triggers.FindAll())
+                    {
+                        if (trigger.Profiles.Contains(profileid))
+                        {
+                            trigger.Profiles.Remove(profileid);
+                            triggers.Update(trigger);
+                        }
+                    }
+                    foreach (var category in categories.FindAll())
+                    {
+                        var profile = from p in category.CharacterOverrides where p.ProfileName == selectedCharacter select p;
+                        var collection = new ObservableCollection<CharacterOverride>(profile);
+                        category.CharacterOverrides.Remove(collection[0]);
+                        categories.Update(category);
+                    }
+                    UpdateView();
+                }
+            }
+        }
+        private void MenuItemStartMonitor_Click(object sender, RoutedEventArgs e)
+        {
+            CharacterProfile selected = (CharacterProfile)listviewCharacters.SelectedItem;
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                var colProfiles = db.GetCollection<CharacterProfile>("profiles");
+                CharacterProfile currentProfile = colProfiles.FindById(selected.Id);
+                currentProfile.Monitor = true;
+                colProfiles.Update(currentProfile);
+                if (currentProfile.Monitor)
+                {
+                    MonitorCharacter(currentProfile);
+                }
+            }
+            UpdateListView();
+        }
+        private void MenuItemStopMonitor_Click(object sender, RoutedEventArgs e)
+        {
+            CharacterProfile selected = (CharacterProfile)listviewCharacters.SelectedItem;
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                var colProfiles = db.GetCollection<CharacterProfile>("profiles");
+                CharacterProfile currentProfile = colProfiles.FindById(selected.Id);
+                currentProfile.Monitor = false;
+                colProfiles.Update(currentProfile);
+            }
+            UpdateListView();
+        }
+        private void ListviewCharacters_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+        {
+            CharacterProfile selected = (CharacterProfile)listviewCharacters.SelectedItem;
+            if(selected.Monitor)
+            {
+                cmStopMonitor.IsEnabled = true;
+                cmStartMonitor.IsEnabled = false;
+            }
+            else
+            {
+                cmStopMonitor.IsEnabled = false;
+                cmStartMonitor.IsEnabled = true;
+            }
+        }
         #endregion
         #region Monitoring
         private void InitializePushback()
@@ -475,14 +558,14 @@ namespace DAR
             {
                 //Get file from github
                 using (var client = new WebClient())
-                {                    
+                {
                     client.DownloadFile("https://raw.githubusercontent.com/bearspider/EQ-LogParsers/master/pushback-list.csv", GlobalVariables.defaultPath + @"\pushback-list.csv");
                 }
 
             }
             using (var reader = new StreamReader(@"C:\eqaudiotriggers\pushback-list.csv"))
             {
-                while(!reader.EndOfStream)
+                while (!reader.EndOfStream)
                 {
                     var line = reader.ReadLine();
                     masterpushbacklist.Add(line);
@@ -530,7 +613,7 @@ namespace DAR
                                 {
                                     using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                                     {
-                                        var triggerCollection = db.GetCollection<Trigger>("triggers");                                        
+                                        var triggerCollection = db.GetCollection<Trigger>("triggers");
                                         foreach (var doc in triggerCollection.FindAll())
                                         {
                                             MatchCollection matches = Regex.Matches(line, doc.SearchText, RegexOptions.IgnoreCase);
@@ -557,7 +640,7 @@ namespace DAR
                                                     }
                                                     lock (_timersLock)
                                                     {
-                                                        
+
                                                         switch (doc.TimerType)
                                                         {
                                                             case "Timer(Count Down)":
@@ -727,29 +810,13 @@ namespace DAR
         }
         private void TriggerRemove_Click(object sender, RoutedEventArgs e)
         {
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
+            MessageBoxResult result = MessageBox.Show($"Are you sure you want to Delete {root.Name}", "Confirmation", MessageBoxButton.YesNo);
+            if (result == MessageBoxResult.Yes)
             {
-                TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
-                var col = db.GetCollection<Trigger>("triggers");
-                var triggergroup = db.GetCollection<TriggerGroup>("triggergroups");
-                var getTrigger = col.FindOne(Query.EQ("Name", root.Name));
-                var getGroup = triggergroup.FindById(getTrigger.Parent);
-                MessageBoxResult result = MessageBox.Show($"Are you sure you want to Delete {root.Name}", "Confirmation", MessageBoxButton.YesNo);
-                if (result == MessageBoxResult.Yes)
-                {
-                    var colProfiles = db.GetCollection<CharacterProfile>("profiles");
-                    var profiles = colProfiles.FindAll();
-                    foreach (CharacterProfile profile in profiles)
-                    {
-                        profile.Triggers.Remove(getTrigger.Id);
-                        colProfiles.Update(profile);
-                    }
-                    getGroup.RemoveTrigger(getTrigger.Id);
-                    triggergroup.Update(getGroup);
-                    col.Delete(getTrigger.Id);
-                }
+                DeleteTrigger(root.Name);
+                UpdateView();
             }
-            UpdateView();
         }
         private void TriggerEdit_Click(object sender, RoutedEventArgs e)
         {
@@ -769,6 +836,63 @@ namespace DAR
                 ribbonMain.SelectedIndex = 0;
             }
         }
+        private void DeleteTrigger(String triggername)
+        {
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                var col = db.GetCollection<Trigger>("triggers");
+                Trigger deadtrigger = col.FindOne(Query.EQ("Name", triggername));
+                var triggergroup = db.GetCollection<TriggerGroup>("triggergroups");
+                var getGroup = triggergroup.FindById(deadtrigger.Parent);
+                var colProfiles = db.GetCollection<CharacterProfile>("profiles");
+                var profiles = colProfiles.FindAll();
+                foreach (CharacterProfile profile in profiles)
+                {
+                    profile.Triggers.Remove(deadtrigger.Id);
+                    colProfiles.Update(profile);
+                }
+                getGroup.RemoveTrigger(deadtrigger.Id);
+                triggergroup.Update(getGroup);
+                col.Delete(deadtrigger.Id);
+            }
+        }
+        private void DeleteTrigger(int triggerid)
+        {
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                var col = db.GetCollection<Trigger>("triggers");
+                Trigger deadtrigger = col.FindById(triggerid);
+                var triggergroup = db.GetCollection<TriggerGroup>("triggergroups");
+                var getGroup = triggergroup.FindById(deadtrigger.Parent);
+                var colProfiles = db.GetCollection<CharacterProfile>("profiles");
+                var profiles = colProfiles.FindAll();
+                foreach (CharacterProfile profile in profiles)
+                {
+                    profile.Triggers.Remove(triggerid);
+                    colProfiles.Update(profile);
+                }
+                getGroup.RemoveTrigger(triggerid);
+                triggergroup.Update(getGroup);
+                col.Delete(triggerid);
+            }
+        }
+        private void CopyTrigger(int triggerid, int newgroupid)
+        {
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                var triggerCollection = db.GetCollection<Trigger>("triggers");
+                var triggergroupCollection = db.GetCollection<TriggerGroup>("triggergroups");
+                Trigger basetrigger = triggerCollection.FindById(triggerid);
+                TriggerGroup basegroup = triggergroupCollection.FindById(newgroupid);
+                basetrigger.Id = 0;
+                basetrigger.Name = basetrigger.Name + "-Copy";
+                basetrigger.Parent = newgroupid;
+                BsonValue newid = triggerCollection.Insert(basetrigger);
+                basegroup.Triggers.Add(newid);
+                basegroup.Triggers.Remove(triggerid);
+                triggergroupCollection.Update(basegroup);
+            }
+        }
         #endregion
         #region Trigger Groups
         private void TriggerGroupsAdd_Click(object sender, RoutedEventArgs e)
@@ -780,22 +904,11 @@ namespace DAR
         private void TriggerGroupsRemove_Click(object sender, RoutedEventArgs e)
         {
             TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            MessageBoxResult result = MessageBox.Show($"Are you sure you want to Delete {root.Name}", "Confirmation", MessageBoxButton.YesNo);
+            if (result == MessageBoxResult.Yes)
             {
-                var col = db.GetCollection<TriggerGroup>("triggergroups");
-                MessageBoxResult result = MessageBox.Show($"Are you sure you want to Delete {root.Name}", "Confirmation", MessageBoxButton.YesNo);
-                if (result == MessageBoxResult.Yes)
-                {
-                    var dbid = (col.FindOne(x => x.TriggerGroupName.Contains(root.Name))).Id;
-                    var childContains = col.FindAll().Where(x => x.children.Contains(dbid));
-                    foreach (var child in childContains)
-                    {
-                        child.Children.Remove(dbid);
-                        col.Update(child);
-                    }
-                    col.Delete(dbid);
-                    UpdateView();
-                }
+                DeleteTriggerGroup(root.Name);
+                UpdateView();
             }
             e.Handled = true;
         }
@@ -825,6 +938,65 @@ namespace DAR
             triggerDialog.Show();
             e.Handled = true;
             UpdateView();
+        }
+        private void DeleteTriggerGroup(String groupname)
+        {
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                var col = db.GetCollection<TriggerGroup>("triggergroups");
+                TriggerGroup deadgroup = col.FindOne(Query.EQ("TriggerGroupName", groupname));
+                var dbid = deadgroup.Id;
+                var childContains = col.FindAll().Where(x => x.children.Contains(dbid));
+                //Delete all triggers associated with the group
+                var triggers = deadgroup.Triggers;                
+                foreach (int triggerid in triggers)
+                {
+                    DeleteTrigger(triggerid);
+                }
+                //If child group, remove child from parent
+                foreach (var child in childContains)
+                {
+                    child.Children.Remove(dbid);
+                    col.Update(child);
+                }
+                //if parent group, remove children
+                foreach (int childgroup in deadgroup.Children)
+                {
+                    DeleteTriggerGroup(childgroup);
+                }
+                col.Delete(dbid);
+            }
+        }
+        private void DeleteTriggerGroup(int groupid)
+        {
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                var col = db.GetCollection<TriggerGroup>("triggergroups");
+                TriggerGroup deadgroup = col.FindById(groupid);
+                var childContains = col.FindAll().Where(x => x.children.Contains(groupid));
+                //Delete all triggers associated with the group
+                var triggers = deadgroup.Triggers;                
+                foreach (int triggerid in triggers)
+                {
+                    DeleteTrigger(triggerid);
+                }
+                //If child group, remove child from parent
+                foreach (var child in childContains)
+                {
+                    child.Children.Remove(groupid);
+                    col.Update(child);
+                }
+                //If Parent group, remove children
+                foreach(int childgroup in deadgroup.Children)
+                {
+                    DeleteTriggerGroup(childgroup);
+                }
+                col.Delete(groupid);
+            }
+        }
+        private void CopyTriggerGroup(int groupid, int newgroupid)
+        {
+            //
         }
         #endregion
         #region Tree
@@ -1204,7 +1376,7 @@ namespace DAR
                 foreach (var doc in col.FindAll())
                 {
                     //Check if the file exists and mark the fileexists boolean
-                    if(File.Exists(doc.LogFile))
+                    if (File.Exists(doc.LogFile))
                     {
                         doc.FileExists = true;
                     }
@@ -1438,13 +1610,13 @@ namespace DAR
         }
         private void TabcontrolCategory_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            var currenttab = (sender as System.Windows.Controls.TabControl);                        
-            CategoryWrapper currentcategory = (CategoryWrapper)currenttab.SelectedItem;            
-            if(currentcategory != null)
+            var currenttab = (sender as System.Windows.Controls.TabControl);
+            CategoryWrapper currentcategory = (CategoryWrapper)currenttab.SelectedItem;
+            if (currentcategory != null)
             {
                 categoryindex = currenttab.SelectedIndex;
                 selectedcategory = currentcategory.CategoryItem.Name;
-            }            
+            }
         }
         private void CategoryName_TextChanged(object sender, TextChangedEventArgs e)
         {
@@ -1458,7 +1630,7 @@ namespace DAR
                     category.Name = newname;
                     categoriescol.Update(category);
                     selectedcategory = newname;
-                }                
+                }
             }
         }
         private void CategoryAdd_Click(object sender, RoutedEventArgs e)
@@ -1472,14 +1644,14 @@ namespace DAR
                 {
                     LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
                     LiteCollection<CharacterProfile> profilecol = db.GetCollection<CharacterProfile>("profiles");
-                    foreach(var profile in profilecol.FindAll())
+                    foreach (var profile in profilecol.FindAll())
                     {
                         CharacterOverride newoverride = new CharacterOverride();
                         newoverride.ProfileName = profile.ProfileName;
                         newcategory.CharacterOverrides.Add(newoverride);
                     }
                     categoriescol.Insert(newcategory);
-                }                
+                }
             }
             Refresh_Categories();
         }
@@ -2053,10 +2225,10 @@ namespace DAR
         {
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");                                
-                foreach(var cat in categoriescol.FindAll())
+                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+                foreach (var cat in categoriescol.FindAll())
                 {
-                    if(cat.DefaultCategory)
+                    if (cat.DefaultCategory)
                     {
                         cat.DefaultCategory = false;
                         categoriescol.Update(cat);
@@ -2080,22 +2252,168 @@ namespace DAR
             image_pushbackindicator.DataContext = pushbackToggle;
         }
         #endregion
-
+        #region LogSearch
         private void LogfileSearch_Click(object sender, RoutedEventArgs e)
         {
             LogSearch logsearch = new LogSearch(characterProfiles);
             logsearch.Show();
         }
-
-        private void Settings_Click(object sender, RoutedEventArgs e)
+        #endregion
+        private void MenuItemTriggerCopy_Click(object sender, RoutedEventArgs e)
         {
-            Settings settingswindow = new Settings();
-            settingswindow.Show();
+            TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
+            if (root.Type == "triggergroup")
+            {
+                triggerclipboard = new Trigger();
+                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                {
+                    var triggergroupCollection = db.GetCollection<TriggerGroup>("triggergroups");
+                    TriggerGroup currentGroup = triggergroupCollection.FindOne(Query.EQ("TriggerGroupName", root.Name));
+                    triggergroupclip = currentGroup;
+                    triggergroupclip.TriggerGroupName = triggergroupclip.TriggerGroupName + "-Copy";
+                    triggergroupclip.Id = 0;
+                }
+            }
+            if (root.Type == "trigger")
+            {
+                triggergroupclip = new TriggerGroup();
+                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                {
+                    var triggergroupCollection = db.GetCollection<Trigger>("triggers");
+                    Trigger currentTrigger = triggergroupCollection.FindOne(Query.EQ("Name", root.Name));
+                    triggerclipboard = currentTrigger;
+                    triggerclipboard.Name = triggerclipboard.Name + "-Copy";
+                    triggerclipboard.Id = 0;
+                    triggerclipboard.Profiles.Clear();
+                }
+            }
         }
-        private void About_Click(object sender, RoutedEventArgs e)
+        private void MenuItemTriggerDelete_Click(object sender, RoutedEventArgs e)
         {
-            About aboutwindow = new About();
-            aboutwindow.Show();
+            TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
+            if (root.Type == "triggergroup")
+            {
+                MessageBoxResult result = MessageBox.Show($"Are you sure you want to Delete {root.Name}", "Confirmation", MessageBoxButton.YesNo);
+                if (result == MessageBoxResult.Yes)
+                {
+                    DeleteTriggerGroup(root.Name);
+                    UpdateView();
+                }
+            }
+            if (root.Type == "trigger")
+            {
+                MessageBoxResult result = MessageBox.Show($"Are you sure you want to Delete {root.Name}", "Confirmation", MessageBoxButton.YesNo);
+                if (result == MessageBoxResult.Yes)
+                {
+                    DeleteTrigger(root.Name);
+                    UpdateView();
+                }                
+            }
+        }
+        private void MenuItemTriggerPaste_Click(object sender, RoutedEventArgs e)
+        {
+            TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                var triggerCollection = db.GetCollection<Trigger>("triggers");
+                var triggergroupCollection = db.GetCollection<TriggerGroup>("triggergroups");
+                //Add new Trigger
+                if(root.Type == "trigger")
+                {
+                    triggerclipboard.Parent = root.Id;
+                    BsonValue newid = triggerCollection.Insert(triggerclipboard);
+                    TriggerGroup updategroup = triggergroupCollection.FindById(triggerclipboard.Parent);
+                    updategroup.Triggers.Add(newid);
+                    triggergroupCollection.Update(updategroup);
+                }
+                //Add new Trigger Group
+                if (root.Type == "triggergroup")
+                {
+                    //Add the parent group id
+                    triggergroupclip.Parent = root.Id;
+                    //Insert the new group
+                    BsonValue newid = triggergroupCollection.Insert(triggergroupclip);
+                    //Copy any underlying groups
+                    foreach(int childgroup in triggergroupclip.Children)
+                    {
+                        //Copy the group
+                    }
+                    //Copy Children Triggers to the new group
+                    foreach(int triggerid in triggergroupclip.Triggers)
+                    {
+                        CopyTrigger(triggerid, newid);
+                    }
+                    TriggerGroup parentgroup = triggergroupCollection.FindById(root.Id);
+                    parentgroup.children.Add(newid);
+                    triggergroupCollection.Update(parentgroup);
+                }
+                if(root.Name == "All Triggers")
+                {
+                    triggergroupclip.Parent = root.Id;
+                    BsonValue newid = triggergroupCollection.Insert(triggergroupclip);
+                    foreach (int triggerid in triggergroupclip.Triggers)
+                    {
+                        CopyTrigger(triggerid, newid);
+                    }
+                }
+            }            
+            UpdateTriggerView();
+        }
+        private void TreeViewTriggers_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+        {
+            TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
+            if (root != null)
+            {
+                if (root.Name == "All Triggers")
+                {
+                    cmTreeCopy.IsEnabled = false;
+                    cmTreeDelete.IsEnabled = false;
+                    if (root.Type == "triggergroup")
+                    {
+                        if (triggergroupclip.TriggerGroupName.Contains("-Copy"))
+                        {
+                            cmTreePaste.IsEnabled = true;
+                        }
+                        else
+                        {
+                            cmTreePaste.IsEnabled = false;
+                        }
+                    }
+                }
+                else
+                {
+                    cmTreeCopy.IsEnabled = true;
+                    cmTreeDelete.IsEnabled = true;
+                    if (root.Type == "triggergroup")
+                    {
+                        if (triggergroupclip.TriggerGroupName.Contains("-Copy") || triggerclipboard.Name.Contains("-Copy"))
+                        {
+                            cmTreePaste.IsEnabled = true;
+                        }
+                        else
+                        {
+                            cmTreePaste.IsEnabled = false;
+                        }
+                    }
+                    if(root.Type == "trigger")
+                    {
+                        if (triggerclipboard.Name.Contains("-Copy"))
+                        {
+                            cmTreePaste.IsEnabled = true;
+                        }
+                        else
+                        {
+                            cmTreePaste.IsEnabled = false;
+                        }
+                    }             
+                }
+            }
+            else
+            {
+                cmTreeCopy.IsEnabled = false;
+                cmTreeDelete.IsEnabled = false;
+                cmTreePaste.IsEnabled = false;
+            }
         }
     }
 }

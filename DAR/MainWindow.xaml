@@ -261,6 +261,7 @@
                                     <DataGridTextColumn Header="Character" Binding="{Binding Character}"  IsReadOnly="True"/>
                                     <DataGridTextColumn Header="Spell" Binding="{Binding Spell}" IsReadOnly="True"/>
                                     <DataGridTextColumn Header="Push Type" Binding="{Binding PushType}" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="Distance" Binding="{Binding Distance}" IsReadOnly="True"/>
                                     <DataGridTextColumn Header="From Log" Binding="{Binding FromCharacter}" IsReadOnly="True"/>
                                 </DataGrid.Columns>
                             </DataGrid>

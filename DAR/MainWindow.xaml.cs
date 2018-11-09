@@ -220,8 +220,8 @@ namespace DAR
         private ObservableCollection<CategoryWrapper> CategoryTab = new ObservableCollection<CategoryWrapper>();
         //These collections are used for the Pushback Monitor feature
         private ObservableCollection<Pushback> pushbackList = new ObservableCollection<Pushback>();
-        private ObservableCollection<String> masterpushbacklist = new ObservableCollection<string>();
-        private ObservableCollection<String> masterpushuplist = new ObservableCollection<string>();
+        private Dictionary<String, Tuple<String, Double>> masterpushbacklist = new Dictionary<String, Tuple<String, Double>>();
+        private Dictionary<String,Tuple<String,Double>> masterpushuplist = new Dictionary<String, Tuple<String, Double>>();
         //Trigger Clipboard
         private int triggerclipboard = 0;
         private int triggergroupclipboard = 0;
@@ -246,6 +246,12 @@ namespace DAR
             //Load the Pushback and Pushup data from CSV files.  If the CSV files do not exist, they will be downloaded.
             InitializePushback();
             InitializePushup();
+
+            //Initialize thread bindings
+            BindingOperations.EnableCollectionSynchronization(pushbackList, _itemsLock);
+            BindingOperations.EnableCollectionSynchronization(timerWindows, _timersLock);
+            BindingOperations.EnableCollectionSynchronization(textWindows, _textsLock);
+            BindingOperations.EnableCollectionSynchronization(categorycollection, _categoryLock);
 
             //Prep Views
             UpdateListView();
@@ -559,7 +565,7 @@ namespace DAR
                 //Get file from github
                 using (var client = new WebClient())
                 {
-                    client.DownloadFile("https://raw.githubusercontent.com/bearspider/EQ-LogParsers/master/pushback-list.csv", GlobalVariables.defaultPath + @"\pushback-list.csv");
+                    client.DownloadFile("https://raw.githubusercontent.com/bearspider/EQ-LogParsers/master/pushback.csv", GlobalVariables.defaultPath + @"\pushback-list.csv");
                 }
 
             }
@@ -568,7 +574,9 @@ namespace DAR
                 while (!reader.EndOfStream)
                 {
                     var line = reader.ReadLine();
-                    masterpushbacklist.Add(line);
+                    String[] vars = line.Split(',');
+                    Tuple<String,Double> entry = new Tuple<string, double>(vars[1],Convert.ToDouble(vars[2]));
+                    masterpushbacklist.Add(vars[0],entry);
                 }
             }
         }
@@ -579,7 +587,7 @@ namespace DAR
                 //Get file from github
                 using (var client = new WebClient())
                 {
-                    client.DownloadFile("https://raw.githubusercontent.com/bearspider/EQ-LogParsers/master/pushup-list.csv", GlobalVariables.defaultPath + @"\pushup-list.csv");
+                    client.DownloadFile("https://raw.githubusercontent.com/bearspider/EQ-LogParsers/master/pushup.csv", GlobalVariables.defaultPath + @"\pushup-list.csv");
                 }
             }
             using (var reader = new StreamReader(@"C:\eqaudiotriggers\pushup-list.csv"))
@@ -587,7 +595,9 @@ namespace DAR
                 while (!reader.EndOfStream)
                 {
                     var line = reader.ReadLine();
-                    masterpushuplist.Add(line);
+                    String[] vars = line.Split(',');
+                    Tuple<String, Double> entry = new Tuple<string, double>(vars[1], Convert.ToDouble(vars[2]));
+                    masterpushuplist.Add(vars[0], entry);
                 }
             }
         }
@@ -672,9 +682,9 @@ namespace DAR
                                         if (pushbackToggle)
                                         {
                                             Match pushmatch = spellregex.Match(line);
-                                            foreach (String spell in masterpushbacklist)
+                                            foreach (KeyValuePair<String,Tuple<String,Double>> spell in masterpushbacklist)
                                             {
-                                                MatchCollection matches = Regex.Matches(pushmatch.Groups["SPELL"].Value, spell, RegexOptions.IgnoreCase);
+                                                MatchCollection matches = Regex.Matches(pushmatch.Groups["SPELL"].Value, spell.Value.Item1, RegexOptions.IgnoreCase);
                                                 if (matches.Count > 0)
                                                 {
                                                     foreach (Match spellmatch in matches)
@@ -684,7 +694,8 @@ namespace DAR
                                                             Character = pushmatch.Groups["CHARACTER"].Value,
                                                             PushType = "Pushback",
                                                             Spell = pushmatch.Groups["SPELL"].Value,
-                                                            FromCharacter = character.ProfileName
+                                                            FromCharacter = character.ProfileName,
+                                                            Distance = spell.Value.Item2
                                                         };
                                                         lock (_itemsLock)
                                                         {
@@ -694,20 +705,21 @@ namespace DAR
                                                     break;
                                                 }
                                             }
-                                            foreach (String spell in masterpushuplist)
+                                            foreach (KeyValuePair<String,Tuple<String,Double>> spell in masterpushuplist)
                                             {
-                                                MatchCollection matches = Regex.Matches(pushmatch.Groups["SPELL"].Value, spell, RegexOptions.IgnoreCase);
+                                                MatchCollection matches = Regex.Matches(pushmatch.Groups["SPELL"].Value, spell.Value.Item1, RegexOptions.IgnoreCase);
                                                 if (matches.Count > 0)
                                                 {
                                                     foreach (Match spellmatch in matches)
                                                     {
-                                                        Pushback pushback = new Pushback
-                                                        {
-                                                            Character = pushmatch.Groups["CHARACTER"].Value,
-                                                            PushType = "Pushup",
-                                                            Spell = pushmatch.Groups["SPELL"].Value,
-                                                            FromCharacter = character.ProfileName
-                                                        };
+                                                    Pushback pushback = new Pushback
+                                                    {
+                                                        Character = pushmatch.Groups["CHARACTER"].Value,
+                                                        PushType = "Pushup",
+                                                        Spell = pushmatch.Groups["SPELL"].Value,
+                                                        FromCharacter = character.ProfileName,
+                                                        Distance = spell.Value.Item2
+                                                    };
                                                         lock (_itemsLock)
                                                         {
                                                             pushbackList.Add(pushback);

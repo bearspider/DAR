@@ -12,13 +12,17 @@ namespace DAR
         public String Spell {get; set;}
         public String PushType {get; set;}
         public String FromCharacter { get; set; }
+        public Double Distance { get; set; }
+        public int Id { get; set; }
 
         public Pushback()
         {
+            Id = 0;
             Character = "";
             Spell = "";
             PushType = "";
             FromCharacter = "";
+            Distance = 0.0;
         }
     }
 }

@@ -223,8 +223,8 @@ namespace DAR
         private ObservableCollection<String> masterpushbacklist = new ObservableCollection<string>();
         private ObservableCollection<String> masterpushuplist = new ObservableCollection<string>();
         //Trigger Clipboard
-        private Trigger triggerclipboard = new Trigger();
-        private TriggerGroup triggergroupclip = new TriggerGroup();
+        private int triggerclipboard = 0;
+        private int triggergroupclipboard = 0;
         #endregion
         public MainWindow()
         {
@@ -994,9 +994,39 @@ namespace DAR
                 col.Delete(groupid);
             }
         }
-        private void CopyTriggerGroup(int groupid, int newgroupid)
+        private void CopyTriggerGroup(int copyfrom, int parent)
         {
-            //
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                var triggergroupCollection = db.GetCollection<TriggerGroup>("triggergroups");
+                TriggerGroup basegroup = triggergroupCollection.FindById(copyfrom);                
+                TriggerGroup newgroup = new TriggerGroup();
+                newgroup.DefaultEnabled = basegroup.DefaultEnabled;
+                newgroup.TriggerGroupName = basegroup.TriggerGroupName + "-Copy";
+                newgroup.Id = 0;
+                newgroup.Parent = parent;
+                BsonValue newgid = triggergroupCollection.Insert(newgroup);
+                if(basegroup.Triggers.Count > 0)
+                {
+                    foreach(int triggerid in basegroup.Triggers)
+                    {
+                        CopyTrigger(triggerid, newgid);
+                    }
+                }
+                if(basegroup.Children.Count > 0)
+                {
+                    foreach(int child in basegroup.Children)
+                    {
+                        CopyTriggerGroup(child, newgid);
+                    }
+                }
+                if (parent != 0)
+                {
+                    TriggerGroup parentgroup = triggergroupCollection.FindById(parent);
+                    parentgroup.AddChild(newgid);
+                    triggergroupCollection.Update(parentgroup);
+                }
+            }
         }
         #endregion
         #region Tree
@@ -2259,33 +2289,19 @@ namespace DAR
             logsearch.Show();
         }
         #endregion
+        #region TriggerContextMenus
         private void MenuItemTriggerCopy_Click(object sender, RoutedEventArgs e)
         {
             TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
             if (root.Type == "triggergroup")
             {
-                triggerclipboard = new Trigger();
-                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-                {
-                    var triggergroupCollection = db.GetCollection<TriggerGroup>("triggergroups");
-                    TriggerGroup currentGroup = triggergroupCollection.FindOne(Query.EQ("TriggerGroupName", root.Name));
-                    triggergroupclip = currentGroup;
-                    triggergroupclip.TriggerGroupName = triggergroupclip.TriggerGroupName + "-Copy";
-                    triggergroupclip.Id = 0;
-                }
+                triggerclipboard = 0;
+                triggergroupclipboard = root.Id;
             }
             if (root.Type == "trigger")
             {
-                triggergroupclip = new TriggerGroup();
-                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-                {
-                    var triggergroupCollection = db.GetCollection<Trigger>("triggers");
-                    Trigger currentTrigger = triggergroupCollection.FindOne(Query.EQ("Name", root.Name));
-                    triggerclipboard = currentTrigger;
-                    triggerclipboard.Name = triggerclipboard.Name + "-Copy";
-                    triggerclipboard.Id = 0;
-                    triggerclipboard.Profiles.Clear();
-                }
+                triggergroupclipboard = 0;
+                triggerclipboard = root.Id;
             }
         }
         private void MenuItemTriggerDelete_Click(object sender, RoutedEventArgs e)
@@ -2320,41 +2336,16 @@ namespace DAR
                 //Add new Trigger
                 if(root.Type == "trigger")
                 {
-                    triggerclipboard.Parent = root.Id;
-                    BsonValue newid = triggerCollection.Insert(triggerclipboard);
-                    TriggerGroup updategroup = triggergroupCollection.FindById(triggerclipboard.Parent);
-                    updategroup.Triggers.Add(newid);
-                    triggergroupCollection.Update(updategroup);
+                    CopyTrigger(triggerclipboard,root.Id);
                 }
                 //Add new Trigger Group
                 if (root.Type == "triggergroup")
                 {
-                    //Add the parent group id
-                    triggergroupclip.Parent = root.Id;
-                    //Insert the new group
-                    BsonValue newid = triggergroupCollection.Insert(triggergroupclip);
-                    //Copy any underlying groups
-                    foreach(int childgroup in triggergroupclip.Children)
-                    {
-                        //Copy the group
-                    }
-                    //Copy Children Triggers to the new group
-                    foreach(int triggerid in triggergroupclip.Triggers)
-                    {
-                        CopyTrigger(triggerid, newid);
-                    }
-                    TriggerGroup parentgroup = triggergroupCollection.FindById(root.Id);
-                    parentgroup.children.Add(newid);
-                    triggergroupCollection.Update(parentgroup);
+                    CopyTriggerGroup(triggergroupclipboard, root.Id);
                 }
                 if(root.Name == "All Triggers")
                 {
-                    triggergroupclip.Parent = root.Id;
-                    BsonValue newid = triggergroupCollection.Insert(triggergroupclip);
-                    foreach (int triggerid in triggergroupclip.Triggers)
-                    {
-                        CopyTrigger(triggerid, newid);
-                    }
+                    CopyTriggerGroup(triggergroupclipboard, 0);
                 }
             }            
             UpdateTriggerView();
@@ -2370,7 +2361,7 @@ namespace DAR
                     cmTreeDelete.IsEnabled = false;
                     if (root.Type == "triggergroup")
                     {
-                        if (triggergroupclip.TriggerGroupName.Contains("-Copy"))
+                        if (triggergroupclipboard != 0)
                         {
                             cmTreePaste.IsEnabled = true;
                         }
@@ -2386,7 +2377,7 @@ namespace DAR
                     cmTreeDelete.IsEnabled = true;
                     if (root.Type == "triggergroup")
                     {
-                        if (triggergroupclip.TriggerGroupName.Contains("-Copy") || triggerclipboard.Name.Contains("-Copy"))
+                        if (triggergroupclipboard != 0 || triggerclipboard != 0)
                         {
                             cmTreePaste.IsEnabled = true;
                         }
@@ -2397,7 +2388,7 @@ namespace DAR
                     }
                     if(root.Type == "trigger")
                     {
-                        if (triggerclipboard.Name.Contains("-Copy"))
+                        if (triggerclipboard != 0)
                         {
                             cmTreePaste.IsEnabled = true;
                         }
@@ -2415,5 +2406,6 @@ namespace DAR
                 cmTreePaste.IsEnabled = false;
             }
         }
+        #endregion
     }
 }

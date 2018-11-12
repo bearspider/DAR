@@ -230,8 +230,20 @@ namespace DAR
         {
             InitializeComponent();
             //Load settings
-            /*Add Code*/
-
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                LiteCollection<Setting> settings = db.GetCollection<Setting>("settings");
+                if (settings.Count() == 0)
+                {
+                    //populate default settings
+                    DefaultSettings();
+                }
+                else
+                {
+                    /*Add Code*/
+                }
+            }
+            
             //Initialize pushback monitor
             image_pushbackindicator.DataContext = pushbackToggle;
             datagrid_pushback.ItemsSource = pushbackList;
@@ -265,8 +277,7 @@ namespace DAR
                 LiteCollection<CharacterProfile> dbcharacterProfiles = db.GetCollection<CharacterProfile>("profiles");
                 LiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");
                 LiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                LiteCollection<Setting> settings = db.GetCollection<Setting>("settings");
+                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");                
                 LiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
                 Trigger testtrigger = triggers.FindById(1);
                 //Check if no overlays or character profiles exist.  If none exist, prompt the editors to create the first entries.
@@ -288,11 +299,6 @@ namespace DAR
                     newProfile.Topmost = true;
                     newProfile.Show();
                     UpdateView();
-                }
-                if (settings.Count() == 0)
-                {
-                    //populate default settings
-                    DefaultSettings();
                 }
                 //If no categories exist(Blank Database), create a default category. DEFAULT category is immutable.
                 IEnumerable<Category> availcategories = categoriescol.FindAll();

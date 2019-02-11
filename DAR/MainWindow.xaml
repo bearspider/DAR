@@ -88,7 +88,7 @@
                     </Custom:RibbonGroup>
                     <Custom:RibbonGroup Header="Misc">
                         <Custom:RibbonSplitButton Label="Commands" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Apps-utilities-terminal.ico">
-                            <Custom:RibbonSplitMenuItem Name="rbnStopAlerts" Header="Stop Alerts">
+                            <Custom:RibbonSplitMenuItem Name="rbnStopAlerts" Header="Stop Alerts" Click="RbnStopAlerts_Click">
                             </Custom:RibbonSplitMenuItem>
                             <Custom:RibbonSplitMenuItem Name="rbnResetCounters" Header="Reset Counters">
                             </Custom:RibbonSplitMenuItem>

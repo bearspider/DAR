@@ -74,14 +74,30 @@ namespace DAR
             Brush brush = new SolidColorBrush((Color)windowcolor);
             this.Background = brush;
         }
-        public void AddTimer(String description, int duration, Boolean type)
+        public void AddTimer(String description, int duration, Boolean type, String character)
         {
             TriggerTimer newTimer = new TriggerTimer();
+            newTimer.Character = character;
             newTimer.SetProgress(0, duration);
             newTimer.SetTimer(description, duration, type);
             newTimer.PropertyChanged += Listener_PropertyChanged;
             newTimer.StartTimer();
             TimerBars.Add(newTimer);
+        }
+        public void RemoveTimer(String character)
+        {
+            List<TriggerTimer> toremove = new List<TriggerTimer>();
+            foreach(TriggerTimer timer in TimerBars)
+            {
+                if(timer.Character == character)
+                {
+                    toremove.Add(timer);
+                }
+            }
+            foreach(TriggerTimer removeitem in toremove)
+            {
+                TimerBars.Remove(removeitem);
+            }
         }
         private void Listener_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
@@ -92,8 +108,7 @@ namespace DAR
                 s.StopTimer();
                 TimerBars.Remove(s);
             }
-        }
-
+        }        
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ChangedButton == MouseButton.Left)

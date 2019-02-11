@@ -12,6 +12,7 @@ namespace DAR
 {
     public class TriggerTimer : INotifyPropertyChanged
     {
+        public string character;
         public DispatcherTimer dispatcherTimer;
         public String timerDescription;
         public int timerDuration;
@@ -30,11 +31,17 @@ namespace DAR
             timerDescription = "New Timer";
             timerDuration = 0;
             direction = false;
+            character = "";
             progress = new ProgressBar()
             {
                 Minimum = 0,
                 Maximum = 1
             };
+        }
+        public String Character
+        {
+            get { return character; }
+            set { character = value; }
         }
         public Boolean Direction
         {

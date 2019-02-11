@@ -157,6 +157,7 @@ namespace DAR
             var main = App.Current.MainWindow as MainWindow;
             main.UpdateListView();
             main.Refresh_Categories();
+            main.AddResetRibbon();
             this.Close();
         }
 

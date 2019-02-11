@@ -1,5 +1,4 @@
 ﻿using LiteDB;
-using Microsoft.Windows.Controls.Ribbon;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -20,6 +19,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Ribbon;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Documents;
@@ -28,6 +28,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Shell;
 using Xceed.Wpf.AvalonDock;
 
 namespace DAR
@@ -229,6 +230,14 @@ namespace DAR
         public MainWindow()
         {
             InitializeComponent();
+
+            //Check if EQAudioTriggers folder exists, if not create.
+            bool mainPath = Directory.Exists(GlobalVariables.defaultPath);
+            if (!mainPath)
+            {
+                Directory.CreateDirectory(GlobalVariables.defaultPath);
+            }
+
             //Load settings
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -247,13 +256,6 @@ namespace DAR
             //Initialize pushback monitor
             image_pushbackindicator.DataContext = pushbackToggle;
             datagrid_pushback.ItemsSource = pushbackList;
-
-            //Check if EQAudioTriggers folder exists, if not create.
-            bool mainPath = Directory.Exists(GlobalVariables.defaultPath);
-            if (!mainPath)
-            {
-                Directory.CreateDirectory(GlobalVariables.defaultPath);
-            }
 
             //Load the Pushback and Pushup data from CSV files.  If the CSV files do not exist, they will be downloaded.
             InitializePushback();
@@ -324,7 +326,6 @@ namespace DAR
                     newWindow.SetProperties(overlay);
                     newWindow.ShowInTaskbar = false;
                     textWindows.Add(newWindow);
-                    //newWindow.AddTrigger(testtrigger);
                     newWindow.Show();
                 }
                 //Deply all timer overlays
@@ -334,19 +335,13 @@ namespace DAR
                     newWindow.SetProperties(overlay);
                     newWindow.ShowInTaskbar = false;
                     timerWindows.Add(newWindow);
-                    //newWindow.Add(testtrigger);
                     newWindow.Show();
                 }
             }
             //Start Monitoring Enabled Profiles
             foreach (CharacterProfile character in characterProfiles)
             {
-                RibbonSplitMenuItem characterStopAlerts = new RibbonSplitMenuItem();
-                RibbonSplitMenuItem characterResetCounters = new RibbonSplitMenuItem();
-                characterStopAlerts.Header = character.Name;
-                characterResetCounters.Header = character.Name;
-                rbnStopAlerts.Items.Add(characterStopAlerts);
-                rbnResetCounters.Items.Add(characterResetCounters);
+                AddResetRibbon();
                 if (File.Exists(character.LogFile) && character.Monitor)
                 {
                     MonitorCharacter(character);
@@ -393,6 +388,48 @@ namespace DAR
         }
         #endregion
         #region Character Profiles
+        public void AddResetRibbon()
+        {
+            rbnStopAlerts.Items.Clear();
+            rbnResetCounters.Items.Clear();
+            foreach (CharacterProfile character in characterProfiles)
+            {
+                RibbonSplitMenuItem characterStopAlerts = new RibbonSplitMenuItem();
+                RibbonSplitMenuItem characterResetCounters = new RibbonSplitMenuItem();
+                characterStopAlerts.Header = character.Name;
+                characterResetCounters.Header = character.Name;
+                characterStopAlerts.Click += RbnStopAlert_Click;
+                rbnStopAlerts.Items.Add(characterStopAlerts);
+                rbnResetCounters.Items.Add(characterResetCounters);
+            }
+        }
+        private void PopResetRibbon(String character)
+        {
+            List<RibbonSplitMenuItem> stoptoremove = new List<RibbonSplitMenuItem>();
+            List<RibbonSplitMenuItem> resettoremove = new List<RibbonSplitMenuItem>();
+            foreach(RibbonSplitMenuItem stopalert in rbnStopAlerts.Items)
+            {
+                if(stopalert.Header.ToString() == character)
+                {
+                    stoptoremove.Add(stopalert);
+                }
+            }
+            foreach (RibbonSplitMenuItem resetalert in rbnResetCounters.Items)
+            {
+                if (resetalert.Header.ToString() == character)
+                {
+                    resettoremove.Add(resetalert);
+                }
+            }
+            foreach(RibbonSplitMenuItem removeitem in stoptoremove)
+            {
+                rbnStopAlerts.Items.Remove(removeitem);
+            }
+            foreach(RibbonSplitMenuItem removeitem in resettoremove)
+            {
+                rbnResetCounters.Items.Remove(removeitem);
+            }
+        }
         private void RibbonButtonEdit_Click(object sender, RoutedEventArgs e)
         {
             CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
@@ -434,6 +471,8 @@ namespace DAR
                         category.CharacterOverrides.Remove(collection[0]);
                         categories.Update(category);
                     }
+                    //Remove Character from stop alerts menu items.
+                    PopResetRibbon(((CharacterProfile)listviewCharacters.SelectedItem).Name);
                     UpdateView();
                 }
             }
@@ -662,9 +701,8 @@ namespace DAR
                                                             case "Timer(Count Down)":
                                                                 Dispatcher.BeginInvoke((Action)(() =>
                                                                 {
-
                                                                     OverlayTimerWindow otw = timerWindows.Single<OverlayTimerWindow>(i => i.Name == triggeredcategory.TimerOverlay);
-                                                                    otw.AddTimer(doc.TimerName, doc.TimerDuration, false);
+                                                                    otw.AddTimer(doc.TimerName, doc.TimerDuration, false, character.characterName);
                                                                     otw.DataContext = otw;
                                                                 }));
                                                                 break;
@@ -672,7 +710,7 @@ namespace DAR
                                                                 Dispatcher.BeginInvoke((Action)(() =>
                                                                 {
                                                                     OverlayTimerWindow otw = timerWindows.Single<OverlayTimerWindow>(i => i.Name == triggeredcategory.TimerOverlay);
-                                                                    otw.AddTimer(doc.TimerName, doc.TimerDuration, true);
+                                                                    otw.AddTimer(doc.TimerName, doc.TimerDuration, true, character.characterName);
                                                                     (timerWindows.Single<OverlayTimerWindow>(i => i.Name == triggeredcategory.TimerOverlay)).DataContext = otw;
                                                                 }));
                                                                 break;
@@ -770,6 +808,22 @@ namespace DAR
                     }
                 }
             }
+        }
+        private void RbnStopAlerts_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (OverlayTimerWindow timerwindow in timerWindows)
+            {
+                timerwindow.TimerBars.Clear();
+            }
+        }
+        private void RbnStopAlert_Click(object sender, RoutedEventArgs e)
+        {
+            String character = (String)((System.Windows.Controls.Ribbon.RibbonSplitMenuItem)e.Source).Header;
+            foreach (OverlayTimerWindow timerwindow in timerWindows)
+            {
+                timerwindow.RemoveTimer(character);
+            }
+            e.Handled = true;
         }
         #endregion
         #region Triggers
@@ -2425,5 +2479,6 @@ namespace DAR
             }
         }
         #endregion
+
     }
 }

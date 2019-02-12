@@ -223,12 +223,13 @@ namespace DAR
         private int triggerclipboard = 0;
         private int triggergroupclipboard = 0;
         private static string version = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion;
+        private int totallinecount = 0;
         #endregion
         public MainWindow()
         {
             InitializeComponent();
             textblockVersion.Text = version;
-
+            statusbarStatus.DataContext = totallinecount;
             //Check if EQAudioTriggers folder exists, if not create.
             bool mainPath = Directory.Exists(GlobalVariables.defaultPath);
             if (!mainPath)
@@ -676,6 +677,7 @@ namespace DAR
                             {
                                 String[] delimiter = new string[] { "\r\n" };
                                 String[] lines = capturedLine.Split(delimiter, StringSplitOptions.RemoveEmptyEntries);
+                                totallinecount += lines.Length;
                                 foreach (string line in lines)
                                 {
                                     using (var db = new LiteDatabase(GlobalVariables.defaultDB))

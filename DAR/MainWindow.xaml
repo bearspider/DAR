@@ -493,5 +493,9 @@
                 </xcad:LayoutPanel>
             </xcad:LayoutRoot>
         </xcad:DockingManager>
+        <Fluent:StatusBar Grid.Row="3" Grid.ColumnSpan="2">
+            <Fluent:StatusBarItem Name="statusbarStatus" Title="Staus" Content="{Binding Path=., StringFormat=\{0\}}" HorizontalAlignment="Right"/>
+            <Fluent:StatusBarItem Content=" lines of logs processed" HorizontalAlignment="Right"/>
+        </Fluent:StatusBar>
     </Grid>
 </Window>

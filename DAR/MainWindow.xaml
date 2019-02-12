@@ -7,6 +7,7 @@
         xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
         xmlns:local="clr-namespace:DAR"
         xmlns:Custom="http://schemas.microsoft.com/winfx/2006/xaml/presentation/ribbon"
+        xmlns:Fluent="urn:fluent-ribbon"
     xmlns:wpf="http://schemas.microsoft.com/netfx/2009/xaml/presentation" x:Class="DAR.MainWindow"
         mc:Ignorable="d"
         Title="EQ Audio Triggers" Height="812" Width="1170" Icon="Images/Tonev-Windows-7-Windows-7-headphone.ico" WindowStyle="ThreeDBorderWindow" SizeChanged="Window_SizeChanged" Closing="Window_Closing">
@@ -57,103 +58,123 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-            <Custom:Ribbon x:Name="ribbonMain" HorizontalAlignment="Left" VerticalAlignment="Top" FontFamily="Global User Interface" RenderTransformOrigin="0.512,1.045" Width="1170" SelectionChanged="RibbonMain_SelectionChanged">
-                <Custom:Ribbon.ApplicationMenu>
-                    <Custom:RibbonApplicationMenu>
-                        <Custom:RibbonApplicationMenuItem Header="Settings" Click="Settings_Click"/>
-                        <Custom:RibbonApplicationMenuItem Header="Check For Update"/>
-                        <Custom:RibbonApplicationMenuItem Header="About" Click="About_Click"/>
-                    </Custom:RibbonApplicationMenu>
-                </Custom:Ribbon.ApplicationMenu>
-                <Custom:RibbonTab Header="Home">
-                    <Custom:RibbonGroup Header="Characters">
-                        <Custom:RibbonButton Name="ribbonCharAdd" Label="Add" IsEnabled="True" Click="RibbonButtonAdd_Click" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-list-add-user.ico"/>
-                        <Custom:RibbonButton Name="ribbonCharEdit" Label="Edit" IsEnabled="False" Click="RibbonButtonEdit_Click" SmallImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-user-properties.ico"/>
-                        <Custom:RibbonButton Name="ribbonCharRemove" Label="Remove" IsEnabled="False" Click="RibbonButtonRemove_Click" SmallImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-list-remove-user.ico"/>
-                    </Custom:RibbonGroup>
-                    <Custom:RibbonGroup Header="Trigger Groups">
-                        <Custom:RibbonSplitButton Name="triggerGroupsAdd" Click="TriggerGroupsAdd_Click" Label="Add" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-tab-new-background.ico">
-                            <Custom:RibbonSplitMenuItem Name="triggerGroupsAddSelected" Click="TriggerGroupsAddSelected_Click" IsEnabled="False" Header="Add To Selected Group"/>
-                            <Custom:RibbonSplitMenuItem Name="triggerGroupsAddTopLevel" Click="TriggerGroupsAddTopLevel_Click" Header="Add Top Level Group"/>
-                        </Custom:RibbonSplitButton>
-                        <Custom:RibbonButton Name="triggerGroupsEdit" Click="TriggerGroupsEdit_Click" IsEnabled="False" Label="Edit" SmallImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-draw-freehand.ico"/>
-                        <Custom:RibbonButton Name="triggerGroupsRemove" Click="TriggerGroupsRemove_Click" IsEnabled="False" Label="Remove" SmallImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-tab-close-other.ico"/>
-                    </Custom:RibbonGroup>
-                    <Custom:RibbonGroup Header="Triggers">
-                        <Custom:RibbonButton Name="triggerAdd" IsEnabled="False" Label="Add" Click="TriggerAdd_Click" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-document-new.ico"/>
-                        <Custom:RibbonButton Name="triggerEdit" IsEnabled="False" Label="Edit" Click="TriggerEdit_Click" SmallImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-document-edit.ico"/>
-                        <Custom:RibbonButton Name="triggerRemove" IsEnabled="False" Label="Remove" Click="TriggerRemove_Click" SmallImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-document-close.ico"/>
-                    </Custom:RibbonGroup>
-                    <Custom:RibbonGroup Header="Misc">
-                        <Custom:RibbonSplitButton Label="Commands" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Apps-utilities-terminal.ico">
-                            <Custom:RibbonSplitMenuItem Name="rbnStopAlerts" Header="Stop Alerts" Click="RbnStopAlerts_Click">
-                            </Custom:RibbonSplitMenuItem>
-                            <Custom:RibbonSplitMenuItem Name="rbnResetCounters" Header="Reset Counters">
-                            </Custom:RibbonSplitMenuItem>
-                        </Custom:RibbonSplitButton>
-                        <Custom:RibbonButton Label="Pronunciations" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Apps-konversation.ico"/>
-                        <Custom:RibbonSplitButton  Click="LogfileSearch_Click" Label="Search" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-edit-find.ico">
-                            <Custom:RibbonSplitMenuItem Click="LogfileSearch_Click" Header="Log File"/>
-                            <Custom:RibbonSplitMenuItem Header="Triggers"/>
-                        </Custom:RibbonSplitButton>
-                    </Custom:RibbonGroup>
-                    <Custom:RibbonGroup Header="Pushback Monitor">
-                        <StackPanel>
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition />
-                                    <RowDefinition />
-                                </Grid.RowDefinitions>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition />
-                                    <ColumnDefinition Width="40"/>
-                                </Grid.ColumnDefinitions>
-                                <Custom:RibbonButton Grid.Row="0" Grid.Column="0" HorizontalAlignment="Center" Name="button_pushbacktoggle" IsEnabled="True" Label="Monitor" Click="Button_pushbacktoggle_Click" LargeImageSource="Images/Icons8-Windows-8-Hands-Clenched-Fist.ico"/>
-                                <Image Name="image_pushbackindicator" Margin="5,0,0,0" Grid.Row="0" Grid.Column="1" Source="{Binding Converter={StaticResource pushbackconverter}}"/>
-                            </Grid>
-                        </StackPanel>
-                    </Custom:RibbonGroup>
-                </Custom:RibbonTab>
-                <Custom:RibbonTab Header="Sharing">
-                    <Custom:RibbonGroup Header="Library">
-                        <Custom:RibbonButton Label="Online Library" LargeImageSource="Images/Itzikgur-My-Seven-Books-1.ico"/>
-                        <Custom:RibbonSplitButton Label="Share" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Apps-preferences-system-network-sharing.ico">
-                            <Custom:RibbonSplitMenuItem Header="Quick Share"/>
-                            <Custom:RibbonSplitMenuItem Header="Submit to Library"/>
-                        </Custom:RibbonSplitButton>
-                    </Custom:RibbonGroup>
-                    <Custom:RibbonGroup Header="Share">
-                        <Custom:RibbonSplitButton Label="Import" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-svn-update.ico">
-                            <Custom:RibbonSplitMenuItem Header="From GINA Package"/>
-                            <Custom:RibbonSplitMenuItem Header="From Everquest"/>
-                            <Custom:RibbonSplitMenuItem Header="From Triggers File"/>
-                            <Custom:RibbonSplitMenuItem Header="From Configuration"/>
-                        </Custom:RibbonSplitButton>
-                        <Custom:RibbonSplitButton Label="Export" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-svn-commit.ico">
-                            <Custom:RibbonSplitMenuItem Header="To Package"/>
-                            <Custom:RibbonSplitMenuItem Header="To Everquest"/>
-                        </Custom:RibbonSplitButton>
-                    </Custom:RibbonGroup>
-                </Custom:RibbonTab>
-                <Custom:RibbonTab Header="Overlays">
-                    <Custom:RibbonGroup Name="ribbongroupTextOverlays" Header="Text Overlays">
-                        <Custom:RibbonButton  Label="Add" Click="TextOverlayAddRibbonButton_Click" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-document-new.ico"/>
-                    </Custom:RibbonGroup>
-                    <Custom:RibbonGroup Name="ribbongroupTimerOverlays" Header="Timer Overlays">
-                        <Custom:RibbonButton Label="Add" Click="TimerOverlayAddRibbonButton_Click" LargeImageSource="Images/Google-Noto-Emoji-Travel-Places-42608-stopwatch.ico"/>
-                    </Custom:RibbonGroup>
-                </Custom:RibbonTab>
-                <Custom:RibbonTab Header="Categories">
-                    <Custom:RibbonGroup Header="Actions">
-                        <Custom:RibbonButton Click="CategoryAdd_Click" Label="Add" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-document-new.ico"/>
-                        <Custom:RibbonButton Click="CategoryRemove_Click" Label="Remove" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-document-close.ico"/>
-                        <Custom:RibbonButton Name="button_CategorySetDefault" Click="CategoryDefault_Click" Label="Set As Default" LargeImageSource="Images/Oxygen-Icons.org-Oxygen-Actions-dialog-ok-apply.ico"/>
-                    </Custom:RibbonGroup>
-                </Custom:RibbonTab>
-            </Custom:Ribbon>
-        </StackPanel>
+        <Fluent:Ribbon Name="ribbonMain" Grid.Row="0" SelectedTabChanged="RibbonMain_SelectionChanged">
+            <!--Backstage-->
+            <Fluent:Ribbon.Menu>
+                <Fluent:Backstage>
+                    <Fluent:BackstageTabControl>
+                        <Fluent:Button Header="Settings" Click="Settings_Click"/>
+                        <Fluent:Button Header="Update"/>
+                        <Fluent:BackstageTabItem Header="About">
+                            <StackPanel>
+                                <Grid Margin="10,0,10,0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Image Grid.Row="1" Grid.Column="0" Source="Images\Tonev-Windows-7-Windows-7-headphone.ico"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1" HorizontalAlignment="Center" Text="EQ Audio Triggers" FontSize="30" FontFamily="Segoe UI" Foreground="Black"/>
+                                    <StackPanel VerticalAlignment="Center" Grid.Row="1" Grid.Column="1">
+                                        <TextBlock VerticalAlignment="Center"  Name="textblockVersion" HorizontalAlignment="Center" FontSize="30" FontFamily="Segoe UI" Foreground="Black"/>
+                                        <TextBlock VerticalAlignment="Center" HorizontalAlignment="Center" FontFamily="Segoe UI" FontSize="15" Text="Dhurgan(Luclin)" Foreground="Black"/>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Fluent:BackstageTabItem>
+                        <Fluent:Button Header="Exit" Click="ButtonExit_Click"/>
+                    </Fluent:BackstageTabControl>
+                </Fluent:Backstage>
+            </Fluent:Ribbon.Menu>
+            <!--Tabs-->
+            <Fluent:RibbonTabItem Name="tabhome" Header="Home">
+                <Fluent:RibbonGroupBox Header="Characters">
+                    <Fluent:Button Name="ribbonCharAdd" Header="Add" IsEnabled="True" Click="RibbonButtonAdd_Click" LargeIcon="Images/Oxygen-Icons.org-Oxygen-Actions-list-add-user.ico"/>
+                    <Fluent:Button Name="ribbonCharEdit" Header="Edit" IsEnabled="False" Click="RibbonButtonEdit_Click" Size="Middle" Icon="Images/Oxygen-Icons.org-Oxygen-Actions-user-properties.ico"/>
+                    <Fluent:Button Name="ribbonCharRemove" Header="Remove" IsEnabled="False" Click="RibbonButtonRemove_Click" Size="Middle" Icon="Images/Oxygen-Icons.org-Oxygen-Actions-list-remove-user.ico"/>
+                </Fluent:RibbonGroupBox>
+                <Fluent:RibbonGroupBox Header="Trigger Groups">
+                    <Fluent:SplitButton Name="triggerGroupsAdd" Click="TriggerGroupsAdd_Click" Header="Add" LargeIcon="Images/Oxygen-Icons.org-Oxygen-Actions-tab-new-background.ico">
+                        <Fluent:Button Name="triggerGroupsAddTopLevel" Click="TriggerGroupsAddTopLevel_Click" Size="Middle" Header="Add Top Level Group" Icon="Images/Oxygen-Icons.org-Oxygen-Actions-list-add.ico"/>
+                        <Fluent:Button Name="triggerGroupsAddSelected" Click="TriggerGroupsAddSelected_Click" Size="Middle" IsEnabled="False" Header="Add To Selected Group" Icon="Images/Oxygen-Icons.org-Oxygen-Actions-list-add.ico"/>                        
+                    </Fluent:SplitButton>
+                    <Fluent:Button Name="triggerGroupsEdit" Click="TriggerGroupsEdit_Click" IsEnabled="False" Header="Edit" Size="Middle" Icon="Images/Oxygen-Icons.org-Oxygen-Actions-draw-freehand.ico"/>
+                    <Fluent:Button Name="triggerGroupsRemove" Click="TriggerGroupsRemove_Click" IsEnabled="False" Header="Remove" Size="Middle" Icon="Images/Oxygen-Icons.org-Oxygen-Actions-tab-close-other.ico"/>
+                </Fluent:RibbonGroupBox>
+                <Fluent:RibbonGroupBox Header="Triggers">
+                    <Fluent:Button Name="triggerAdd" IsEnabled="False" Header="Add" Click="TriggerAdd_Click" LargeIcon="Images/Oxygen-Icons.org-Oxygen-Actions-document-new.ico"/>
+                    <Fluent:Button Name="triggerEdit" IsEnabled="False" Header="Edit" Click="TriggerEdit_Click" Size="Middle" Icon="Images/Oxygen-Icons.org-Oxygen-Actions-document-edit.ico"/>
+                    <Fluent:Button Name="triggerRemove" IsEnabled="False" Header="Remove" Click="TriggerRemove_Click" Size="Middle" Icon="Images/Oxygen-Icons.org-Oxygen-Actions-document-close.ico"/>
+                </Fluent:RibbonGroupBox>
+                <Fluent:RibbonGroupBox Header="Misc">
+                    <Fluent:SplitButton Header="Commands" LargeIcon="Images/Oxygen-Icons.org-Oxygen-Apps-utilities-terminal.ico">
+                        <Fluent:SplitButton HorizontalAlignment="Right" Name="rbnStopAlerts" Size="Middle" Icon="Images/Oxygen-Icons.org-Oxygen-Actions-process-stop.ico" Header="Stop Alerts" Click="RbnStopAlerts_Click"/>
+                        <Fluent:SplitButton HorizontalAlignment="Right" Name="rbnResetCounters" Size="Middle" Icon="Images/Oxygen-Icons.org-Oxygen-Actions-edit-undo.ico" Header="Reset Counters"/>
+                    </Fluent:SplitButton>
+                    <Fluent:Button Header="Pronunciations" LargeIcon="Images/Oxygen-Icons.org-Oxygen-Apps-konversation.ico"/>
+                    <Fluent:SplitButton Header="Search" Click="LogfileSearch_Click" LargeIcon="Images/Oxygen-Icons.org-Oxygen-Actions-edit-find.ico">
+                        <Fluent:Button Header="Log File" Size="Middle" Click="LogfileSearch_Click"/>
+                        <Fluent:Button Header="Triggers" Size="Middle"/>
+                    </Fluent:SplitButton>
+                </Fluent:RibbonGroupBox>
+                <Fluent:RibbonGroupBox Header="Pushback Monitor">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition />
+                                <RowDefinition />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition />
+                                <ColumnDefinition Width="40"/>
+                            </Grid.ColumnDefinitions>
+                            <Fluent:Button Grid.Row="0" Grid.Column="0" HorizontalAlignment="Center" Name="fluentbutton_pushbacktoggle" IsEnabled="True" Header="Monitor" Click="Button_pushbacktoggle_Click" LargeIcon="Images/Icons8-Windows-8-Hands-Clenched-Fist.ico"/>
+                            <Image Name="image_pushbackindicator" Margin="5,0,0,0" Grid.Row="0" Grid.Column="1" Source="{Binding Converter={StaticResource pushbackconverter}}"/>
+                        </Grid>
+                    </StackPanel>
+                </Fluent:RibbonGroupBox>
+            </Fluent:RibbonTabItem>
+            <Fluent:RibbonTabItem Name="tabsharing" Header="Sharing">
+                <Fluent:RibbonGroupBox Header="Library">
+                    <Fluent:Button Header="Online Library" LargeIcon="Images/Itzikgur-My-Seven-Books-1.ico"/>
+                    <Fluent:SplitButton Header="Share" LargeIcon="Images/Oxygen-Icons.org-Oxygen-Apps-preferences-system-network-sharing.ico">
+                        <Fluent:Button Size="Middle" Header="Quick Share"/>
+                        <Fluent:Button Size="Middle" Header="Submit to Library"/>
+                    </Fluent:SplitButton>
+                </Fluent:RibbonGroupBox>
+                <Fluent:RibbonGroupBox Header="Share">
+                    <Fluent:SplitButton Header="Import" LargeIcon="Images/Oxygen-Icons.org-Oxygen-Actions-svn-update.ico">
+                        <Fluent:Button Size="Middle" Header="From Everquest"/>
+                        <Fluent:Button Size="Middle" Header="From Triggers File"/>
+                    </Fluent:SplitButton>
+                    <Fluent:SplitButton Header="Export" LargeIcon="Images/Oxygen-Icons.org-Oxygen-Actions-svn-commit.ico">
+                        <Fluent:Button Size="Middle" Header="To Package"/>
+                        <Fluent:Button Size="Middle" Header="To Everquest"/>
+                    </Fluent:SplitButton>
+                </Fluent:RibbonGroupBox>
+            </Fluent:RibbonTabItem>
+            <Fluent:RibbonTabItem Name="taboverlays" Header="Overlays">
+                <Fluent:RibbonGroupBox Name="ribbongroupTextOverlays" Header="Text Overlays">
+                    <Fluent:Button Header="Add" Click="TextOverlayAddRibbonButton_Click" LargeIcon="Images/Oxygen-Icons.org-Oxygen-Actions-document-new.ico"/>
+                </Fluent:RibbonGroupBox>
+                <Fluent:RibbonGroupBox Name="ribbongroupTimerOverlays" Header="Timer Overlays">
+                    <Fluent:Button Header="Add" Click="TimerOverlayAddRibbonButton_Click" LargeIcon="Images/Google-Noto-Emoji-Travel-Places-42608-stopwatch.ico"/>
+                </Fluent:RibbonGroupBox>
+            </Fluent:RibbonTabItem>
+            <Fluent:RibbonTabItem Name="tabcategories" Header="Categories">
+                <Fluent:RibbonGroupBox Header="Actions">
+                    <Fluent:Button Click="CategoryAdd_Click" Header="Add" LargeIcon="Images/Oxygen-Icons.org-Oxygen-Actions-document-new.ico"/>
+                    <Fluent:Button Click="CategoryRemove_Click" Header="Remove" LargeIcon="Images/Oxygen-Icons.org-Oxygen-Actions-document-close.ico"/>
+                    <Fluent:Button Name="button_CategorySetDefault" Click="CategoryDefault_Click" Header="Set As Default" LargeIcon="Images/Oxygen-Icons.org-Oxygen-Actions-dialog-ok-apply.ico"/>
+                </Fluent:RibbonGroupBox>
+            </Fluent:RibbonTabItem>
+        </Fluent:Ribbon>
 
         <xcad:DockingManager 
                            AllowMixedOrientation="True"

@@ -19,7 +19,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Ribbon;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Documents;
@@ -30,6 +29,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Shell;
 using Xceed.Wpf.AvalonDock;
+using System.Reflection;
 
 namespace DAR
 {
@@ -78,11 +78,7 @@ namespace DAR
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
             String rString = "";
-            if ((Boolean)value)
-            {
-                rString = "";
-            }
-            else
+            if (!(Boolean)value)
             {
                 rString = "Images/Oxygen-Icons.org-Oxygen-Status-image-missing.ico";
             }
@@ -106,7 +102,7 @@ namespace DAR
             String rString = "";
             if ((Boolean)value)
             {
-                rString = "";
+                rString = "Transparent";
             }
             else
             {
@@ -226,10 +222,12 @@ namespace DAR
         //Trigger Clipboard
         private int triggerclipboard = 0;
         private int triggergroupclipboard = 0;
+        private static string version = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion;
         #endregion
         public MainWindow()
         {
             InitializeComponent();
+            textblockVersion.Text = version;
 
             //Check if EQAudioTriggers folder exists, if not create.
             bool mainPath = Directory.Exists(GlobalVariables.defaultPath);
@@ -353,12 +351,7 @@ namespace DAR
             }
         }
         #region Form Functions
-        //Re-adjust the ribbon size if the main window is resized
-        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            ribbonMain.Width = ActualWidth;
-        }
-        private void Window_Closing(object sender, CancelEventArgs e)
+        private void CloseProgram()
         {
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -376,6 +369,15 @@ namespace DAR
             }
             Environment.Exit(Environment.ExitCode);
         }
+        //Re-adjust the ribbon size if the main window is resized
+        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            ribbonMain.Width = ActualWidth;
+        }
+        private void Window_Closing(object sender, CancelEventArgs e)
+        {
+            CloseProgram();
+        }
         private void Settings_Click(object sender, RoutedEventArgs e)
         {
             Settings settingswindow = new Settings();
@@ -386,6 +388,10 @@ namespace DAR
             About aboutwindow = new About();
             aboutwindow.Show();
         }
+        private void ButtonExit_Click(object sender, RoutedEventArgs e)
+        {
+            CloseProgram();
+        }
         #endregion
         #region Character Profiles
         public void AddResetRibbon()
@@ -394,10 +400,16 @@ namespace DAR
             rbnResetCounters.Items.Clear();
             foreach (CharacterProfile character in characterProfiles)
             {
-                RibbonSplitMenuItem characterStopAlerts = new RibbonSplitMenuItem();
-                RibbonSplitMenuItem characterResetCounters = new RibbonSplitMenuItem();
+                Fluent.Button characterStopAlerts = new Fluent.Button();
+                Fluent.Button characterResetCounters = new Fluent.Button();
                 characterStopAlerts.Header = character.Name;
                 characterResetCounters.Header = character.Name;
+                characterStopAlerts.Size = Fluent.RibbonControlSize.Middle;
+                characterResetCounters.Size = Fluent.RibbonControlSize.Middle;
+                characterStopAlerts.HorizontalAlignment = HorizontalAlignment.Right;
+                characterResetCounters.HorizontalAlignment = HorizontalAlignment.Right;
+                characterStopAlerts.Icon = "Images/Oxygen-Icons.org-Oxygen-Actions-im-user.ico";
+                characterResetCounters.Icon = "Images/Oxygen-Icons.org-Oxygen-Actions-im-user.ico";                
                 characterStopAlerts.Click += RbnStopAlert_Click;
                 rbnStopAlerts.Items.Add(characterStopAlerts);
                 rbnResetCounters.Items.Add(characterResetCounters);
@@ -405,27 +417,27 @@ namespace DAR
         }
         private void PopResetRibbon(String character)
         {
-            List<RibbonSplitMenuItem> stoptoremove = new List<RibbonSplitMenuItem>();
-            List<RibbonSplitMenuItem> resettoremove = new List<RibbonSplitMenuItem>();
-            foreach(RibbonSplitMenuItem stopalert in rbnStopAlerts.Items)
+            List<Fluent.Button> stoptoremove = new List<Fluent.Button>();
+            List<Fluent.Button> resettoremove = new List<Fluent.Button>();
+            foreach(Fluent.Button stopalert in rbnStopAlerts.Items)
             {
                 if(stopalert.Header.ToString() == character)
                 {
                     stoptoremove.Add(stopalert);
                 }
             }
-            foreach (RibbonSplitMenuItem resetalert in rbnResetCounters.Items)
+            foreach (Fluent.Button resetalert in rbnResetCounters.Items)
             {
                 if (resetalert.Header.ToString() == character)
                 {
                     resettoremove.Add(resetalert);
                 }
             }
-            foreach(RibbonSplitMenuItem removeitem in stoptoremove)
+            foreach(Fluent.Button removeitem in stoptoremove)
             {
                 rbnStopAlerts.Items.Remove(removeitem);
             }
-            foreach(RibbonSplitMenuItem removeitem in resettoremove)
+            foreach(Fluent.Button removeitem in resettoremove)
             {
                 rbnResetCounters.Items.Remove(removeitem);
             }
@@ -905,7 +917,7 @@ namespace DAR
         {
             if (availabletriggers.IsSelected == true)
             {
-                ribbonMain.SelectedIndex = 0;
+                ribbonMain.SelectedTabIndex = 0;
             }
         }
         private void DeleteTrigger(String triggername)
@@ -1547,19 +1559,19 @@ namespace DAR
         }
         private void TextOverlayProperties_Click(object sender, RoutedEventArgs e)
         {
-            String overlayname = (sender as RibbonSplitMenuItem).Name;
+            String overlayname = (sender as Fluent.Button).Name;
             OverlayTextEditor newOverlayEditor = new OverlayTextEditor(overlayname);
             newOverlayEditor.Show();
         }
         private void TimerOverlayProperties_Click(object sender, RoutedEventArgs e)
         {
-            String overlayname = (sender as RibbonSplitMenuItem).Name;
+            String overlayname = (sender as Fluent.Button).Name;
             OverlayTimerEditor newOverlayEditor = new OverlayTimerEditor(overlayname);
             newOverlayEditor.Show();
         }
         private void TextOverlayDelete_Click(object sender, RoutedEventArgs e)
         {
-            String overlayname = (sender as RibbonSplitMenuItem).Name;
+            String overlayname = (sender as Fluent.Button).Name;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 LiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
@@ -1578,20 +1590,25 @@ namespace DAR
         }
         private void TimerOverlayDelete_Click(object sender, RoutedEventArgs e)
         {
-            String overlayname = (sender as RibbonSplitMenuItem).Name;
+            String overlayname = (sender as Fluent.Button).Name;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 LiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");
                 overlaytimers.Delete(Query.EQ("Name", overlayname));
             }
             //Kill current overlay if running
+            List<OverlayTimerWindow> toremove = new List<OverlayTimerWindow>();
             foreach (OverlayTimerWindow overlay in timerWindows)
             {
                 if (overlay.Name == overlayname)
                 {
-                    timerWindows.Remove(overlay);
-                    overlay.Close();
+                    toremove.Add(overlay);
                 }
+            }
+            foreach(OverlayTimerWindow removewindow in toremove)
+            {
+                timerWindows.Remove(removewindow);
+                removewindow.Close();
             }
             OverlayTimer_Refresh();
         }
@@ -1612,17 +1629,21 @@ namespace DAR
                 foreach (var overlay in overlaytimers.FindAll())
                 {
                     availoverlaytimers.Add(overlay);
-                    RibbonSplitButton overlaytimer = new RibbonSplitButton();
-                    overlaytimer.Label = overlay.Name;
-                    overlaytimer.LargeImageSource = new BitmapImage(new Uri(@"Images/Google-Noto-Emoji-Travel-Places-42608-stopwatch.ico", UriKind.RelativeOrAbsolute));
+                    Fluent.SplitButton overlaytimer = new Fluent.SplitButton();
+                    overlaytimer.Header = overlay.Name;
+                    overlaytimer.LargeIcon = "Images/Google-Noto-Emoji-Travel-Places-42608-stopwatch.ico";
                     overlaytimer.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("Gray"));
-                    RibbonSplitMenuItem timerProperties = new RibbonSplitMenuItem();
+                    Fluent.Button timerProperties = new Fluent.Button();
                     timerProperties.Name = overlay.Name;
                     timerProperties.Header = "Properties";
                     timerProperties.AddHandler(Button.ClickEvent, new RoutedEventHandler(TimerOverlayProperties_Click));
-                    RibbonSplitMenuItem timerDelete = new RibbonSplitMenuItem();
+                    timerProperties.Size = Fluent.RibbonControlSize.Middle;
+                    timerProperties.HorizontalAlignment = HorizontalAlignment.Right;
+                    Fluent.Button timerDelete = new Fluent.Button();
                     timerDelete.Header = "Delete";
                     timerDelete.Name = overlay.Name;
+                    timerDelete.Size = Fluent.RibbonControlSize.Middle;
+                    timerDelete.HorizontalAlignment = HorizontalAlignment.Right;
                     timerDelete.AddHandler(Button.ClickEvent, new RoutedEventHandler(TimerOverlayDelete_Click));
                     overlaytimer.Items.Add(timerProperties);
                     overlaytimer.Items.Add(timerDelete);
@@ -1644,17 +1665,21 @@ namespace DAR
                 foreach (var overlay in overlaytexts.FindAll())
                 {
                     availoverlaytexts.Add(overlay);
-                    RibbonSplitButton overlaytext = new RibbonSplitButton();
-                    overlaytext.Label = overlay.Name;
-                    overlaytext.LargeImageSource = new BitmapImage(new Uri(@"Images/Oxygen-Icons.org-Oxygen-Actions-document-new.ico", UriKind.RelativeOrAbsolute));
+                    Fluent.SplitButton overlaytext = new Fluent.SplitButton();
+                    overlaytext.Header = overlay.Name;
+                    overlaytext.LargeIcon = "Images/Oxygen-Icons.org-Oxygen-Actions-document-new.ico";
                     overlaytext.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("Gray"));
-                    RibbonSplitMenuItem textProperties = new RibbonSplitMenuItem();
+                    Fluent.Button textProperties = new Fluent.Button();
                     textProperties.Name = overlay.Name;
                     textProperties.Header = "Properties";
+                    textProperties.Size = Fluent.RibbonControlSize.Middle;
+                    textProperties.HorizontalAlignment = HorizontalAlignment.Right;
                     textProperties.AddHandler(Button.ClickEvent, new RoutedEventHandler(TextOverlayProperties_Click));
-                    RibbonSplitMenuItem textDelete = new RibbonSplitMenuItem();
+                    Fluent.Button textDelete = new Fluent.Button();
                     textDelete.Header = "Delete";
                     textDelete.Name = overlay.Name;
+                    textDelete.Size = Fluent.RibbonControlSize.Middle;
+                    textDelete.HorizontalAlignment = HorizontalAlignment.Right;
                     textDelete.AddHandler(Button.ClickEvent, new RoutedEventHandler(TextOverlayDelete_Click));
                     overlaytext.Items.Add(textProperties);
                     overlaytext.Items.Add(textDelete);
@@ -1694,13 +1719,13 @@ namespace DAR
         {
             if (categoriesDocument.IsSelected == true)
             {
-                ribbonMain.SelectedIndex = 3;
+                ribbonMain.SelectedTabIndex = 3;
                 Refresh_Categories();
             }
         }
         private void RibbonMain_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (ribbonMain.SelectedIndex == 3)
+            if (ribbonMain.SelectedTabIndex == 3)
             {
                 categoriesDocument.IsSelected = true;
                 Refresh_Categories();
@@ -2479,6 +2504,7 @@ namespace DAR
             }
         }
         #endregion
+
 
     }
 }

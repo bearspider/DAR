@@ -665,28 +665,29 @@ namespace DAR
             //Look into doing Parallel.Foreach with semaphores by cpu core count inspection
             Thread t = new Thread(() =>
             {
-                using (FileStream filestream = File.Open(character.LogFile, System.IO.FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                 {
-                    filestream.Seek(0, SeekOrigin.End);
-                    using (StreamReader streamReader = new StreamReader(filestream))
+                    var triggerCollection = db.GetCollection<Trigger>("triggers");
+                    IEnumerable<Trigger> alltriggers = triggerCollection.FindAll();
+                    using (FileStream filestream = File.Open(character.LogFile, System.IO.FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                     {
-                        for (; ; )
+                        filestream.Seek(0, SeekOrigin.End);
+                        using (StreamReader streamReader = new StreamReader(filestream))
                         {
-                            Thread.Sleep(TimeSpan.FromMilliseconds(5));
-                            String capturedLine = streamReader.ReadToEnd();
-                            if (capturedLine.Length > 0)
+                            for (; ; )
                             {
-                                String[] delimiter = new string[] { "\r\n" };
-                                String[] lines = capturedLine.Split(delimiter, StringSplitOptions.RemoveEmptyEntries);
-                                //totallinecount += lines.Length;
-                                foreach (string line in lines)
+                                Thread.Sleep(TimeSpan.FromMilliseconds(5));
+                                String capturedLine = streamReader.ReadToEnd();
+                                if (capturedLine.Length > 0)
                                 {
-                                    using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                                    String[] delimiter = new string[] { "\r\n" };
+                                    String[] lines = capturedLine.Split(delimiter, StringSplitOptions.RemoveEmptyEntries);
+                                    //totallinecount += lines.Length;
+                                    foreach (string line in lines)
                                     {
-                                        var triggerCollection = db.GetCollection<Trigger>("triggers");
-                                        foreach (var doc in triggerCollection.FindAll())
+                                        foreach (var doc in alltriggers)
                                         {
-                                            /*MatchCollection matches = Regex.Matches(line, doc.SearchText, RegexOptions.IgnoreCase);
+                                            MatchCollection matches = Regex.Matches(line, doc.SearchText, RegexOptions.IgnoreCase);
                                             if (matches.Count > 0)
                                             {
                                                 foreach (Match tMatch in matches)
@@ -697,20 +698,25 @@ namespace DAR
                                                     { PlaySound(doc.AudioSettings.SoundFileId); }
                                                     //Add Timer code
                                                     Category triggeredcategory = categorycollection.Single<Category>(i => i.Id == doc.TriggerCategory);
+                                                    Stopwatch texttimer = new Stopwatch();
+                                                    texttimer.Start();
                                                     if (doc.Displaytext != null)
                                                     {
-                                                        //find the text overlay from category
-                                                        Dispatcher.BeginInvoke((Action)(() =>
-                                                        {
-                                                            OverlayTextWindow otw = textWindows.Single<OverlayTextWindow>(i => i.Name == triggeredcategory.TextOverlay);
-                                                            otw.AddTrigger(doc);
-                                                            otw.DataContext = otw;
+                                                         //find the text overlay from category
+                                                         Dispatcher.BeginInvoke((Action)(() =>
+                                                         {
+                                                             OverlayTextWindow otw = textWindows.Single<OverlayTextWindow>(i => i.Name == triggeredcategory.TextOverlay);
+                                                             otw.AddTrigger(doc);
+                                                             otw.DataContext = otw;
                                                         }));
-
+                                                        Console.WriteLine($"{doc.TimerName}");
                                                     }
+                                                    texttimer.Stop();
+                                                    Console.WriteLine($"Text: {texttimer.Elapsed.TotalMilliseconds.ToString()}");
+                                                    Stopwatch countertimer = new Stopwatch();
+                                                    countertimer.Start();
                                                     lock (_timersLock)
                                                     {
-
                                                         switch (doc.TimerType)
                                                         {
                                                             case "Timer(Count Down)":
@@ -735,13 +741,17 @@ namespace DAR
                                                                 break;
                                                         }
                                                     }
+                                                    countertimer.Stop();
+                                                    Console.WriteLine($"Timer: {countertimer.Elapsed.TotalMilliseconds.ToString()}");
                                                 }
-                                            }*/
+                                            }
                                         }
+                                        Stopwatch pushtimer = new Stopwatch();
+                                        pushtimer.Start();
                                         if (pushbackToggle)
                                         {
                                             Match pushmatch = spellregex.Match(line);
-                                            foreach (KeyValuePair<String,Tuple<String,Double>> spell in masterpushbacklist)
+                                            foreach (KeyValuePair<String, Tuple<String, Double>> spell in masterpushbacklist)
                                             {
                                                 MatchCollection matches = Regex.Matches(pushmatch.Groups["SPELL"].Value, spell.Value.Item1, RegexOptions.IgnoreCase);
                                                 if (matches.Count > 0)
@@ -764,21 +774,21 @@ namespace DAR
                                                     break;
                                                 }
                                             }
-                                            foreach (KeyValuePair<String,Tuple<String,Double>> spell in masterpushuplist)
+                                            foreach (KeyValuePair<String, Tuple<String, Double>> spell in masterpushuplist)
                                             {
                                                 MatchCollection matches = Regex.Matches(pushmatch.Groups["SPELL"].Value, spell.Value.Item1, RegexOptions.IgnoreCase);
                                                 if (matches.Count > 0)
                                                 {
                                                     foreach (Match spellmatch in matches)
                                                     {
-                                                    Pushback pushback = new Pushback
-                                                    {
-                                                        Character = pushmatch.Groups["CHARACTER"].Value,
-                                                        PushType = "Pushup",
-                                                        Spell = pushmatch.Groups["SPELL"].Value,
-                                                        FromCharacter = character.ProfileName,
-                                                        Distance = spell.Value.Item2
-                                                    };
+                                                        Pushback pushback = new Pushback
+                                                        {
+                                                            Character = pushmatch.Groups["CHARACTER"].Value,
+                                                            PushType = "Pushup",
+                                                            Spell = pushmatch.Groups["SPELL"].Value,
+                                                            FromCharacter = character.ProfileName,
+                                                            Distance = spell.Value.Item2
+                                                        };
                                                         lock (_itemsLock)
                                                         {
                                                             pushbackList.Add(pushback);
@@ -788,13 +798,14 @@ namespace DAR
                                                 }
                                             }
                                         }
+                                        pushtimer.Stop();
+                                        Console.WriteLine($"Pushback: {pushtimer.Elapsed.TotalMilliseconds.ToString()}");
                                     }
                                 }
-
-                            }
-                            if (characterProfiles.Any(x => x.Monitor == false && x.ProfileName == character.ProfileName))
-                            {
-                                break;
+                                if (characterProfiles.Any(x => x.Monitor == false && x.ProfileName == character.ProfileName))
+                                {
+                                    break;
+                                }
                             }
                         }
                     }

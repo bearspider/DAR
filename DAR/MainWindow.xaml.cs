@@ -203,6 +203,7 @@ namespace DAR
         private object _timersLock = new object();
         private object _textsLock = new object();
         private object _categoryLock = new object();
+
         //basicregex should be used for all character monitoring
         Regex basicregex = new Regex(@"\[(?<EQTIME>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\]\s(?<DATA>.*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         //spellregex sould ONLY be used for the Pushback Monitor Feature
@@ -677,7 +678,7 @@ namespace DAR
                             {
                                 String[] delimiter = new string[] { "\r\n" };
                                 String[] lines = capturedLine.Split(delimiter, StringSplitOptions.RemoveEmptyEntries);
-                                totallinecount += lines.Length;
+                                //totallinecount += lines.Length;
                                 foreach (string line in lines)
                                 {
                                     using (var db = new LiteDatabase(GlobalVariables.defaultDB))
@@ -685,7 +686,7 @@ namespace DAR
                                         var triggerCollection = db.GetCollection<Trigger>("triggers");
                                         foreach (var doc in triggerCollection.FindAll())
                                         {
-                                            MatchCollection matches = Regex.Matches(line, doc.SearchText, RegexOptions.IgnoreCase);
+                                            /*MatchCollection matches = Regex.Matches(line, doc.SearchText, RegexOptions.IgnoreCase);
                                             if (matches.Count > 0)
                                             {
                                                 foreach (Match tMatch in matches)
@@ -735,7 +736,7 @@ namespace DAR
                                                         }
                                                     }
                                                 }
-                                            }
+                                            }*/
                                         }
                                         if (pushbackToggle)
                                         {
@@ -786,7 +787,6 @@ namespace DAR
                                                     break;
                                                 }
                                             }
-
                                         }
                                     }
                                 }
@@ -2506,7 +2506,5 @@ namespace DAR
             }
         }
         #endregion
-
-
     }
 }

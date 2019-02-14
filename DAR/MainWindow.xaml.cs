@@ -714,17 +714,17 @@ namespace DAR
                                                     { PlaySound(doc.AudioSettings.SoundFileId); }
                                                     //Add Timer code
                                                     Category triggeredcategory = categorycollection.Single<Category>(i => i.Id == doc.TriggerCategory);
+                                                    String overlayname = triggeredcategory.TextOverlay;
                                                     Stopwatch texttimer = new Stopwatch();
                                                     texttimer.Start();
                                                     if (doc.Displaytext != null)
                                                     {
-                                                        //find the text overlay from category
                                                         Dispatcher.BeginInvoke((Action)(() =>
                                                         {
-                                                            OverlayTextWindow textwindow = textWindows.Single<OverlayTextWindow>(i => i.Name == triggeredcategory.TextOverlay);
-                                                            textwindow.AddTrigger(doc);
-                                                            textwindow.DataContext = textwindow;
-                                                        }));
+                                                            //OverlayTextWindow textwindow = textWindows.Single<OverlayTextWindow>(i => i.Name == triggeredcategory.TextOverlay);
+                                                            //textwindow.AddTrigger(doc);
+                                                            //textwindow.DataContext = textwindow;
+                                                        }), DispatcherPriority.Send);
                                                         Console.WriteLine($"{doc.TimerName}");
                                                     }
                                                     texttimer.Stop();

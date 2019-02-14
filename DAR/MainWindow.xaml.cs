@@ -30,6 +30,7 @@ using System.Windows.Shapes;
 using System.Windows.Shell;
 using Xceed.Wpf.AvalonDock;
 using System.Reflection;
+using System.Windows.Threading;
 
 namespace DAR
 {
@@ -203,6 +204,7 @@ namespace DAR
         private object _timersLock = new object();
         private object _textsLock = new object();
         private object _categoryLock = new object();
+        private object _triggerLock = new object();
 
         //basicregex should be used for all character monitoring
         Regex basicregex = new Regex(@"\[(?<EQTIME>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\]\s(?<DATA>.*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -216,10 +218,11 @@ namespace DAR
         private ObservableCollection<OverlayTimer> availoverlaytimers = new ObservableCollection<OverlayTimer>();
         private ObservableCollection<Category> categorycollection = new ObservableCollection<Category>();
         private ObservableCollection<CategoryWrapper> CategoryTab = new ObservableCollection<CategoryWrapper>();
+        private ObservableCollection<ActivatedTrigger> activatedTriggers = new ObservableCollection<ActivatedTrigger>();
         //These collections are used for the Pushback Monitor feature
         private ObservableCollection<Pushback> pushbackList = new ObservableCollection<Pushback>();
         private Dictionary<String, Tuple<String, Double>> masterpushbacklist = new Dictionary<String, Tuple<String, Double>>();
-        private Dictionary<String,Tuple<String,Double>> masterpushuplist = new Dictionary<String, Tuple<String, Double>>();
+        private Dictionary<String, Tuple<String, Double>> masterpushuplist = new Dictionary<String, Tuple<String, Double>>();
         //Trigger Clipboard
         private int triggerclipboard = 0;
         private int triggergroupclipboard = 0;
@@ -252,10 +255,12 @@ namespace DAR
                     /*Add Code*/
                 }
             }
-            
+
             //Initialize pushback monitor
             image_pushbackindicator.DataContext = pushbackToggle;
             datagrid_pushback.ItemsSource = pushbackList;
+            //Set Datagrid for activated triggers
+            datagrid_activated.ItemsSource = activatedTriggers;
 
             //Load the Pushback and Pushup data from CSV files.  If the CSV files do not exist, they will be downloaded.
             InitializePushback();
@@ -266,6 +271,7 @@ namespace DAR
             BindingOperations.EnableCollectionSynchronization(timerWindows, _timersLock);
             BindingOperations.EnableCollectionSynchronization(textWindows, _textsLock);
             BindingOperations.EnableCollectionSynchronization(categorycollection, _categoryLock);
+            BindingOperations.EnableCollectionSynchronization(activatedTriggers, _triggerLock);
 
             //Prep Views
             UpdateListView();
@@ -279,7 +285,7 @@ namespace DAR
                 LiteCollection<CharacterProfile> dbcharacterProfiles = db.GetCollection<CharacterProfile>("profiles");
                 LiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");
                 LiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");                
+                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
                 LiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
                 Trigger testtrigger = triggers.FindById(1);
                 //Check if no overlays or character profiles exist.  If none exist, prompt the editors to create the first entries.
@@ -338,6 +344,7 @@ namespace DAR
                     newWindow.Show();
                 }
             }
+
             //Start Monitoring Enabled Profiles
             foreach (CharacterProfile character in characterProfiles)
             {
@@ -411,7 +418,7 @@ namespace DAR
                 characterStopAlerts.HorizontalAlignment = HorizontalAlignment.Right;
                 characterResetCounters.HorizontalAlignment = HorizontalAlignment.Right;
                 characterStopAlerts.Icon = "Images/Oxygen-Icons.org-Oxygen-Actions-im-user.ico";
-                characterResetCounters.Icon = "Images/Oxygen-Icons.org-Oxygen-Actions-im-user.ico";                
+                characterResetCounters.Icon = "Images/Oxygen-Icons.org-Oxygen-Actions-im-user.ico";
                 characterStopAlerts.Click += RbnStopAlert_Click;
                 rbnStopAlerts.Items.Add(characterStopAlerts);
                 rbnResetCounters.Items.Add(characterResetCounters);
@@ -421,9 +428,9 @@ namespace DAR
         {
             List<Fluent.Button> stoptoremove = new List<Fluent.Button>();
             List<Fluent.Button> resettoremove = new List<Fluent.Button>();
-            foreach(Fluent.Button stopalert in rbnStopAlerts.Items)
+            foreach (Fluent.Button stopalert in rbnStopAlerts.Items)
             {
-                if(stopalert.Header.ToString() == character)
+                if (stopalert.Header.ToString() == character)
                 {
                     stoptoremove.Add(stopalert);
                 }
@@ -435,11 +442,11 @@ namespace DAR
                     resettoremove.Add(resetalert);
                 }
             }
-            foreach(Fluent.Button removeitem in stoptoremove)
+            foreach (Fluent.Button removeitem in stoptoremove)
             {
                 rbnStopAlerts.Items.Remove(removeitem);
             }
-            foreach(Fluent.Button removeitem in resettoremove)
+            foreach (Fluent.Button removeitem in resettoremove)
             {
                 rbnResetCounters.Items.Remove(removeitem);
             }
@@ -604,7 +611,7 @@ namespace DAR
         private void ListviewCharacters_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
             CharacterProfile selected = (CharacterProfile)listviewCharacters.SelectedItem;
-            if(selected.Monitor)
+            if (selected.Monitor)
             {
                 cmStopMonitor.IsEnabled = true;
                 cmStartMonitor.IsEnabled = false;
@@ -634,8 +641,8 @@ namespace DAR
                 {
                     var line = reader.ReadLine();
                     String[] vars = line.Split(',');
-                    Tuple<String,Double> entry = new Tuple<string, double>(vars[1],Convert.ToDouble(vars[2]));
-                    masterpushbacklist.Add(vars[0],entry);
+                    Tuple<String, Double> entry = new Tuple<string, double>(vars[1], Convert.ToDouble(vars[2]));
+                    masterpushbacklist.Add(vars[0], entry);
                 }
             }
         }
@@ -662,7 +669,7 @@ namespace DAR
         }
         private void MonitorCharacter(CharacterProfile character)
         {
-            //Look into doing Parallel.Foreach with semaphores by cpu core count inspection
+            #region threading
             Thread t = new Thread(() =>
             {
                 using (var db = new LiteDatabase(GlobalVariables.defaultDB))
@@ -690,6 +697,15 @@ namespace DAR
                                             MatchCollection matches = Regex.Matches(line, doc.SearchText, RegexOptions.IgnoreCase);
                                             if (matches.Count > 0)
                                             {
+                                                ActivatedTrigger newactive = new ActivatedTrigger
+                                                {
+                                                    Name = doc.Name,
+                                                    FromLog = character.ProfileName
+                                                };
+                                                lock (_triggerLock)
+                                                {
+                                                    activatedTriggers.Add(newactive);
+                                                }
                                                 foreach (Match tMatch in matches)
                                                 {
                                                     if (doc.AudioSettings.AudioType == "tts")
@@ -702,12 +718,12 @@ namespace DAR
                                                     texttimer.Start();
                                                     if (doc.Displaytext != null)
                                                     {
-                                                         //find the text overlay from category
-                                                         Dispatcher.BeginInvoke((Action)(() =>
-                                                         {
-                                                             OverlayTextWindow otw = textWindows.Single<OverlayTextWindow>(i => i.Name == triggeredcategory.TextOverlay);
-                                                             otw.AddTrigger(doc);
-                                                             otw.DataContext = otw;
+                                                        //find the text overlay from category
+                                                        Dispatcher.BeginInvoke((Action)(() =>
+                                                        {
+                                                            OverlayTextWindow textwindow = textWindows.Single<OverlayTextWindow>(i => i.Name == triggeredcategory.TextOverlay);
+                                                            textwindow.AddTrigger(doc);
+                                                            textwindow.DataContext = textwindow;
                                                         }));
                                                         Console.WriteLine($"{doc.TimerName}");
                                                     }
@@ -722,18 +738,18 @@ namespace DAR
                                                             case "Timer(Count Down)":
                                                                 Dispatcher.BeginInvoke((Action)(() =>
                                                                 {
-                                                                    OverlayTimerWindow otw = timerWindows.Single<OverlayTimerWindow>(i => i.Name == triggeredcategory.TimerOverlay);
-                                                                    otw.AddTimer(doc.TimerName, doc.TimerDuration, false, character.characterName);
-                                                                    otw.DataContext = otw;
-                                                                }));
+                                                                    OverlayTimerWindow timerwindow = timerWindows.Single<OverlayTimerWindow>(i => i.Name == triggeredcategory.TimerOverlay);
+                                                                    timerwindow.AddTimer(doc.TimerName, doc.TimerDuration, false, character.characterName, triggeredcategory);
+                                                                    timerwindow.DataContext = timerwindow;
+                                                                }), DispatcherPriority.Send);
                                                                 break;
                                                             case "Stopwatch(Count Up)":
                                                                 Dispatcher.BeginInvoke((Action)(() =>
                                                                 {
-                                                                    OverlayTimerWindow otw = timerWindows.Single<OverlayTimerWindow>(i => i.Name == triggeredcategory.TimerOverlay);
-                                                                    otw.AddTimer(doc.TimerName, doc.TimerDuration, true, character.characterName);
-                                                                    (timerWindows.Single<OverlayTimerWindow>(i => i.Name == triggeredcategory.TimerOverlay)).DataContext = otw;
-                                                                }));
+                                                                    OverlayTimerWindow timerwindow = timerWindows.Single<OverlayTimerWindow>(i => i.Name == triggeredcategory.TimerOverlay);
+                                                                    timerwindow.AddTimer(doc.TimerName, doc.TimerDuration, true, character.characterName, triggeredcategory);
+                                                                    timerwindow.DataContext = timerwindow;
+                                                                }), DispatcherPriority.Send);
                                                                 break;
                                                             case "Repeating Timer":
                                                                 break;
@@ -812,6 +828,7 @@ namespace DAR
                 }
             });
             t.Start();
+            #endregion
         }
         private void Changed(object sender, FileSystemEventArgs e)
         {
@@ -1045,7 +1062,7 @@ namespace DAR
                 var dbid = deadgroup.Id;
                 var childContains = col.FindAll().Where(x => x.children.Contains(dbid));
                 //Delete all triggers associated with the group
-                var triggers = deadgroup.Triggers;                
+                var triggers = deadgroup.Triggers;
                 foreach (int triggerid in triggers)
                 {
                     DeleteTrigger(triggerid);
@@ -1072,7 +1089,7 @@ namespace DAR
                 TriggerGroup deadgroup = col.FindById(groupid);
                 var childContains = col.FindAll().Where(x => x.children.Contains(groupid));
                 //Delete all triggers associated with the group
-                var triggers = deadgroup.Triggers;                
+                var triggers = deadgroup.Triggers;
                 foreach (int triggerid in triggers)
                 {
                     DeleteTrigger(triggerid);
@@ -1084,7 +1101,7 @@ namespace DAR
                     col.Update(child);
                 }
                 //If Parent group, remove children
-                foreach(int childgroup in deadgroup.Children)
+                foreach (int childgroup in deadgroup.Children)
                 {
                     DeleteTriggerGroup(childgroup);
                 }
@@ -1096,23 +1113,23 @@ namespace DAR
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 var triggergroupCollection = db.GetCollection<TriggerGroup>("triggergroups");
-                TriggerGroup basegroup = triggergroupCollection.FindById(copyfrom);                
+                TriggerGroup basegroup = triggergroupCollection.FindById(copyfrom);
                 TriggerGroup newgroup = new TriggerGroup();
                 newgroup.DefaultEnabled = basegroup.DefaultEnabled;
                 newgroup.TriggerGroupName = basegroup.TriggerGroupName + "-Copy";
                 newgroup.Id = 0;
                 newgroup.Parent = parent;
                 BsonValue newgid = triggergroupCollection.Insert(newgroup);
-                if(basegroup.Triggers.Count > 0)
+                if (basegroup.Triggers.Count > 0)
                 {
-                    foreach(int triggerid in basegroup.Triggers)
+                    foreach (int triggerid in basegroup.Triggers)
                     {
                         CopyTrigger(triggerid, newgid);
                     }
                 }
-                if(basegroup.Children.Count > 0)
+                if (basegroup.Children.Count > 0)
                 {
-                    foreach(int child in basegroup.Children)
+                    foreach (int child in basegroup.Children)
                     {
                         CopyTriggerGroup(child, newgid);
                     }
@@ -1618,7 +1635,7 @@ namespace DAR
                     toremove.Add(overlay);
                 }
             }
-            foreach(OverlayTimerWindow removewindow in toremove)
+            foreach (OverlayTimerWindow removewindow in toremove)
             {
                 timerWindows.Remove(removewindow);
                 removewindow.Close();
@@ -2433,7 +2450,7 @@ namespace DAR
                 {
                     DeleteTrigger(root.Name);
                     UpdateView();
-                }                
+                }
             }
         }
         private void MenuItemTriggerPaste_Click(object sender, RoutedEventArgs e)
@@ -2444,20 +2461,20 @@ namespace DAR
                 var triggerCollection = db.GetCollection<Trigger>("triggers");
                 var triggergroupCollection = db.GetCollection<TriggerGroup>("triggergroups");
                 //Add new Trigger
-                if(root.Type == "trigger")
+                if (root.Type == "trigger")
                 {
-                    CopyTrigger(triggerclipboard,root.Id);
+                    CopyTrigger(triggerclipboard, root.Id);
                 }
                 //Add new Trigger Group
                 if (root.Type == "triggergroup")
                 {
                     CopyTriggerGroup(triggergroupclipboard, root.Id);
                 }
-                if(root.Name == "All Triggers")
+                if (root.Name == "All Triggers")
                 {
                     CopyTriggerGroup(triggergroupclipboard, 0);
                 }
-            }            
+            }
             UpdateTriggerView();
         }
         private void TreeViewTriggers_ContextMenuOpening(object sender, ContextMenuEventArgs e)
@@ -2496,7 +2513,7 @@ namespace DAR
                             cmTreePaste.IsEnabled = false;
                         }
                     }
-                    if(root.Type == "trigger")
+                    if (root.Type == "trigger")
                     {
                         if (triggerclipboard != 0)
                         {
@@ -2506,7 +2523,7 @@ namespace DAR
                         {
                             cmTreePaste.IsEnabled = false;
                         }
-                    }             
+                    }
                 }
             }
             else

@@ -74,7 +74,7 @@ namespace DAR
             Brush brush = new SolidColorBrush((Color)windowcolor);
             this.Background = brush;
         }
-        public void AddTimer(String description, int duration, Boolean type, String character)
+        public void AddTimer(String description, int duration, Boolean type, String character, Category triggeredcategory)
         {
             TriggerTimer newTimer = new TriggerTimer();
             newTimer.Character = character;
@@ -82,6 +82,8 @@ namespace DAR
             newTimer.SetTimer(description, duration, type);
             newTimer.PropertyChanged += Listener_PropertyChanged;
             newTimer.StartTimer();
+            newTimer.Barcolor = triggeredcategory.TimerBarColor;
+            newTimer.Textcolor = triggeredcategory.TimerFontColor;
             TimerBars.Add(newTimer);
         }
         public void RemoveTimer(String character)

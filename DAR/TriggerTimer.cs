@@ -19,6 +19,8 @@ namespace DAR
         public ProgressBar progress;
         public Boolean direction; //false is count down, true is count up
         public double progressValue;
+        public string Barcolor { get; set; }
+        public string Textcolor { get; set; }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -32,6 +34,8 @@ namespace DAR
             timerDuration = 0;
             direction = false;
             character = "";
+            Barcolor = "";
+            Textcolor = "";
             progress = new ProgressBar()
             {
                 Minimum = 0,

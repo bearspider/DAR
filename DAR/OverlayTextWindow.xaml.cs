@@ -13,6 +13,9 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using System.Globalization;
+using System.ComponentModel;
+using System.Collections.Specialized;
 
 namespace DAR
 {
@@ -28,6 +31,7 @@ namespace DAR
         public OverlayTextWindow()
         {
             InitializeComponent();
+            var listener = OcPropertyChangedListener.Create(triggers);
             icTriggers.ItemsSource = triggers;
         }
         public void SetProperties(OverlayText overlay)
@@ -59,11 +63,39 @@ namespace DAR
                 oti.FontColor = selectedcategory.TextFontColor;
                 oti.FontSize = windowproperties.Size;
                 oti.FontFamily = windowproperties.Font;
+                oti.Duration = windowproperties.Delay;
+                oti.SetProgress(0,windowproperties.Delay);
+                oti.SetTimer(windowproperties.Delay);
+                oti.PropertyChanged += Listener_PropertyChanged;
+                oti.StartTimer();
                 triggers.Add(oti);
-                icTriggers.DataContext = triggers;
+                icTriggers.DataContext = triggers;                
+            }
+        }
+        public void RemoveTrigger(Trigger oldtrigger)
+        {
+            List<OverlayTextItem> toremove = new List<OverlayTextItem>();
+            foreach (OverlayTextItem textitem in triggers)
+            {
+                if(textitem.TriggerObject == oldtrigger)
+                {
+                    toremove.Add(textitem);
+                }
+            }
+            foreach(OverlayTextItem removeitem in toremove)
+            {
+                triggers.Remove(removeitem);
+            }
 
-                //Async job wait windowproperties.Delay, then remove item from triggers.
-                
+        }
+        private void Listener_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            OverlayTextItem s = (OverlayTextItem)sender;
+
+            if (s.progress.Value == 0)
+            {
+                s.StopTimer();
+                triggers.Remove(s);
             }
         }
     }

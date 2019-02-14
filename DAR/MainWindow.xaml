@@ -274,7 +274,13 @@
                             </TreeView>
                         </xcad:LayoutDocument>
                         <xcad:LayoutDocument x:Name="firedtriggers" Title="Activated Triggers" ContentId="activatedPane">
-                            <TextBox AcceptsReturn="True" TextWrapping="Wrap"></TextBox>
+                            <DataGrid Name="datagrid_activated" AutoGenerateColumns="False">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Trigger Name" Binding="{Binding Name}"  IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="From Log" Binding="{Binding FromLog}" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="Triggred At" Binding="{Binding TriggerTime}" IsReadOnly="True"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
                         </xcad:LayoutDocument>
                         <xcad:LayoutDocument x:Name="pushbacklist" Title="Pushback Monitor" ContentId="pushbackPane">
                             <DataGrid Name="datagrid_pushback" AutoGenerateColumns="False">

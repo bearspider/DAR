@@ -6,7 +6,7 @@ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:local="clr-namespace:DAR"
         xmlns:componentModel="clr-namespace:System.ComponentModel;assembly=WindowsBase"
         mc:Ignorable="d"
-        Title="OverlayTimers" Name="overlays" Height="450" Width="800" AllowsTransparency="True" WindowStyle="None" MouseDown="Window_MouseDown" Opacity="1" MouseUp="Window_MouseUp">
+        Title="OverlayTimers" Name="overlays" Height="450" Width="800" AllowsTransparency="True" WindowStyle="None" Topmost="True">
     <Window.Resources>
         <ResourceDictionary>
             <local:TimeConverter x:Key="converter" />
@@ -19,7 +19,7 @@ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     </Window.Resources>
 
 
-    <ListBox HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Name="listviewTimers" ItemsSource="{Binding Source={StaticResource src}}">
+    <ListBox BorderThickness="0" Background="Transparent" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Name="listviewTimers" ItemsSource="{Binding Source={StaticResource src}}">
         <ListBox.ItemTemplate>
             <DataTemplate>
                 <WrapPanel>
@@ -28,9 +28,9 @@ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
-                        <ProgressBar Foreground="AliceBlue" Width="500" HorizontalContentAlignment="Stretch" Name="pb"  Value="{Binding Progress.Value}" Minimum="{Binding Minimum}" Maximum="{Binding Maximum}"/>
-                        <TextBlock VerticalAlignment="Center" HorizontalAlignment="Right" Text="{Binding ElementName=pb, Path=Value, Converter={StaticResource converter}}" FontSize="30" Foreground="DarkMagenta"/>
-                        <TextBlock Text="{Binding TimerDescription}" FontSize="30" Foreground="DarkMagenta" HorizontalAlignment="Left"/>
+                        <ProgressBar Foreground="{Binding Barcolor}" Width="500" HorizontalContentAlignment="Stretch" Name="pb"  Value="{Binding Progress.Value}" Minimum="{Binding Minimum}" Maximum="{Binding Maximum}"/>
+                        <TextBlock VerticalAlignment="Center" HorizontalAlignment="Right" Text="{Binding ElementName=pb, Path=Value, Converter={StaticResource converter}}" FontSize="30" Foreground="{Binding Textcolor}"/>
+                        <TextBlock Text="{Binding TimerDescription}" FontSize="30" Foreground="{Binding Textcolor}" HorizontalAlignment="Left"/>
                     </Grid>
                 </WrapPanel>
             </DataTemplate>

@@ -13,6 +13,7 @@ namespace DAR
         public String PushType {get; set;}
         public String FromCharacter { get; set; }
         public Double Distance { get; set; }
+        public DateTime TriggerTime { get; set; }
         public int Id { get; set; }
 
         public Pushback()
@@ -23,6 +24,7 @@ namespace DAR
             PushType = "";
             FromCharacter = "";
             Distance = 0.0;
+            TriggerTime = DateTime.Now;
         }
     }
 }

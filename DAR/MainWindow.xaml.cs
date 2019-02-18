@@ -205,6 +205,7 @@ namespace DAR
         private object _textsLock = new object();
         private object _categoryLock = new object();
         private object _triggerLock = new object();
+        private readonly SynchronizationContext syncontext;
 
         //basicregex should be used for all character monitoring
         Regex basicregex = new Regex(@"\[(?<EQTIME>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\]\s(?<DATA>.*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -228,10 +229,12 @@ namespace DAR
         private int triggergroupclipboard = 0;
         private static string version = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion;
         private int totallinecount = 0;
+
         #endregion
         public MainWindow()
         {
             InitializeComponent();
+            syncontext = SynchronizationContext.Current;
             textblockVersion.Text = version;
             statusbarStatus.DataContext = totallinecount;
             //Check if EQAudioTriggers folder exists, if not create.
@@ -259,8 +262,17 @@ namespace DAR
             //Initialize pushback monitor
             image_pushbackindicator.DataContext = pushbackToggle;
             datagrid_pushback.ItemsSource = pushbackList;
+            ICollectionView pushbackview = CollectionViewSource.GetDefaultView(pushbackList);
+            pushbackview.SortDescriptions.Add(new SortDescription(("TriggerTime"), ListSortDirection.Descending));
+            var pushbackshape = (ICollectionViewLiveShaping)CollectionViewSource.GetDefaultView(pushbackList);
+            pushbackshape.IsLiveSorting = true;
+
             //Set Datagrid for activated triggers
             datagrid_activated.ItemsSource = activatedTriggers;
+            ICollectionView triggerview = CollectionViewSource.GetDefaultView(activatedTriggers);
+            triggerview.SortDescriptions.Add(new SortDescription(("TriggerTime"), ListSortDirection.Descending));
+            var triggershape = (ICollectionViewLiveShaping)CollectionViewSource.GetDefaultView(activatedTriggers);
+            triggershape.IsLiveSorting = true;
 
             //Load the Pushback and Pushup data from CSV files.  If the CSV files do not exist, they will be downloaded.
             InitializePushback();
@@ -344,10 +356,10 @@ namespace DAR
                     newWindow.Show();
                 }
             }
-
             //Start Monitoring Enabled Profiles
             foreach (CharacterProfile character in characterProfiles)
             {
+                Monitor(character);
                 AddResetRibbon();
                 if (File.Exists(character.LogFile) && character.Monitor)
                 {
@@ -667,10 +679,42 @@ namespace DAR
                 }
             }
         }
-        private void MonitorCharacter(CharacterProfile character)
+        private async void Monitor(CharacterProfile character)
+        {
+            await Task.Run(() =>
+            {
+                MonitorCharacter(character);
+
+            });
+        }
+        private void UpdateTimer(OverlayTimerWindow otw, Trigger acttrigger, Boolean updown, String charname, Category actcategory)
+        {
+            syncontext.Post(new SendOrPostCallback(o =>
+            {
+                otw.AddTimer(((Trigger)o).TimerName, ((Trigger)o).TimerDuration, updown, charname, actcategory); ;
+                otw.DataContext = otw;
+            }), acttrigger);
+        }
+        private void UpdateText(OverlayTextWindow otw, Trigger acttrigger)
+        {
+            syncontext.Post(new SendOrPostCallback(o =>
+            {
+                otw.AddTrigger((Trigger)o);
+                otw.DataContext = otw;
+            }), acttrigger);
+        }
+        private void UpdateLineCount(int value)
+        {
+            syncontext.Post(new SendOrPostCallback(o =>
+            {
+                totallinecount += (int)o;
+                statusbarStatus.DataContext = totallinecount;
+            }), value);
+        }
+        private async void MonitorCharacter(CharacterProfile character)
         {
             #region threading
-            Thread t = new Thread(() =>
+            await Task.Run(() =>
             {
                 using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                 {
@@ -689,7 +733,7 @@ namespace DAR
                                 {
                                     String[] delimiter = new string[] { "\r\n" };
                                     String[] lines = capturedLine.Split(delimiter, StringSplitOptions.RemoveEmptyEntries);
-                                    //totallinecount += lines.Length;
+                                    UpdateLineCount(lines.Length);
                                     foreach (string line in lines)
                                     {
                                         foreach (var doc in alltriggers)
@@ -719,12 +763,8 @@ namespace DAR
                                                     texttimer.Start();
                                                     if (doc.Displaytext != null)
                                                     {
-                                                        Dispatcher.BeginInvoke((Action)(() =>
-                                                        {
-                                                            //OverlayTextWindow textwindow = textWindows.Single<OverlayTextWindow>(i => i.Name == triggeredcategory.TextOverlay);
-                                                            //textwindow.AddTrigger(doc);
-                                                            //textwindow.DataContext = textwindow;
-                                                        }), DispatcherPriority.Send);
+                                                        OverlayTextWindow otw = textWindows.Single<OverlayTextWindow>(i => i.windowproperties.Name == triggeredcategory.TextOverlay);
+                                                        UpdateText(otw, doc);
                                                         Console.WriteLine($"{doc.TimerName}");
                                                     }
                                                     texttimer.Stop();
@@ -732,24 +772,16 @@ namespace DAR
                                                     Stopwatch countertimer = new Stopwatch();
                                                     countertimer.Start();
                                                     lock (_timersLock)
-                                                    {
+                                                    {                                                        
                                                         switch (doc.TimerType)
                                                         {
                                                             case "Timer(Count Down)":
-                                                                Dispatcher.BeginInvoke((Action)(() =>
-                                                                {
-                                                                    OverlayTimerWindow timerwindow = timerWindows.Single<OverlayTimerWindow>(i => i.Name == triggeredcategory.TimerOverlay);
-                                                                    timerwindow.AddTimer(doc.TimerName, doc.TimerDuration, false, character.characterName, triggeredcategory);
-                                                                    timerwindow.DataContext = timerwindow;
-                                                                }), DispatcherPriority.Send);
+                                                                OverlayTimerWindow timerwindowdown = timerWindows.Single<OverlayTimerWindow>(i => i.windowproperties.Name == triggeredcategory.TimerOverlay);
+                                                                UpdateTimer(timerwindowdown, doc, false, character.characterName, triggeredcategory);
                                                                 break;
                                                             case "Stopwatch(Count Up)":
-                                                                Dispatcher.BeginInvoke((Action)(() =>
-                                                                {
-                                                                    OverlayTimerWindow timerwindow = timerWindows.Single<OverlayTimerWindow>(i => i.Name == triggeredcategory.TimerOverlay);
-                                                                    timerwindow.AddTimer(doc.TimerName, doc.TimerDuration, true, character.characterName, triggeredcategory);
-                                                                    timerwindow.DataContext = timerwindow;
-                                                                }), DispatcherPriority.Send);
+                                                                OverlayTimerWindow timerwindowup = timerWindows.Single<OverlayTimerWindow>(i => i.windowproperties.Name == triggeredcategory.TimerOverlay);
+                                                                UpdateTimer(timerwindowup, doc, true, character.characterName, triggeredcategory);
                                                                 break;
                                                             case "Repeating Timer":
                                                                 break;
@@ -762,6 +794,7 @@ namespace DAR
                                                 }
                                             }
                                         }
+                                        #region pushback monitor
                                         Stopwatch pushtimer = new Stopwatch();
                                         pushtimer.Start();
                                         if (pushbackToggle)
@@ -816,6 +849,7 @@ namespace DAR
                                         }
                                         pushtimer.Stop();
                                         Console.WriteLine($"Pushback: {pushtimer.Elapsed.TotalMilliseconds.ToString()}");
+                                        #endregion
                                     }
                                 }
                                 if (characterProfiles.Any(x => x.Monitor == false && x.ProfileName == character.ProfileName))
@@ -827,7 +861,6 @@ namespace DAR
                     }
                 }
             });
-            t.Start();
             #endregion
         }
         private void Changed(object sender, FileSystemEventArgs e)
@@ -2534,5 +2567,17 @@ namespace DAR
             }
         }
         #endregion
+
+        private void TextboxTriggerSearch_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            //setup live filtering
+            //https://www.c-sharpcorner.com/UploadFile/013102/wpf-4-5-live-shaping/
+        }
+
+        private void TextboxPushbackSearch_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            //setup live filtering
+            //https://www.c-sharpcorner.com/UploadFile/013102/wpf-4-5-live-shaping/
+        }
     }
 }

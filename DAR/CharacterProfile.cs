@@ -110,9 +110,12 @@ namespace DAR
             get { return timerBarColor; }
             set { timerBarColor = value; }
         }
-        public void Speak(string output)
+        public async void Speak(string output)
         {
-            synth.Speak(output);
+            await Task.Run(() =>
+            {
+                synth.Speak(output);
+            });            
         }
         public void AddTrigger(int triggerId)
         {

@@ -727,7 +727,7 @@ namespace DAR
                         {
                             for (; ; )
                             {
-                                Thread.Sleep(TimeSpan.FromMilliseconds(5));
+                                //Thread.Sleep(TimeSpan.FromMilliseconds(5));
                                 String capturedLine = streamReader.ReadToEnd();
                                 if (capturedLine.Length > 0)
                                 {

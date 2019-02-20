@@ -66,7 +66,8 @@
                 <Fluent:Backstage>
                     <Fluent:BackstageTabControl>
                         <Fluent:Button Header="Settings" Click="Settings_Click"/>
-                        <Fluent:Button Header="Update"/>
+                        <Fluent:Button Header="Update Program"/>
+                        <Fluent:Button Header="Update Pushback List" Click="UpdatePushback_Click"/>
                         <Fluent:BackstageTabItem Header="About">
                             <StackPanel>
                                 <Grid Margin="10,0,10,0">
@@ -114,7 +115,7 @@
                 </Fluent:RibbonGroupBox>
                 <Fluent:RibbonGroupBox Header="Misc">
                     <Fluent:SplitButton Header="Commands" LargeIcon="Images/Oxygen-Icons.org-Oxygen-Apps-utilities-terminal.ico">
-                        <Fluent:SplitButton HorizontalAlignment="Right" Name="rbnStopAlerts" Size="Middle" Icon="Images/Oxygen-Icons.org-Oxygen-Actions-process-stop.ico" Header="Stop Alerts" Click="RbnStopAlerts_Click"/>
+                        <Fluent:SplitButton HorizontalAlignment="Right" Name="rbnStopAlerts" Size="Middle" Icon="Images/Oxygen-Icons.org-Oxygen-Actions-process-stop.ico" Header="Reset Timers" Click="RbnStopAlerts_Click"/>
                         <Fluent:SplitButton HorizontalAlignment="Right" Name="rbnResetCounters" Size="Middle" Icon="Images/Oxygen-Icons.org-Oxygen-Actions-edit-undo.ico" Header="Reset Counters"/>
                     </Fluent:SplitButton>
                     <Fluent:Button Header="Pronunciations" LargeIcon="Images/Oxygen-Icons.org-Oxygen-Apps-konversation.ico"/>
@@ -243,8 +244,8 @@
                                                         <ColumnDefinition Width="25"/>
                                                     </Grid.ColumnDefinitions>                                                    
                                                     <Image HorizontalAlignment="Left" Grid.Row="0" Grid.Column="0" Source="{Binding Monitor, Converter={StaticResource converter}}" />
-                                                    <TextBlock Margin="5,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" Grid.Row="0" Grid.Column="1" Text="{Binding ProfileName}" />
-                                                    <Image HorizontalAlignment="Right" Grid.Row="0" Grid.Column="2" Source="{Binding FileExists, Converter={StaticResource fileconverter}}"/>
+                                                    <TextBlock Margin="5,0,15,0" VerticalAlignment="Center" HorizontalAlignment="Left" Grid.Row="0" Grid.Column="1" Text="{Binding ProfileName}" />
+                                                    <Image HorizontalAlignment="Right" Margin="0,0,0,0" Grid.Row="0" Grid.Column="2" Source="{Binding FileExists, Converter={StaticResource fileconverter}}"/>
                                                 </Grid>
                                                 </Border>
                                             </WrapPanel>
@@ -281,7 +282,7 @@
                                 </TreeView.ContextMenu>
                             </TreeView>
                         </xcad:LayoutDocument>
-                        <xcad:LayoutDocument x:Name="firedtriggers" Title="Activated Triggers" ContentId="activatedPane">
+                        <xcad:LayoutDocument x:Name="firedtriggerspane" Title="Activated Triggers" ContentId="activatedPane">
                             <DataGrid Name="datagrid_activated" AutoGenerateColumns="False">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Trigger Name" Binding="{Binding Name}"  IsReadOnly="True"/>
@@ -290,7 +291,7 @@
                                 </DataGrid.Columns>
                             </DataGrid>
                         </xcad:LayoutDocument>
-                        <xcad:LayoutDocument x:Name="pushbacklist" Title="Pushback Monitor" ContentId="pushbackPane">
+                        <xcad:LayoutDocument x:Name="pushbackpane" Title="Pushback Monitor" ContentId="pushbackPane">
                             <DataGrid Name="datagrid_pushback" AutoGenerateColumns="False">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Character" Binding="{Binding Character}"  IsReadOnly="True"/>

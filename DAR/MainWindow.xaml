@@ -124,7 +124,7 @@
                         <Fluent:Button Header="Triggers" Size="Middle"/>
                     </Fluent:SplitButton>
                 </Fluent:RibbonGroupBox>
-                <Fluent:RibbonGroupBox Header="Pushback Monitor">
+                <Fluent:RibbonGroupBox Header="Pushback Monitor" Width="120">
                     <StackPanel>
                         <Grid>
                             <Grid.RowDefinitions>

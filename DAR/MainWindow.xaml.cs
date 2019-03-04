@@ -214,6 +214,7 @@ namespace DAR
         private ObservableCollection<Category> categorycollection = new ObservableCollection<Category>();
         private ObservableCollection<CategoryWrapper> CategoryTab = new ObservableCollection<CategoryWrapper>();
         private ObservableCollection<ActivatedTrigger> activatedTriggers = new ObservableCollection<ActivatedTrigger>();
+        private List<Setting> programsettings = new List<Setting>();
         //These collections are used for the Pushback Monitor feature
         private ObservableCollection<Pushback> pushbackList = new ObservableCollection<Pushback>();
         private Dictionary<String, Tuple<String, Double>> masterpushbacklist = new Dictionary<String, Tuple<String, Double>>();
@@ -252,7 +253,10 @@ namespace DAR
                 }
                 else
                 {
-                    /*Add Code*/
+                    foreach(Setting programsetting in settings.FindAll())
+                    {
+                        programsettings.Add(programsetting);                        
+                    }
                 }
             }
 
@@ -355,12 +359,41 @@ namespace DAR
                 }
             }
             //Start Monitoring Enabled Profiles
+            string archivefolder = programsettings.Single<Setting>(i => i.Name == "LogArchiveFolder").Value;
+            string archivemethod = programsettings.Single<Setting>(i => i.Name == "ArchiveMethod").Value;
+            string autodelete = programsettings.Single<Setting>(i => i.Name == "AutoDelete").Value;
+            string compressarchive = programsettings.Single<Setting>(i => i.Name == "CompressArchive").Value;
+            int logsize = Convert.ToInt32(programsettings.Single<Setting>(i => i.Name == "LogSize").Value);
+            int archivedays = Convert.ToInt32(programsettings.Single<Setting>(i => i.Name == "DeleteArchives").Value);
             foreach (CharacterProfile character in characterProfiles)
             {
                 AddResetRibbon();
                 if (File.Exists(character.LogFile) && character.Monitor)
                 {
                     MonitorCharacter(character);
+                    //Start Log Maintenance
+                    if ((programsettings.Single<Setting>(i => i.Name == "AutoArchive")).Value == "true")
+                    {
+                        switch (archivemethod)
+                        {
+                            case "Size Threshold":
+                                //Start Task, check log size every 5 minutes.
+                                //If log size is greater than programsettings["Log Size"].
+                                //Move File to archive
+                                //Create new file
+                                SizeMaintenance(character.LogFile,archivefolder, logsize, compressarchive, autodelete);
+                                break;
+                            case "Scheduled":
+                                //Start Task, check the date every 5 minutes.
+                                //If today is the scheduled day
+                                //Move File to archive
+                                //Create new file
+                                ScheduledMaintenance(character.LogFile, archivefolder, logsize, compressarchive, autodelete);
+                                break;
+                            default:
+                                break;
+                        }
+                    }
                 }
                 else
                 {
@@ -2524,6 +2557,46 @@ namespace DAR
         {
             Pushback actpush = de as Pushback;
             return (actpush.Spell.IndexOf(textboxPushbackSearch.Text, StringComparison.OrdinalIgnoreCase) >= 0);
+        }
+        #endregion
+        #region Logfile Maintenance
+        private async void SizeMaintenance(String logfile, String folder, int filesize, String compress, String delete)
+        {
+            await Task.Run(() =>
+            {
+                while(true)
+                {
+                    FileInfo fileinfo = new FileInfo(logfile);
+                    if(fileinfo.Length > filesize)
+                    {
+                        ArchiveLog(logfile, folder);
+                    }
+                    Thread.Sleep(300000);
+                }
+            });
+        }
+        private async void ScheduledMaintenance(String logfile, String folder, int filesize, String compress, String delete)
+        {
+            await Task.Run(() => {
+                while(true)
+                {
+                    FileInfo fileinfo = new FileInfo(logfile);
+                }
+            });
+        }
+        private void ArchiveLog(string logfile, string archivefolder)
+        {
+            string filedate = (DateTime.Now).ToFileTime().ToString();
+            string[] logsplits = logfile.Split('\\');
+            string[] filesplit = logsplits[2].Split('.');
+            string newfilename = filesplit[0] + "_" + filedate + '.' + filesplit[1];
+            string archivefile = archivefolder + '\\' + newfilename;
+            File.Move(logfile, archivefile);
+            File.Create(logfile);
+        }
+        private void CompressLog(string archivefolder)
+        {
+
         }
         #endregion
     }

@@ -2591,8 +2591,8 @@ namespace DAR
             string[] filesplit = logsplits[2].Split('.');
             string newfilename = filesplit[0] + "_" + filedate + '.' + filesplit[1];
             string archivefile = archivefolder + '\\' + newfilename;
-            File.Move(logfile, archivefile);
-            File.Create(logfile);
+            //File.Move(logfile, archivefile);
+            //File.Create(logfile);
         }
         private void CompressLog(string archivefolder)
         {

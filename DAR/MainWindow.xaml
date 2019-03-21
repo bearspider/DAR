@@ -124,7 +124,7 @@
                         <Fluent:Button Header="Triggers" Size="Middle"/>
                     </Fluent:SplitButton>
                 </Fluent:RibbonGroupBox>
-                <Fluent:RibbonGroupBox Header="Pushback Monitor" Width="120">
+                <Fluent:RibbonGroupBox Header="Pushback Monitor" Width="115">
                     <StackPanel>
                         <Grid>
                             <Grid.RowDefinitions>
@@ -282,8 +282,8 @@
                                 </TreeView.ContextMenu>
                             </TreeView>
                         </xcad:LayoutDocument>
-                        <xcad:LayoutDocument x:Name="firedtriggerspane" Title="Activated Triggers" ContentId="activatedPane">
-                            <DataGrid Name="datagrid_activated" AutoGenerateColumns="False">
+                        <xcad:LayoutDocument x:Name="firedtriggers" Title="Activated Triggers" ContentId="activatedPane">
+                            <DataGrid Name="datagrid_activated" AutoGenerateColumns="False" CanUserAddRows="False">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Trigger Name" Binding="{Binding Name}"  IsReadOnly="True"/>
                                     <DataGridTextColumn Header="From Log" Binding="{Binding FromLog}" IsReadOnly="True"/>
@@ -291,8 +291,8 @@
                                 </DataGrid.Columns>
                             </DataGrid>
                         </xcad:LayoutDocument>
-                        <xcad:LayoutDocument x:Name="pushbackpane" Title="Pushback Monitor" ContentId="pushbackPane">
-                            <DataGrid Name="datagrid_pushback" AutoGenerateColumns="False">
+                        <xcad:LayoutDocument x:Name="pushbacklist" Title="Pushback Monitor" ContentId="pushbackPane">
+                            <DataGrid Name="datagrid_pushback" AutoGenerateColumns="False" CanUserAddRows="False">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Character" Binding="{Binding Character}"  IsReadOnly="True"/>
                                     <DataGridTextColumn Header="Spell" Binding="{Binding Spell}" IsReadOnly="True"/>

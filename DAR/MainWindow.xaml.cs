@@ -42,6 +42,7 @@ namespace DAR
         public static string defaultPath = @"C:\EQAudioTriggers";
         public static string defaultDB = $"{defaultPath}\\eqtriggers.db";
         public static string eqRegex = @"\[(?<eqtime>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\](?<stringToMatch>.*)";
+        public static Regex eqspellRegex = new Regex(@"(\[(?<eqtime>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\])\s((?<character>\w+)\sbegin\s(casting|singing)\s(?<spellname>.*)\.)|(\[(?<eqtime>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\])\s(?<character>\w+)\s(begins\sto\s(cast|sing)\s.*\<(?<spellname>.*)\>)");
         public static string pathRegex = @"(?<logdir>.*\\)(?<logname>eqlog_.*\.txt)";
         public static string pushbackurl = @"https://raw.githubusercontent.com/bearspider/EQ-LogParsers/master/pushback.csv";
         public static string pushupurl = @"https://raw.githubusercontent.com/bearspider/EQ-LogParsers/master/pushup.csv";
@@ -366,11 +367,12 @@ namespace DAR
             int logsize = Convert.ToInt32(programsettings.Single<Setting>(i => i.Name == "LogSize").Value);
             int archivedays = Convert.ToInt32(programsettings.Single<Setting>(i => i.Name == "DeleteArchives").Value);
             foreach (CharacterProfile character in characterProfiles)
-            {
+            {                
                 AddResetRibbon();
                 if (File.Exists(character.LogFile) && character.Monitor)
                 {
                     MonitorCharacter(character);
+                    //Monitor(character);
                     //Start Log Maintenance
                     if ((programsettings.Single<Setting>(i => i.Name == "AutoArchive")).Value == "true")
                     {
@@ -727,7 +729,11 @@ namespace DAR
                         masterpushuplist.Add(vars[0], entry);
                     }
                 }
-            });
+            }
+        }
+        private async void Monitor(CharacterProfile character)
+        {
+            await Task.Run(() => { MonitorCharacter(character); });
         }
         private void UpdateTimer(OverlayTimerWindow otw, Trigger acttrigger, Boolean updown, String charname, Category actcategory)
         {
@@ -758,136 +764,166 @@ namespace DAR
             #region threading
             await Task.Run(() =>
             {
-                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                using (FileStream filestream = File.Open(character.LogFile, System.IO.FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
-                    var triggerCollection = db.GetCollection<Trigger>("triggers");
-                    IEnumerable<Trigger> alltriggers = triggerCollection.FindAll();
-                    using (FileStream filestream = File.Open(character.LogFile, System.IO.FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    filestream.Seek(0, SeekOrigin.End);
+                    using (StreamReader streamReader = new StreamReader(filestream))
                     {
-                        filestream.Seek(0, SeekOrigin.End);
-                        using (StreamReader streamReader = new StreamReader(filestream))
+                        while(true)
                         {
-                            for (; ; )
+                            String capturedLine = streamReader.ReadLine();
+                            if (capturedLine != null)
                             {
-                                Thread.Sleep(TimeSpan.FromMilliseconds(500));
-                                String capturedLine = streamReader.ReadToEnd();
-                                if (capturedLine.Length > 0)
+                                UpdateLineCount(1);                                
+                                TriggerMonitor(capturedLine, character);
+                                if (pushbackToggle)
                                 {
-                                    String[] delimiter = new string[] { "\r\n" };
-                                    String[] lines = capturedLine.Split(delimiter, StringSplitOptions.RemoveEmptyEntries);
-                                    UpdateLineCount(lines.Length);
-                                    foreach (string line in lines)
-                                    {
-                                        foreach (var doc in alltriggers)
-                                        {
-                                            MatchCollection matches = Regex.Matches(line, doc.SearchText, RegexOptions.IgnoreCase);
-                                            if (matches.Count > 0)
-                                            {
-                                                ActivatedTrigger newactive = new ActivatedTrigger
-                                                {
-                                                    Name = doc.Name,
-                                                    FromLog = character.ProfileName
-                                                };
-                                                lock (_triggerLock)
-                                                {
-                                                    activatedTriggers.Add(newactive);
-                                                }
-                                                foreach (Match tMatch in matches)
-                                                {
-                                                    if (doc.AudioSettings.AudioType == "tts")
-                                                    { character.Speak(doc.AudioSettings.TTS); }
-                                                    if (doc.AudioSettings.AudioType == "file")
-                                                    { PlaySound(doc.AudioSettings.SoundFileId); }
-                                                    //Add Timer code
-                                                    Category triggeredcategory = categorycollection.Single<Category>(i => i.Id == doc.TriggerCategory);
-                                                    String overlayname = triggeredcategory.TextOverlay;
-                                                    Stopwatch texttimer = new Stopwatch();
-                                                    texttimer.Start();
-                                                    if (doc.Displaytext != null)
-                                                    {
-                                                        OverlayTextWindow otw = textWindows.Single<OverlayTextWindow>(i => i.windowproperties.Name == triggeredcategory.TextOverlay);
-                                                        UpdateText(otw, doc);
-                                                        Console.WriteLine($"{doc.TimerName}");
-                                                    }
-                                                    texttimer.Stop();
-                                                    Console.WriteLine($"Text: {texttimer.Elapsed.TotalMilliseconds.ToString()}");
-                                                    Stopwatch countertimer = new Stopwatch();
-                                                    countertimer.Start();
-                                                    lock (_timersLock)
-                                                    {                                                        
-                                                        switch (doc.TimerType)
-                                                        {
-                                                            case "Timer(Count Down)":
-                                                                OverlayTimerWindow timerwindowdown = timerWindows.Single<OverlayTimerWindow>(i => i.windowproperties.Name == triggeredcategory.TimerOverlay);
-                                                                UpdateTimer(timerwindowdown, doc, false, character.characterName, triggeredcategory);
-                                                                break;
-                                                            case "Stopwatch(Count Up)":
-                                                                OverlayTimerWindow timerwindowup = timerWindows.Single<OverlayTimerWindow>(i => i.windowproperties.Name == triggeredcategory.TimerOverlay);
-                                                                UpdateTimer(timerwindowup, doc, true, character.characterName, triggeredcategory);
-                                                                break;
-                                                            case "Repeating Timer":
-                                                                break;
-                                                            default:
-                                                                break;
-                                                        }
-                                                    }
-                                                    countertimer.Stop();
-                                                    Console.WriteLine($"Timer: {countertimer.Elapsed.TotalMilliseconds.ToString()}");
-                                                }
-                                            }
-                                        }
-                                        #region pushback monitor
-                                        Stopwatch pushtimer = new Stopwatch();
-                                        pushtimer.Start();
-                                        if (pushbackToggle)
-                                        {
-                                            Match pushmatch = spellregex.Match(line);
-                                            if(dictpushback.ContainsKey(pushmatch.Groups["SPELL"].Value))
-                                            {
-                                                Pushback pushback = new Pushback
-                                                {
-                                                    Character = pushmatch.Groups["CHARACTER"].Value,
-                                                    PushType = "Pushback",
-                                                    Spell = pushmatch.Groups["SPELL"].Value,
-                                                    FromCharacter = character.ProfileName,
-                                                    Distance = dictpushback[pushmatch.Groups["SPELL"].Value]
-                                                };
-                                                lock (_itemsLock)
-                                                {
-                                                    pushbackList.Add(pushback);
-                                                }
-                                            }
-                                            if (dictpushup.ContainsKey(pushmatch.Groups["SPELL"].Value))
-                                            {
-                                                Pushback pushback = new Pushback
-                                                {
-                                                    Character = pushmatch.Groups["CHARACTER"].Value,
-                                                    PushType = "Pushup",
-                                                    Spell = pushmatch.Groups["SPELL"].Value,
-                                                    FromCharacter = character.ProfileName,
-                                                    Distance = dictpushback[pushmatch.Groups["SPELL"].Value]
-                                                };
-                                                lock (_itemsLock)
-                                                {
-                                                    pushbackList.Add(pushback);
-                                                }
-                                            }
-                                        }
-                                        pushtimer.Stop();
-                                        Console.WriteLine($"Pushback: {pushtimer.Elapsed.TotalMilliseconds.ToString()}");
-                                        #endregion
-                                    }
-                                }
-                                if (characterProfiles.Any(x => x.Monitor == false && x.ProfileName == character.ProfileName))
-                                {
-                                    break;
+                                    PushMonitor(capturedLine, character.ProfileName);
                                 }
                             }
+                            if (characterProfiles.Any(x => x.Monitor == false && x.ProfileName == character.ProfileName))
+                            {
+                                break;
+                            }
+                            Thread.Sleep(1);
                         }
                     }
                 }
             });
             #endregion
+        }
+        private void TriggerMonitor(String line,CharacterProfile character)
+        {
+            //Add stopwatch info for trigger
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                var triggerCollection = db.GetCollection<Trigger>("triggers");
+                IEnumerable<Trigger> alltriggers = triggerCollection.FindAll();
+                #region triggerparse
+                foreach (var doc in alltriggers)
+                {
+                    MatchCollection matches = Regex.Matches(line, doc.SearchText, RegexOptions.IgnoreCase);
+                    if (matches.Count > 0)
+                    {
+                        ActivatedTrigger newactive = new ActivatedTrigger
+                        {
+                            Name = doc.Name,
+                            FromLog = character.ProfileName
+                        };
+                        lock (_triggerLock)
+                        {
+                            activatedTriggers.Add(newactive);
+                        }
+                        foreach (Match tMatch in matches)
+                        {
+                            if (doc.AudioSettings.AudioType == "tts")
+                            { character.Speak(doc.AudioSettings.TTS); }
+                            if (doc.AudioSettings.AudioType == "file")
+                            { PlaySound(doc.AudioSettings.SoundFileId); }
+                            //Add Timer code
+                            Category triggeredcategory = categorycollection.Single<Category>(i => i.Id == doc.TriggerCategory);
+                            String overlayname = triggeredcategory.TextOverlay;
+                            Stopwatch texttimer = new Stopwatch();
+                            texttimer.Start();
+                            if (doc.Displaytext != null)
+                            {
+                                OverlayTextWindow otw = textWindows.Single<OverlayTextWindow>(i => i.windowproperties.Name == triggeredcategory.TextOverlay);
+                                UpdateText(otw, doc);
+                                Console.WriteLine($"{doc.TimerName}");
+                            }
+                            texttimer.Stop();
+                            //Console.WriteLine($"Text: {texttimer.Elapsed.TotalMilliseconds.ToString()}");
+                            Stopwatch countertimer = new Stopwatch();
+                            countertimer.Start();
+                            lock (_timersLock)
+                            {                                                        
+                                switch (doc.TimerType)
+                                {
+                                    case "Timer(Count Down)":
+                                        OverlayTimerWindow timerwindowdown = timerWindows.Single<OverlayTimerWindow>(i => i.windowproperties.Name == triggeredcategory.TimerOverlay);
+                                        UpdateTimer(timerwindowdown, doc, false, character.characterName, triggeredcategory);
+                                        break;
+                                    case "Stopwatch(Count Up)":
+                                        OverlayTimerWindow timerwindowup = timerWindows.Single<OverlayTimerWindow>(i => i.windowproperties.Name == triggeredcategory.TimerOverlay);
+                                        UpdateTimer(timerwindowup, doc, true, character.characterName, triggeredcategory);
+                                        break;
+                                    case "Repeating Timer":
+                                        break;
+                                    default:
+                                        break;
+                                }
+                            }
+                            countertimer.Stop();
+                            //Console.WriteLine($"Timer: {countertimer.Elapsed.TotalMilliseconds.ToString()}");
+                        }
+                    }
+                }
+                #endregion
+            }
+            stopwatch.Stop();
+            //Console.WriteLine($"Trigger Monitor: {stopwatch.Elapsed.TotalSeconds}");
+        }
+        private void PushMonitor(String line, string profilename)
+        {
+            //Add stopwatch info for push monitor
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+            Match pushmatch = GlobalVariables.eqspellRegex.Match(line);
+            if (pushmatch.Success)
+            {                    
+                String logspell = pushmatch.Groups["spellname"].Value;
+                #region pushback
+                foreach (KeyValuePair<String, Tuple<String, Double>> spell in masterpushbacklist)
+                {
+                    //Match pushbackmatch = Regex.Match($"^{logspell}$", spell.Value.Item1);
+                    if (logspell == spell.Value.Item1)
+                    {
+                    Console.WriteLine($"Matched {logspell} to {spell.Value.Item1}");
+                        Pushback pushback = new Pushback
+                        {
+                            Character = pushmatch.Groups["character"].Value,
+                            PushType = "Pushback",
+                            Spell = logspell,
+                            FromCharacter = profilename,
+                            Distance = spell.Value.Item2
+                        };
+                        lock (_itemsLock)
+                        {
+                            pushbackList.Add(pushback);
+                        }
+                    }
+                }
+                #endregion
+                #region pushup
+                /*foreach (KeyValuePair<String, Tuple<String, Double>> spell in masterpushuplist)
+                {
+                MatchCollection matches = Regex.Matches(pushmatch.Groups["SPELL"].Value, spell.Value.Item1, RegexOptions.IgnoreCase);
+                if (matches.Count > 0)
+                {
+                    foreach (Match spellmatch in matches)
+                    {
+                        Pushback pushback = new Pushback
+                        {
+                            Character = pushmatch.Groups["CHARACTER"].Value,
+                            PushType = "Pushup",
+                            Spell = pushmatch.Groups["SPELL"].Value,
+                            FromCharacter = character.ProfileName,
+                            Distance = spell.Value.Item2
+                        };
+                        lock (_itemsLock)
+                        {
+                            pushbackList.Add(pushback);
+                        }
+                    }
+                    break;
+                }
+                }*/
+                #endregion
+            }
+            stopwatch.Stop();
+            //Console.WriteLine($"Pushback Monitor: {stopwatch.Elapsed.TotalSeconds}");
         }
         private void Changed(object sender, FileSystemEventArgs e)
         {
@@ -2379,7 +2415,6 @@ namespace DAR
             Refresh_Categories();
             tabcontrolCategory.SelectedIndex = tabindex;
         }
-
         #endregion
         #region Pushback Monitor
         private void Button_pushbacktoggle_Click(object sender, RoutedEventArgs e)

@@ -729,7 +729,7 @@ namespace DAR
                         masterpushuplist.Add(vars[0], entry);
                     }
                 }
-            }
+            });
         }
         private async void Monitor(CharacterProfile character)
         {
@@ -2484,6 +2484,31 @@ namespace DAR
                 }
             }
         }
+        private void MenuItemTriggerEdit_Click(object sender, RoutedEventArgs e)
+        {
+            TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
+            if(root.Type == "trigger")
+            {
+                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                {
+                    var triggerCollection = db.GetCollection<Trigger>("triggers");
+                    var currentTrigger = triggerCollection.FindOne(Query.EQ("Name", root.Name));
+                    TriggerEditor triggerDialog = new TriggerEditor(currentTrigger.Id);
+                    triggerDialog.Show();
+                }
+            }
+            if(root.Type == "triggergroup")
+            {
+                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                {
+                    var col = db.GetCollection<TriggerGroup>("triggergroups");
+                    TriggerGroup result = col.FindOne(Query.And(Query.EQ("TriggerGroupName", root.Name), Query.EQ("_id", root.Id)));
+                    TriggerGroupEdit triggerDialog = new TriggerGroupEdit(result);
+                    triggerDialog.Show();
+                }
+                UpdateView();
+            }
+        }
         private void MenuItemTriggerPaste_Click(object sender, RoutedEventArgs e)
         {
             TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
@@ -2526,6 +2551,7 @@ namespace DAR
                         else
                         {
                             cmTreePaste.IsEnabled = false;
+                            cmTreeEdit.IsEnabled = false;
                         }
                     }
                 }
@@ -2535,6 +2561,7 @@ namespace DAR
                     cmTreeDelete.IsEnabled = true;
                     if (root.Type == "triggergroup")
                     {
+                        cmTreeEdit.IsEnabled = true;
                         if (triggergroupclipboard != 0 || triggerclipboard != 0)
                         {
                             cmTreePaste.IsEnabled = true;
@@ -2546,9 +2573,10 @@ namespace DAR
                     }
                     if (root.Type == "trigger")
                     {
+                        cmTreeEdit.IsEnabled = true;
                         if (triggerclipboard != 0)
                         {
-                            cmTreePaste.IsEnabled = true;
+                            cmTreePaste.IsEnabled = true;                            
                         }
                         else
                         {
@@ -2562,6 +2590,7 @@ namespace DAR
                 cmTreeCopy.IsEnabled = false;
                 cmTreeDelete.IsEnabled = false;
                 cmTreePaste.IsEnabled = false;
+                cmTreeEdit.IsEnabled = false;
             }
         }
         #endregion
@@ -2621,11 +2650,11 @@ namespace DAR
         }
         private void ArchiveLog(string logfile, string archivefolder)
         {
-            string filedate = (DateTime.Now).ToFileTime().ToString();
-            string[] logsplits = logfile.Split('\\');
-            string[] filesplit = logsplits[2].Split('.');
-            string newfilename = filesplit[0] + "_" + filedate + '.' + filesplit[1];
-            string archivefile = archivefolder + '\\' + newfilename;
+            //string filedate = (DateTime.Now).ToFileTime().ToString();
+            //string[] logsplits = logfile.Split('\\');
+            //string[] filesplit = logsplits[2].Split('.');
+            //string newfilename = filesplit[0] + "_" + filedate + '.' + filesplit[1];
+            //string archivefile = archivefolder + '\\' + newfilename;
             //File.Move(logfile, archivefile);
             //File.Create(logfile);
         }
@@ -2634,5 +2663,7 @@ namespace DAR
 
         }
         #endregion
+
+
     }
 }

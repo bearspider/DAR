@@ -267,6 +267,11 @@
                                                 <Image Height="20" Source="Images\Oxygen-Icons.org-Oxygen-Actions-edit-copy.ico"/>
                                             </MenuItem.Icon>
                                         </MenuItem>
+                                        <MenuItem Name="cmTreeEdit" Header="Edit" Click="MenuItemTriggerEdit_Click">
+                                            <MenuItem.Icon>
+                                                <Image Height="20" Source="Images\Oxygen-Icons.org-Oxygen-Actions-document-edit.ico"/>
+                                            </MenuItem.Icon>
+                                        </MenuItem>
                                         <MenuItem Name="cmTreePaste" Header="Paste" Click="MenuItemTriggerPaste_Click">
                                             <MenuItem.Icon>
                                                 <Image Height="20" Source="Images\Oxygen-Icons.org-Oxygen-Actions-edit-paste.ico"/>
@@ -282,7 +287,7 @@
                                 </TreeView.ContextMenu>
                             </TreeView>
                         </xcad:LayoutDocument>
-                        <xcad:LayoutDocument x:Name="firedtriggers" Title="Activated Triggers" ContentId="activatedPane">
+                        <xcad:LayoutDocument x:Name="firedtriggerspane" Title="Activated Triggers" ContentId="activatedPane">
                             <DataGrid Name="datagrid_activated" AutoGenerateColumns="False" CanUserAddRows="False">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Trigger Name" Binding="{Binding Name}"  IsReadOnly="True"/>
@@ -291,7 +296,7 @@
                                 </DataGrid.Columns>
                             </DataGrid>
                         </xcad:LayoutDocument>
-                        <xcad:LayoutDocument x:Name="pushbacklist" Title="Pushback Monitor" ContentId="pushbackPane">
+                        <xcad:LayoutDocument x:Name="pushbackpane" Title="Pushback Monitor" ContentId="pushbackPane">
                             <DataGrid Name="datagrid_pushback" AutoGenerateColumns="False" CanUserAddRows="False">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Character" Binding="{Binding Character}"  IsReadOnly="True"/>

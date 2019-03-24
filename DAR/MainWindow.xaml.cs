@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Drawing.Text;
 using System.Globalization;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Media;
@@ -31,6 +32,10 @@ using System.Windows.Shell;
 using Xceed.Wpf.AvalonDock;
 using System.Reflection;
 using System.Windows.Threading;
+using Microsoft.Win32;
+using System.Xml;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace DAR
 {
@@ -187,8 +192,14 @@ namespace DAR
     public partial class MainWindow : Window
     {
         #region Properties
+        public int triggergroupid = 0;
+        public int triggerid = 0;
         private TreeViewModel tv;
         private List<TreeViewModel> treeView;
+        private List<TreeViewModel> mergetreeView;
+        private List<TriggerGroup> mergegroups = new List<TriggerGroup>();
+        private List<Trigger> mergetriggers = new List<Trigger>();
+        private TreeViewModel mergeview;
         public ObservableCollection<CharacterProfile> characterProfiles = new ObservableCollection<CharacterProfile>();
         private String currentSelection;
         private CharacterProfile currentprofile;
@@ -2662,8 +2673,201 @@ namespace DAR
         {
 
         }
+
         #endregion
-
-
+        #region Import Triggers
+        private void ImportFromGINA_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog fileDialog = new OpenFileDialog();
+            fileDialog.Filter = "GINA Trigger Package|*.gtp";
+            if(fileDialog.ShowDialog() == true)
+            {
+                using (ZipArchive archive = ZipFile.OpenRead(fileDialog.FileName))
+                {
+                    ZipArchiveEntry triggersxml = archive.Entries[0];
+                    using (StreamReader streamtriggers = new StreamReader(triggersxml.Open()))
+                    {
+                        XmlDocument doc = new XmlDocument();
+                        doc.LoadXml(streamtriggers.ReadToEnd());
+                        string json = JsonConvert.SerializeXmlNode(doc);
+                        JToken jsontoken = JObject.Parse(json);
+                        triggergroupid = 0;
+                        triggerid = 0;
+                        mergetreeView = new List<TreeViewModel>();
+                        ParseGina(jsontoken.SelectToken("SharedData"));                     
+                    }                        
+                }
+            }
+        }
+        private void ParseGina(JToken jsontoken)
+        {
+            mergeview = new TreeViewModel((string)jsontoken["TriggerGroups"]["TriggerGroup"]["Name"]);
+            mergetreeView.Add(mergeview);
+            int result = GetTriggerGroups(jsontoken.SelectToken("TriggerGroups.TriggerGroup"),triggergroupid);
+            //build tree
+            foreach(TriggerGroup tg in mergegroups)
+            {
+                if(tg.Parent == 0)
+                {
+                    TreeViewModel rTree = new TreeViewModel(tg.TriggerGroupName)
+                    {
+                        Type = "triggergroup",
+                        Id = tg.Id
+                    };
+                    if(tg.Triggers.Count > 0)
+                    {
+                        foreach(int item in tg.Triggers)
+                        {
+                            Trigger findtrigger = mergetriggers.Find(x => x.id == item);
+                            TreeViewModel newChildBranch = new TreeViewModel(findtrigger.Name)
+                            {
+                                Type = "trigger"
+                            };
+                            rTree.Children.Add(newChildBranch);
+                        }
+                    }
+                    if(tg.Children.Count > 0)
+                    {
+                        mergeview.Children.Add(BuildMergeTree(tg));
+                    }
+                    else
+                    {
+                        mergeview.Children.Add(rTree);
+                    }
+                }
+            }
+            mergeview.Initialize();
+            treemerge.ItemsSource = mergetreeView;
+            treemerge.Visibility = Visibility.Visible;
+        }
+        private TreeViewModel BuildMergeTree(TriggerGroup branch)
+        {
+            TreeViewModel rTree = new TreeViewModel(branch.TriggerGroupName)
+            {
+                Type = "triggergroup",
+                Id = branch.Id
+            };
+            if (branch.triggers.Count > 0)
+            {
+                foreach (Int32 item in branch.triggers)
+                {
+                    Trigger findtrigger = mergetriggers.Find(x => x.id == item);
+                    TreeViewModel newChildBranch = new TreeViewModel(findtrigger.Name)
+                    {
+                        Type = "trigger"
+                    };
+                    rTree.Children.Add(newChildBranch);
+                }
+            }
+            if (branch.Children.Count > 0)
+            {
+                foreach (int leaf in branch.Children)
+                {
+                    TriggerGroup leafGroup = GetMergeTriggerGroup(leaf);
+                    rTree.Children.Add(BuildMergeTree(leafGroup));
+                }
+            }
+            rTree.VerifyCheckedState();
+            return rTree;
+        }
+        private TriggerGroup GetMergeTriggerGroup(int id)
+        {
+            return mergegroups.Find(x => x.id == id);
+        }
+        private int GetTriggerGroups(JToken jsontoken, int parentid)
+        {
+            int rval = triggergroupid;
+            TriggerGroup newgroup = new TriggerGroup
+            {
+                TriggerGroupName = jsontoken["Name"].ToString(),
+                Comments = jsontoken["Comments"].ToString(),
+                Id = triggergroupid,
+                Parent = parentid
+            };
+            mergegroups.Add(newgroup);
+            foreach (JToken token in jsontoken.Children())
+            {
+                switch(((JProperty)token).Name)
+                {
+                    case "TriggerGroups":
+                        if ((jsontoken["TriggerGroups"]["TriggerGroup"]).GetType().ToString() == "Newtonsoft.Json.Linq.JArray")
+                        {
+                            foreach (JToken newtoken in ((JArray)(jsontoken["TriggerGroups"]["TriggerGroup"])).Children())
+                            {
+                                triggergroupid++;
+                                newgroup.Children.Add(GetTriggerGroups(newtoken,triggergroupid));
+                            }
+                        }
+                        else
+                        {
+                            if ((jsontoken["TriggerGroups"]["TriggerGroup"]).GetType().ToString() == "Newtonsoft.Json.Linq.JObject")
+                            {
+                                triggergroupid++;
+                                newgroup.Children.Add(GetTriggerGroups(jsontoken["TriggerGroups"]["TriggerGroup"], triggergroupid));
+                            }
+                        }
+                        break;
+                    case "Triggers":
+                        if ((jsontoken["Triggers"]["Trigger"]).GetType().ToString() == "Newtonsoft.Json.Linq.JArray")
+                        {
+                            foreach (JToken newtoken in ((JArray)(jsontoken["Triggers"]["Trigger"])).Children())
+                            {
+                                newgroup.Triggers.Add(GetTrigger(newtoken, triggergroupid));
+                            }
+                        }
+                        else
+                        {
+                            if ((jsontoken["Triggers"]["Trigger"]).GetType().ToString() == "Newtonsoft.Json.Linq.JObject")
+                            {
+                                newgroup.Triggers.Add(GetTrigger(jsontoken["Triggers"]["Trigger"], triggergroupid));
+                            }
+                        }
+                        break;
+                    default:
+                        break;
+                }                
+            }            
+            return rval;
+        }
+        private int GetTrigger(JToken jsontoken, int parentid)
+        {
+            int rval = triggerid;
+            Trigger newtrigger = new Trigger
+            {
+                id = triggerid,
+                name = jsontoken["Name"].ToString(),
+                profiles = new ArrayList(),
+                searchText = (String)jsontoken["TriggerText"],
+                comments = (String)jsontoken["Comments"],
+                regex = (bool)jsontoken["EnableRegex"],
+                fastcheck = (bool)jsontoken["UseFastCheck"],
+                parent = parentid,
+                triggerCategory = 0,
+                displaytext = (String)jsontoken["DisplayText"],
+                clipboardtext = (String)jsontoken["ClipboardText"],
+                audioSettings = new Audio(),
+                timerType = (String)jsontoken["TimerType"],
+                timerName = (String)jsontoken["TimerName"],
+                timerDuration = (int)jsontoken["TimerDuration"],
+                triggeredAgain = 2,
+                endEarlyText = new BindingList<SearchText>(),
+                //endEarlyText = "";
+                timerEndingDuration = (int)jsontoken["TimerVisibleDuration"],
+                timerEndingDisplayText = "",
+                timerEndingClipboardText = "",
+                timerEndingAudio = new Audio(),
+                timerEnding = (bool)jsontoken["UseTimerEnding"],
+                timerEndedClipboardText = "",
+                timerEndedDisplayText = "",
+                timerEnded = (bool)jsontoken["UseTimerEnded"],
+                timerEndedAudio = new Audio(),
+                resetCounter = (bool)jsontoken["UseCounterResetTimer"],
+                resetCounterDuration = (int)jsontoken["CounterResetDuration"],
+            };
+            mergetriggers.Add(newtrigger);
+            triggerid++;
+            return rval;
+        }
+        #endregion
     }
 }

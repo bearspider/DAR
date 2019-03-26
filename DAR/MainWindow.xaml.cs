@@ -2701,7 +2701,8 @@ namespace DAR
         }
         private void ParseGina(JToken jsontoken)
         {
-            mergeview = new TreeViewModel((string)jsontoken["TriggerGroups"]["TriggerGroup"]["Name"]);
+            //mergeview = new TreeViewModel((string)jsontoken["TriggerGroups"]["TriggerGroup"]["Name"]);
+            mergeview = new TreeViewModel("All Triggers");
             mergetreeView.Add(mergeview);
             int result = GetTriggerGroups(jsontoken.SelectToken("TriggerGroups.TriggerGroup"),triggergroupid);
             //build tree

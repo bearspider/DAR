@@ -213,6 +213,11 @@ namespace DAR
         private object _triggerLock = new object();
         private readonly SynchronizationContext syncontext;
 
+        //Drag and Drop Merge Triggers
+        private Point _lastMouseDown;
+        private TreeViewModel draggedItem;
+        private TreeViewModel targetItem;
+
         //basicregex should be used for all character monitoring
         Regex basicregex = new Regex(@"\[(?<EQTIME>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\]\s(?<DATA>.*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         //spellregex sould ONLY be used for the Pushback Monitor Feature
@@ -289,7 +294,7 @@ namespace DAR
 
             //Load the Pushback and Pushup data from CSV files.  If the CSV files do not exist, they will be downloaded.
             InitializePushback();
-            InitializePushup();
+            //InitializePushup();
 
             //Initialize thread bindings
             BindingOperations.EnableCollectionSynchronization(pushbackList, _itemsLock);
@@ -699,12 +704,6 @@ namespace DAR
                     {
                         var line = reader.ReadLine();
                         String[] vars = line.Split(',');
-                        try
-                        {
-                            dictpushback.Add(vars[1], Convert.ToDouble(vars[2]));
-                        }
-                        catch (ArgumentException)
-                        { /*item probably already added*/ }
                         Tuple<String, Double> entry = new Tuple<string, double>(vars[1], Convert.ToDouble(vars[2]));
                         masterpushbacklist.Add(vars[0], entry);
                     }
@@ -1342,6 +1341,55 @@ namespace DAR
                 triggerEdit.IsEnabled = false;
                 triggerRemove.IsEnabled = false;
             }
+        }
+        private void Treemerge_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left)
+            {
+                _lastMouseDown = e.GetPosition(null);
+            }
+        }
+        private void Treemerge_PreviewMouseMove(object sender, MouseEventArgs e)
+        {
+            Point mouseposition = e.GetPosition(null);
+            Vector diff = _lastMouseDown - mouseposition;
+
+            if(e.LeftButton == MouseButtonState.Pressed)
+            {
+                TreeView tree = sender as TreeView;
+                TreeViewItem treeitem = FindAncestor<TreeViewItem>((DependencyObject)e.OriginalSource);
+                if(treeitem != null)
+                {
+                    TreeViewModel treemodel = (TreeViewModel)treeitem.Header;
+                }
+                               
+            }
+        }
+        private void TreeViewTriggers_DragEnter(object sender, DragEventArgs e)
+        {
+            if(sender == e.Source)
+            {
+                e.Effects = DragDropEffects.None;
+            }
+        }
+
+        private void TreeViewTriggers_Drop(object sender, DragEventArgs e)
+        {
+            Console.WriteLine("Drop Item");
+            String stop = "";
+        }
+        private T FindAncestor<T>(DependencyObject current) where T : DependencyObject
+        {
+            do
+            {
+                if (current is T)
+                {
+                    return (T)current;
+                }
+                current = VisualTreeHelper.GetParent(current);
+            }
+            while (current != null);
+            return null;
         }
         #endregion
         #region Functions
@@ -2702,7 +2750,8 @@ namespace DAR
         private void ParseGina(JToken jsontoken)
         {
             //mergeview = new TreeViewModel((string)jsontoken["TriggerGroups"]["TriggerGroup"]["Name"]);
-            mergeview = new TreeViewModel("All Triggers");
+            mergeview = new TreeViewModel("Triggers to Import");
+            mergeview.IsChecked = false;
             mergetreeView.Add(mergeview);
             int result = GetTriggerGroups(jsontoken.SelectToken("TriggerGroups.TriggerGroup"),triggergroupid);
             //build tree
@@ -2870,5 +2919,7 @@ namespace DAR
             return rval;
         }
         #endregion
+
+
     }
 }

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.ComponentModel;
 using System.Windows.Forms;
+using System.Diagnostics;
 
 namespace DAR
 {
@@ -40,11 +41,11 @@ namespace DAR
             }
             if(_isChecked == false)
             {
-                NotifyTriggerAdded(Name);
+                NotifyTriggerAdded(Id.ToString());
             }
             else
             {
-                NotifyTriggerRemoved(Name);
+                NotifyTriggerRemoved(Id.ToString());
             }
             _isChecked = value;
 

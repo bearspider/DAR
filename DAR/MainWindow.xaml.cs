@@ -204,6 +204,7 @@ namespace DAR
         public ObservableCollection<CharacterProfile> characterProfiles = new ObservableCollection<CharacterProfile>();
         private String currentSelection;
         private CharacterProfile currentprofile;
+        private Category defaultcategory;
         private String selectedcategory;
         private int categoryindex = 0;
         private Boolean pushbackToggle = false;
@@ -341,10 +342,10 @@ namespace DAR
                     UpdateView();
                 }
                 //If no categories exist(Blank Database), create a default category. DEFAULT category is immutable.
-                IEnumerable<Category> availcategories = categoriescol.FindAll();
-                if (availcategories.Count<Category>() == 0)
+                defaultcategory = categoriescol.FindOne(Query.EQ("Name", "Default"));
+                if (defaultcategory == null)
                 {
-                    Category defaultcategory = new Category();
+                    defaultcategory = new Category();
                     defaultcategory.DefaultCategory = true;
                     foreach (var profile in dbcharacterProfiles.FindAll())
                     {
@@ -355,7 +356,6 @@ namespace DAR
                     defaultcategory.AvailableTimerOverlays = availoverlaytimers;
                     defaultcategory.AvailableTextOverlays = availoverlaytexts;
                     categoriescol.Insert(defaultcategory);
-                    availcategories = categoriescol.FindAll();
                 }
                 //Deploy all text overlays
                 foreach (var overlay in overlaytexts.FindAll())
@@ -842,7 +842,6 @@ namespace DAR
                             {
                                 OverlayTextWindow otw = textWindows.Single<OverlayTextWindow>(i => i.windowproperties.Name == triggeredcategory.TextOverlay);
                                 UpdateText(otw, doc);
-                                Console.WriteLine($"{doc.TimerName}");
                             }
                             texttimer.Stop();
                             //Console.WriteLine($"Text: {texttimer.Elapsed.TotalMilliseconds.ToString()}");
@@ -891,7 +890,6 @@ namespace DAR
                     //Match pushbackmatch = Regex.Match($"^{logspell}$", spell.Value.Item1);
                     if (logspell == spell.Value.Item1)
                     {
-                    Console.WriteLine($"Matched {logspell} to {spell.Value.Item1}");
                         Pushback pushback = new Pushback
                         {
                             Character = pushmatch.Groups["character"].Value,
@@ -985,12 +983,10 @@ namespace DAR
         private void TriggerRemoved_TreeViewModel(object sender, PropertyChangedEventArgs e)
         {
             RemoveTrigger(e.PropertyName);
-            UpdateView();
         }
         private void TriggerAdded_TreeViewModel(object sender, PropertyChangedEventArgs e)
         {
             AddTrigger(e.PropertyName);
-            UpdateView();
         }
         public void RemoveTrigger(String triggerName)
         {
@@ -999,15 +995,14 @@ namespace DAR
             {
                 var colProfiles = db.GetCollection<CharacterProfile>("profiles");
                 var colTriggers = db.GetCollection<Trigger>("triggers");
-                var currentProfile = colProfiles.FindById(selectedCharacter.Id);
-                var currentTrigger = colTriggers.FindOne(Query.EQ("Name", triggerName));
+                var currentTrigger = colTriggers.FindById(Convert.ToInt32(triggerName));
                 if ((currentTrigger.Profiles.Contains(selectedCharacter.Id)))
                 {
-                    currentProfile.Triggers.Remove(currentTrigger.id);
+                    currentprofile.Triggers.Remove(currentTrigger.id);
                     currentTrigger.profiles.Remove(selectedCharacter.Id);
                 }
                 colTriggers.Update(currentTrigger);
-                colProfiles.Update(currentProfile);
+                colProfiles.Update(currentprofile);
             }
         }
         public void AddTrigger(String triggerName)
@@ -1017,15 +1012,14 @@ namespace DAR
             {
                 var colProfiles = db.GetCollection<CharacterProfile>("profiles");
                 var colTriggers = db.GetCollection<Trigger>("triggers");
-                var currentProfile = colProfiles.FindById(selectedCharacter.Id);
-                var currentTrigger = colTriggers.FindOne(Query.EQ("Name", triggerName));
+                var currentTrigger = colTriggers.FindById(Convert.ToInt32(triggerName));
                 if (!(currentTrigger.Profiles.Contains(selectedCharacter.Id)))
                 {
-                    currentProfile.Triggers.Add(currentTrigger.id);
+                    currentprofile.Triggers.Add(currentTrigger.id);
                     currentTrigger.profiles.Add(selectedCharacter.Id);
                 }
                 colTriggers.Update(currentTrigger);
-                colProfiles.Update(currentProfile);
+                colProfiles.Update(currentprofile);
             }
         }
         private void TriggerRemove_Click(object sender, RoutedEventArgs e)
@@ -1276,7 +1270,8 @@ namespace DAR
                         }
                         TreeViewModel newChildBranch = new TreeViewModel(getTrigger.Name)
                         {
-                            Type = "trigger"
+                            Type = "trigger",
+                            Id = getTrigger.Id
                         };
                         newChildBranch.IsChecked = isChecked;
                         newChildBranch.TriggerAdded += TriggerAdded_TreeViewModel;
@@ -1364,8 +1359,7 @@ namespace DAR
                     TreeViewModel treemodel = (TreeViewModel)treeitem.Header;
                     DataObject dragdata = new DataObject("TreeViewModel", treemodel);
                     DragDrop.DoDragDrop(treeitem, dragdata, DragDropEffects.Move);
-                }
-                               
+                }                               
             }
         }
         private void TreeViewTriggers_DragEnter(object sender, DragEventArgs e)
@@ -1379,12 +1373,12 @@ namespace DAR
         {
             if(e.Data.GetDataPresent("TreeViewModel"))
             {
-                //Point pt = ((TreeView)sender).PointFromScreen(new Point(e.X, e.Y));
-                //TreeViewModel DestinationNode = ((TreeView)sender).ge .GetNodeAt(pt);
                 TreeViewModel copytriggers = e.Data.GetData("TreeViewModel") as TreeViewModel;
+                Stopwatch stopwatch = new Stopwatch();
+                stopwatch.Start();
                 ImportTriggers(copytriggers);
-                //If trigger group, 
-                Console.WriteLine("Drop Item");
+                stopwatch.Stop();
+                Console.WriteLine($"Imported Triggers in {stopwatch.Elapsed.ToString()}");
             }
         }
         private int ImportTriggerGroup(TriggerGroup toimport, int importparent)
@@ -1402,12 +1396,12 @@ namespace DAR
                     Parent = importparent,
                     Comments = toimport.Comments,
                 };
-                var currentTriggerGroup = colTriggerGroups.FindOne(Query.EQ("TriggerGroupName", toimport.TriggerGroupName));
+                /*var currentTriggerGroup = colTriggerGroups.FindOne(Query.EQ("TriggerGroupName", toimport.TriggerGroupName));
                 //If there was an existing group append '-Import' to it.
                 if (currentTriggerGroup != null)
                 {
                     newgroup.TriggerGroupName += "-Import";
-                }
+                }*/
                 bsonid = colTriggerGroups.Insert(newgroup);
                 //If child groups, recursive call
                 if (toimport.Children.Count > 0)
@@ -1443,15 +1437,13 @@ namespace DAR
             {
                 var colTriggers = db.GetCollection<Trigger>("triggers");
                 var colProfiles = db.GetCollection<CharacterProfile>("profiles");
-                var colCategories = db.GetCollection<Category>("categories");
-                var defaultcategory = colCategories.FindOne(Query.EQ("Name", "Default"));
-                var triggerexist = colTriggers.FindOne(Query.EQ("Name", toimport.Name));
                 toimport.TriggerCategory = defaultcategory.Id;
+                /*var triggerexist = colTriggers.FindOne(Query.EQ("Name", toimport.Name));                
                 //If a trigger already exists, then append '-Import' to the name
                 if (triggerexist != null)
                 {
                     toimport.Name += "-Import";
-                }
+                }*/
                 bsonid = colTriggers.Insert(toimport);
                 //Activate for every profile
                 IEnumerable<CharacterProfile> profiles = colProfiles.FindAll();
@@ -1476,7 +1468,15 @@ namespace DAR
                 var colProfiles = db.GetCollection<CharacterProfile>("profiles");
                 var colTriggers = db.GetCollection<Trigger>("triggers");
                 //We can only drop onto trigger groups, find the object of the one we dropped on
-                var dropTriggerGroup = colTriggerGroups.FindOne(Query.EQ("TriggerGroupName", droptree.Name));
+                //If it's All triggers, manually set the id to 0
+                TriggerGroup dropTriggerGroup = new TriggerGroup
+                {
+                    Id = 0
+                };
+                if(droptree.Name != "All Triggers")
+                {
+                    dropTriggerGroup = colTriggerGroups.FindOne(Query.EQ("TriggerGroupName", droptree.Name));
+                }            
                 //If we're importing over a trigger group, walk through the tree
                 if (importtree.Type == "triggergroup")
                 {
@@ -1488,8 +1488,8 @@ namespace DAR
                     dropTriggerGroup.AddChild(gid);
                     colTriggerGroups.Update(dropTriggerGroup);
                 }
-                //If we're dragging over a single trigger, add it to the group
-                if(importtree.Type == "trigger")
+                //If we're dragging over a single trigger, add it to the group which is not All Triggers
+                if(importtree.Type == "trigger" && droptree.Name != "All Triggers")
                 {
                     //find the id in our mergetriggers and add it.
                     Trigger roottrigger = mergetriggers.Find(x => x.Name == importtree.Name);
@@ -1524,14 +1524,12 @@ namespace DAR
             TreeViewModel hover = (TreeViewModel)((TreeViewItem)sender).DataContext;
             if (hover.Type == "triggergroup")
             {
-                Console.WriteLine($"Currently over {hover.Name}");
                 droptree = hover;
                 e.Handled = true;
             }
             if (hover.Name == "All Triggers")
             {
                 droptree = hover;
-                Console.WriteLine($"Currently over {hover.Name}");
             }
      
         }

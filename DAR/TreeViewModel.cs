@@ -27,7 +27,6 @@ namespace DAR
         TreeViewModel _parent;
         #endregion
         #region IsChecked
-
         public bool? IsChecked
         {
             get { return _isChecked; }
@@ -79,7 +78,6 @@ namespace DAR
         }
 
         #endregion
-        
         public void Initialize()
         {
             foreach (TreeViewModel child in Children)
@@ -89,52 +87,18 @@ namespace DAR
             }
             
         }
-
         public static List<TreeViewModel> SetTree(string topLevelName)
         {
             List<TreeViewModel> treeView = new List<TreeViewModel>();
             TreeViewModel tv = new TreeViewModel(topLevelName);
-
             treeView.Add(tv);
-
-            //Perform recursive method to build treeview 
-  
-            #region Test Data
-            //Doing this below for this example, you should do it dynamically 
-            /***************************************************
-            TreeViewModel tvChild4 = new TreeViewModel("Child4");
-
-            tv.Children.Add(new TreeViewModel("Child1"));
-            tv.Children.Add(new TreeViewModel("Child2"));
-            tv.Children.Add(new TreeViewModel("Child3"));
-            tv.Children.Add(tvChild4);
-            tv.Children.Add(new TreeViewModel("Child5"));
-
-            TreeViewModel grtGrdChild2 = (new TreeViewModel("GrandChild4-2"));
-
-            tvChild4.Children.Add(new TreeViewModel("GrandChild4-1"));
-            tvChild4.Children.Add(grtGrdChild2);
-            tvChild4.Children.Add(new TreeViewModel("GrandChild4-3"));
-
-            grtGrdChild2.Children.Add(new TreeViewModel("GreatGrandChild4-2-1"));
-            //***************************************************/
-            #endregion
-
             tv.Initialize();
-
             return treeView;
         }
         public List<string> GetTree()
         {
-            List<string> selected = new List<string>();
-            //select = recursive method to check each tree view item for selection (if required)
-
+            List<string> selected = new List<string>();            
             return selected;
-
-            //***********************************************************
-            //From your window capture selected your treeview control like:   TreeViewModel root = (TreeViewModel)TreeViewControl.Items[0];
-            //                                                                List<string> selected = new List<string>(TreeViewModel.GetTree());
-            //***********************************************************
         }
 
         #region INotifyPropertyChanged Members

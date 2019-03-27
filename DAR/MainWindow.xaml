@@ -24,6 +24,7 @@
                 <Setter Property="IsExpanded" Value="True" />
                 <Setter Property="IsSelected" Value="{Binding IsInitiallySelected, Mode=OneTime}" />
                 <Setter Property="KeyboardNavigation.AcceptsReturn" Value="True" />
+                <EventSetter Event="DragOver" Handler="TreeViewItem_DragOver"/>
             </Style>
             <HierarchicalDataTemplate x:Key="CheckBoxItemTemplate" ItemsSource="{Binding Children, Mode=OneTime}">
                 <StackPanel Orientation="Horizontal">
@@ -267,7 +268,7 @@
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <TreeView x:Name="treeViewTriggers"
-                                        AllowDrop="True" 
+                                        AllowDrop="True"
                                         BorderBrush="Black" BorderThickness="1" 
                                         Grid.Row="0" Grid.Column="0" Margin="12,12,0,0"
                                         ContextMenuOpening="TreeViewTriggers_ContextMenuOpening" 
@@ -275,8 +276,8 @@
                                         HorizontalAlignment="Left" VerticalAlignment="Top"   
                                         ItemContainerStyle="{StaticResource TreeViewItemStyle}"
                                         ItemTemplate="{StaticResource CheckBoxItemTemplate}" 
-                                              DragEnter="TreeViewTriggers_DragEnter"
-                                              Drop="TreeViewTriggers_Drop">
+                                        DragEnter="TreeViewTriggers_DragEnter"
+                                        Drop="TreeViewTriggers_Drop">
                                         <TreeView.ContextMenu>
                                             <ContextMenu>
                                                 <MenuItem Name="cmTreeCopy" Header="Copy" Click="MenuItemTriggerCopy_Click">

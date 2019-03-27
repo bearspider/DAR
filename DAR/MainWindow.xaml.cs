@@ -200,6 +200,7 @@ namespace DAR
         private List<TriggerGroup> mergegroups = new List<TriggerGroup>();
         private List<Trigger> mergetriggers = new List<Trigger>();
         private TreeViewModel mergeview;
+        private TreeViewModel droptree;
         public ObservableCollection<CharacterProfile> characterProfiles = new ObservableCollection<CharacterProfile>();
         private String currentSelection;
         private CharacterProfile currentprofile;
@@ -1354,13 +1355,15 @@ namespace DAR
             Point mouseposition = e.GetPosition(null);
             Vector diff = _lastMouseDown - mouseposition;
 
-            if(e.LeftButton == MouseButtonState.Pressed)
+            if(e.LeftButton == MouseButtonState.Pressed && (Math.Abs(diff.X) > SystemParameters.MinimumHorizontalDragDistance || Math.Abs(diff.Y) > SystemParameters.MinimumVerticalDragDistance))
             {
                 TreeView tree = sender as TreeView;
                 TreeViewItem treeitem = FindAncestor<TreeViewItem>((DependencyObject)e.OriginalSource);
                 if(treeitem != null)
                 {
                     TreeViewModel treemodel = (TreeViewModel)treeitem.Header;
+                    DataObject dragdata = new DataObject("TreeViewModel", treemodel);
+                    DragDrop.DoDragDrop(treeitem, dragdata, DragDropEffects.Move);
                 }
                                
             }
@@ -1372,11 +1375,136 @@ namespace DAR
                 e.Effects = DragDropEffects.None;
             }
         }
-
         private void TreeViewTriggers_Drop(object sender, DragEventArgs e)
         {
-            Console.WriteLine("Drop Item");
-            String stop = "";
+            if(e.Data.GetDataPresent("TreeViewModel"))
+            {
+                //Point pt = ((TreeView)sender).PointFromScreen(new Point(e.X, e.Y));
+                //TreeViewModel DestinationNode = ((TreeView)sender).ge .GetNodeAt(pt);
+                TreeViewModel copytriggers = e.Data.GetData("TreeViewModel") as TreeViewModel;
+                ImportTriggers(copytriggers);
+                //If trigger group, 
+                Console.WriteLine("Drop Item");
+            }
+        }
+        private int ImportTriggerGroup(TriggerGroup toimport, int importparent)
+        {
+            int bsonid = 0;
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                var colTriggerGroups = db.GetCollection<TriggerGroup>("triggergroups");
+                var colProfiles = db.GetCollection<CharacterProfile>("profiles");
+                //create a new group because we need to get bson values from child triggers and group database entries
+                //Look for trigger group by name.
+                TriggerGroup newgroup = new TriggerGroup
+                {
+                    TriggerGroupName = toimport.TriggerGroupName,
+                    Parent = importparent,
+                    Comments = toimport.Comments,
+                };
+                var currentTriggerGroup = colTriggerGroups.FindOne(Query.EQ("TriggerGroupName", toimport.TriggerGroupName));
+                //If there was an existing group append '-Import' to it.
+                if (currentTriggerGroup != null)
+                {
+                    newgroup.TriggerGroupName += "-Import";
+                }
+                bsonid = colTriggerGroups.Insert(newgroup);
+                //If child groups, recursive call
+                if (toimport.Children.Count > 0)
+                {
+                    foreach(int child in toimport.Children)
+                    {
+                        TriggerGroup childgroup = mergegroups[child];
+                        int gid = ImportTriggerGroup(childgroup, bsonid);
+                        newgroup.AddChild(gid);
+                    }
+                }
+                if(toimport.Triggers.Count > 0)
+                {
+                    foreach(int child in toimport.Triggers)
+                    {
+                        Trigger childtrigger = mergetriggers[child];
+                        childtrigger.Parent = bsonid;
+                        childtrigger.Id = 0;
+                        int tid = ImportTrigger(childtrigger);
+                        newgroup.AddTriggers(tid);
+                    }                    
+                }
+                //Update the database after we've entered in all the children triggers and groups
+                colTriggerGroups.Update(newgroup);               
+            }
+            return bsonid;
+        }
+        private int ImportTrigger(Trigger toimport)
+        {
+            int bsonid = 0;
+            toimport.Id = 0;
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                var colTriggers = db.GetCollection<Trigger>("triggers");
+                var colProfiles = db.GetCollection<CharacterProfile>("profiles");
+                var colCategories = db.GetCollection<Category>("categories");
+                var defaultcategory = colCategories.FindOne(Query.EQ("Name", "Default"));
+                var triggerexist = colTriggers.FindOne(Query.EQ("Name", toimport.Name));
+                toimport.TriggerCategory = defaultcategory.Id;
+                //If a trigger already exists, then append '-Import' to the name
+                if (triggerexist != null)
+                {
+                    toimport.Name += "-Import";
+                }
+                bsonid = colTriggers.Insert(toimport);
+                //Activate for every profile
+                IEnumerable<CharacterProfile> profiles = colProfiles.FindAll();
+                foreach(CharacterProfile profile in profiles)
+                {
+                    profile.AddTrigger(bsonid);
+                    toimport.Profiles.Add(profile.Id);
+                    colTriggers.Update(toimport);
+                    colProfiles.Update(profile);
+                }
+            }
+            return bsonid;
+        }
+        private void ImportTriggers(TreeViewModel importtree)
+        {
+
+            //Walk through the tree and verify the node is in the database.
+            //check the root node, then walk through the children.
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                var colTriggerGroups = db.GetCollection<TriggerGroup>("triggergroups");
+                var colProfiles = db.GetCollection<CharacterProfile>("profiles");
+                var colTriggers = db.GetCollection<Trigger>("triggers");
+                //We can only drop onto trigger groups, find the object of the one we dropped on
+                var dropTriggerGroup = colTriggerGroups.FindOne(Query.EQ("TriggerGroupName", droptree.Name));
+                //If we're importing over a trigger group, walk through the tree
+                if (importtree.Type == "triggergroup")
+                {
+                    //Find our object in mergegroups, add self and children to the database.
+                    TriggerGroup rootgroup = mergegroups.Find(x => x.TriggerGroupName == importtree.Name);
+                    //Insert trigger group into database get bsonid return value.                    
+                    //add triggergroup id to dropnode children and update in the database.
+                    int gid = ImportTriggerGroup(rootgroup, droptree.Id);
+                    dropTriggerGroup.AddChild(gid);
+                    colTriggerGroups.Update(dropTriggerGroup);
+                }
+                //If we're dragging over a single trigger, add it to the group
+                if(importtree.Type == "trigger")
+                {
+                    //find the id in our mergetriggers and add it.
+                    Trigger roottrigger = mergetriggers.Find(x => x.Name == importtree.Name);
+                    roottrigger.Parent = droptree.Id;
+                    int bsonid = ImportTrigger(roottrigger);
+                    //add the trigger to the drop group
+                    dropTriggerGroup.AddTriggers(bsonid);
+                    colTriggerGroups.Update(dropTriggerGroup);
+                }
+            }
+            //Once we're done with the import, update the trigger view
+            UpdateListView();
+            UpdateTriggerView();
+            //Keep the merge tree up until the user clears it
+            treemerge.Visibility = Visibility.Visible;
         }
         private T FindAncestor<T>(DependencyObject current) where T : DependencyObject
         {
@@ -1390,6 +1518,22 @@ namespace DAR
             }
             while (current != null);
             return null;
+        }
+        private void TreeViewItem_DragOver(object sender, DragEventArgs e)
+        {
+            TreeViewModel hover = (TreeViewModel)((TreeViewItem)sender).DataContext;
+            if (hover.Type == "triggergroup")
+            {
+                Console.WriteLine($"Currently over {hover.Name}");
+                droptree = hover;
+                e.Handled = true;
+            }
+            if (hover.Name == "All Triggers")
+            {
+                droptree = hover;
+                Console.WriteLine($"Currently over {hover.Name}");
+            }
+     
         }
         #endregion
         #region Functions
@@ -2919,7 +3063,5 @@ namespace DAR
             return rval;
         }
         #endregion
-
-
     }
 }

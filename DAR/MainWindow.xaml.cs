@@ -780,97 +780,96 @@ namespace DAR
                     filestream.Seek(0, SeekOrigin.End);
                     using (StreamReader streamReader = new StreamReader(filestream))
                     {
-                        while(true)
+                        using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                         {
-                            String capturedLine = streamReader.ReadLine();
-                            if (capturedLine != null)
+                            var triggerCollection = db.GetCollection<Trigger>("triggers");
+                            IEnumerable<Trigger> alltriggers = triggerCollection.FindAll();
+                            while (true)
                             {
-                                UpdateLineCount(1);                                
-                                TriggerMonitor(capturedLine, character);
-                                if (pushbackToggle)
+                                String capturedLine = streamReader.ReadLine();
+                                if (capturedLine != null)
                                 {
-                                    PushMonitor(capturedLine, character.ProfileName);
+                                    UpdateLineCount(1);
+                                    foreach (var doc in alltriggers)
+                                    {
+                                        MatchCollection matches = Regex.Matches(capturedLine, Regex.Escape(doc.SearchText), RegexOptions.IgnoreCase);
+                                        if (matches.Count > 0)
+                                        {
+                                            TriggerMonitor(doc,character,matches);
+                                        }
+                                    }
+                                    if (pushbackToggle)
+                                    {
+                                        PushMonitor(capturedLine, character.ProfileName);
+                                    }
                                 }
+                                if (characterProfiles.Any(x => x.Monitor == false && x.ProfileName == character.ProfileName))
+                                {
+                                    break;
+                                }
+                                Thread.Sleep(1);
                             }
-                            if (characterProfiles.Any(x => x.Monitor == false && x.ProfileName == character.ProfileName))
-                            {
-                                break;
-                            }
-                            Thread.Sleep(1);
                         }
                     }
                 }
             });
             #endregion
         }
-        private void TriggerMonitor(String line,CharacterProfile character)
+        private void TriggerMonitor(Trigger activetrigger,CharacterProfile character, MatchCollection matches)
         {
             //Add stopwatch info for trigger
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+
+            ActivatedTrigger newactive = new ActivatedTrigger
             {
-                var triggerCollection = db.GetCollection<Trigger>("triggers");
-                IEnumerable<Trigger> alltriggers = triggerCollection.FindAll();
-                #region triggerparse
-                foreach (var doc in alltriggers)
+                Name = activetrigger.Name,
+                FromLog = character.ProfileName
+            };
+            lock (_triggerLock)
+            {
+                activatedTriggers.Add(newactive);
+            }
+            foreach (Match tMatch in matches)
+            {
+                if (activetrigger.AudioSettings.AudioType == "tts")
+                { character.Speak(activetrigger.AudioSettings.TTS); }
+                if (activetrigger.AudioSettings.AudioType == "file")
+                { PlaySound(activetrigger.AudioSettings.SoundFileId); }
+                //Add Timer code
+                Category triggeredcategory = categorycollection.Single<Category>(i => i.Id == activetrigger.TriggerCategory);
+                String overlayname = triggeredcategory.TextOverlay;
+                Stopwatch texttimer = new Stopwatch();
+                texttimer.Start();
+                if (activetrigger.Displaytext != null)
                 {
-                    MatchCollection matches = Regex.Matches(line, doc.SearchText, RegexOptions.IgnoreCase);
-                    if (matches.Count > 0)
+                    OverlayTextWindow otw = textWindows.Single<OverlayTextWindow>(i => i.windowproperties.Name == triggeredcategory.TextOverlay);
+                    UpdateText(otw, activetrigger);
+                }
+                texttimer.Stop();
+                //Console.WriteLine($"Text: {texttimer.Elapsed.TotalMilliseconds.ToString()}");
+                Stopwatch countertimer = new Stopwatch();
+                countertimer.Start();
+                lock (_timersLock)
+                {                                                        
+                    switch (activetrigger.TimerType)
                     {
-                        ActivatedTrigger newactive = new ActivatedTrigger
-                        {
-                            Name = doc.Name,
-                            FromLog = character.ProfileName
-                        };
-                        lock (_triggerLock)
-                        {
-                            activatedTriggers.Add(newactive);
-                        }
-                        foreach (Match tMatch in matches)
-                        {
-                            if (doc.AudioSettings.AudioType == "tts")
-                            { character.Speak(doc.AudioSettings.TTS); }
-                            if (doc.AudioSettings.AudioType == "file")
-                            { PlaySound(doc.AudioSettings.SoundFileId); }
-                            //Add Timer code
-                            Category triggeredcategory = categorycollection.Single<Category>(i => i.Id == doc.TriggerCategory);
-                            String overlayname = triggeredcategory.TextOverlay;
-                            Stopwatch texttimer = new Stopwatch();
-                            texttimer.Start();
-                            if (doc.Displaytext != null)
-                            {
-                                OverlayTextWindow otw = textWindows.Single<OverlayTextWindow>(i => i.windowproperties.Name == triggeredcategory.TextOverlay);
-                                UpdateText(otw, doc);
-                            }
-                            texttimer.Stop();
-                            //Console.WriteLine($"Text: {texttimer.Elapsed.TotalMilliseconds.ToString()}");
-                            Stopwatch countertimer = new Stopwatch();
-                            countertimer.Start();
-                            lock (_timersLock)
-                            {                                                        
-                                switch (doc.TimerType)
-                                {
-                                    case "Timer(Count Down)":
-                                        OverlayTimerWindow timerwindowdown = timerWindows.Single<OverlayTimerWindow>(i => i.windowproperties.Name == triggeredcategory.TimerOverlay);
-                                        UpdateTimer(timerwindowdown, doc, false, character.characterName, triggeredcategory);
-                                        break;
-                                    case "Stopwatch(Count Up)":
-                                        OverlayTimerWindow timerwindowup = timerWindows.Single<OverlayTimerWindow>(i => i.windowproperties.Name == triggeredcategory.TimerOverlay);
-                                        UpdateTimer(timerwindowup, doc, true, character.characterName, triggeredcategory);
-                                        break;
-                                    case "Repeating Timer":
-                                        break;
-                                    default:
-                                        break;
-                                }
-                            }
-                            countertimer.Stop();
-                            //Console.WriteLine($"Timer: {countertimer.Elapsed.TotalMilliseconds.ToString()}");
-                        }
+                        case "Timer(Count Down)":
+                            OverlayTimerWindow timerwindowdown = timerWindows.Single<OverlayTimerWindow>(i => i.windowproperties.Name == triggeredcategory.TimerOverlay);
+                            UpdateTimer(timerwindowdown, activetrigger, false, character.characterName, triggeredcategory);
+                            break;
+                        case "Stopwatch(Count Up)":
+                            OverlayTimerWindow timerwindowup = timerWindows.Single<OverlayTimerWindow>(i => i.windowproperties.Name == triggeredcategory.TimerOverlay);
+                            UpdateTimer(timerwindowup, activetrigger, true, character.characterName, triggeredcategory);
+                            break;
+                        case "Repeating Timer":
+                            break;
+                        default:
+                            break;
                     }
                 }
-                #endregion
+                countertimer.Stop();
+                //Console.WriteLine($"Timer: {countertimer.Elapsed.TotalMilliseconds.ToString()}");
             }
             stopwatch.Stop();
             //Console.WriteLine($"Trigger Monitor: {stopwatch.Elapsed.TotalSeconds}");
@@ -1390,18 +1389,19 @@ namespace DAR
                 var colProfiles = db.GetCollection<CharacterProfile>("profiles");
                 //create a new group because we need to get bson values from child triggers and group database entries
                 //Look for trigger group by name.
+                Console.WriteLine($"Inserting Trigger Group: {toimport.TriggerGroupName}");
                 TriggerGroup newgroup = new TriggerGroup
                 {
                     TriggerGroupName = toimport.TriggerGroupName,
                     Parent = importparent,
                     Comments = toimport.Comments,
                 };
-                /*var currentTriggerGroup = colTriggerGroups.FindOne(Query.EQ("TriggerGroupName", toimport.TriggerGroupName));
+                var currentTriggerGroup = colTriggerGroups.FindOne(Query.EQ("TriggerGroupName", toimport.TriggerGroupName));
                 //If there was an existing group append '-Import' to it.
                 if (currentTriggerGroup != null)
                 {
                     newgroup.TriggerGroupName += "-Import";
-                }*/
+                }
                 bsonid = colTriggerGroups.Insert(newgroup);
                 //If child groups, recursive call
                 if (toimport.Children.Count > 0)
@@ -1433,19 +1433,22 @@ namespace DAR
         {
             int bsonid = 0;
             toimport.Id = 0;
+            Console.WriteLine($"Inserting Trigger: {toimport.Name}");
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 var colTriggers = db.GetCollection<Trigger>("triggers");
                 var colProfiles = db.GetCollection<CharacterProfile>("profiles");
                 toimport.TriggerCategory = defaultcategory.Id;
-                /*var triggerexist = colTriggers.FindOne(Query.EQ("Name", toimport.Name));                
+                var triggerexist = colTriggers.FindOne(Query.EQ("Name", toimport.Name));                
                 //If a trigger already exists, then append '-Import' to the name
                 if (triggerexist != null)
                 {
                     toimport.Name += "-Import";
-                }*/
+                }
                 bsonid = colTriggers.Insert(toimport);
                 //Activate for every profile
+                /*Stopwatch stopwatch = new Stopwatch();
+                stopwatch.Start();
                 IEnumerable<CharacterProfile> profiles = colProfiles.FindAll();
                 foreach(CharacterProfile profile in profiles)
                 {
@@ -1454,12 +1457,13 @@ namespace DAR
                     colTriggers.Update(toimport);
                     colProfiles.Update(profile);
                 }
+                stopwatch.Stop();
+                Console.WriteLine($"Took {stopwatch.Elapsed.ToString()} to add profiles.");*/
             }
             return bsonid;
         }
         private void ImportTriggers(TreeViewModel importtree)
         {
-
             //Walk through the tree and verify the node is in the database.
             //check the root node, then walk through the children.
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))

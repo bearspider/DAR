@@ -122,7 +122,7 @@ namespace DAR
             }
         }
         #region INotifyPropertyChanged Members
-        public event PropertyChangedEventHandler OverlaySaved;
+        //public event PropertyChangedEventHandler OverlaySaved;
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected void NotifySaveOverlay(string info)

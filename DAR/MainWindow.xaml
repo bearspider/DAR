@@ -258,63 +258,63 @@
                     </xcad:LayoutAnchorablePaneGroup>
                     <xcad:LayoutDocumentPane>
                         <xcad:LayoutDocument x:Name="availabletriggers" CanClose="False" Title="Triggers" ContentId="triggersPane" IsSelectedChanged="Availabletriggers_IsSelectedChanged">
-                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-                                <Grid>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition />
-                                    </Grid.RowDefinitions>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TreeView x:Name="treeViewTriggers"
-                                        AllowDrop="True"
-                                        BorderBrush="Black" BorderThickness="1" 
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled"> 
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TreeView x:Name="treeViewTriggers"
+                                        AllowDrop="True" Background="LightSteelBlue"
+                                        BorderBrush="Black" BorderThickness="1"
                                         Grid.Row="0" Grid.Column="0" Margin="12,12,0,0"
                                         ContextMenuOpening="TreeViewTriggers_ContextMenuOpening" 
                                         SelectedItemChanged="TreeViewTriggers_SelectedItemChanged" 
-                                        HorizontalAlignment="Left" VerticalAlignment="Top"   
+                                        HorizontalAlignment="Left" VerticalAlignment="Stretch"   
                                         ItemContainerStyle="{StaticResource TreeViewItemStyle}"
                                         ItemTemplate="{StaticResource CheckBoxItemTemplate}" 
                                         DragEnter="TreeViewTriggers_DragEnter"
                                         Drop="TreeViewTriggers_Drop">
-                                        <TreeView.ContextMenu>
-                                            <ContextMenu>
-                                                <MenuItem Name="cmTreeCopy" Header="Copy" Click="MenuItemTriggerCopy_Click">
-                                                    <MenuItem.Icon>
-                                                        <Image Height="20" Source="Images\Oxygen-Icons.org-Oxygen-Actions-edit-copy.ico"/>
-                                                    </MenuItem.Icon>
-                                                </MenuItem>
-                                                <MenuItem Name="cmTreeEdit" Header="Edit" Click="MenuItemTriggerEdit_Click">
-                                                    <MenuItem.Icon>
-                                                        <Image Height="20" Source="Images\Oxygen-Icons.org-Oxygen-Actions-document-edit.ico"/>
-                                                    </MenuItem.Icon>
-                                                </MenuItem>
-                                                <MenuItem Name="cmTreePaste" Header="Paste" Click="MenuItemTriggerPaste_Click">
-                                                    <MenuItem.Icon>
-                                                        <Image Height="20" Source="Images\Oxygen-Icons.org-Oxygen-Actions-edit-paste.ico"/>
-                                                    </MenuItem.Icon>
-                                                </MenuItem>
-                                                <Separator/>
-                                                <MenuItem Name="cmTreeDelete" Header="Delete" Click="MenuItemTriggerDelete_Click">
-                                                    <MenuItem.Icon>
-                                                        <Image Height="20" Source="Images\Oxygen-Icons.org-Oxygen-Actions-edit-delete.ico"/>
-                                                    </MenuItem.Icon>
-                                                </MenuItem>
-                                            </ContextMenu>
-                                        </TreeView.ContextMenu>
-                                    </TreeView>
-                                    <TreeView 
+                                    <TreeView.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Name="cmTreeCopy" Header="Copy" Click="MenuItemTriggerCopy_Click">
+                                                <MenuItem.Icon>
+                                                    <Image Height="20" Source="Images\Oxygen-Icons.org-Oxygen-Actions-edit-copy.ico"/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Name="cmTreeEdit" Header="Edit" Click="MenuItemTriggerEdit_Click">
+                                                <MenuItem.Icon>
+                                                    <Image Height="20" Source="Images\Oxygen-Icons.org-Oxygen-Actions-document-edit.ico"/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Name="cmTreePaste" Header="Paste" Click="MenuItemTriggerPaste_Click">
+                                                <MenuItem.Icon>
+                                                    <Image Height="20" Source="Images\Oxygen-Icons.org-Oxygen-Actions-edit-paste.ico"/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <Separator/>
+                                            <MenuItem Name="cmTreeDelete" Header="Delete" Click="MenuItemTriggerDelete_Click">
+                                                <MenuItem.Icon>
+                                                    <Image Height="20" Source="Images\Oxygen-Icons.org-Oxygen-Actions-edit-delete.ico"/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                        </ContextMenu>
+                                    </TreeView.ContextMenu>
+                                </TreeView>
+                                <TreeView 
                                         x:Name="treemerge"
                                         Margin="12,12,0,0" 
-                                        Grid.Row="0" Grid.Column="1"                                         
-                                        HorizontalAlignment="Left" VerticalAlignment="Top" 
+                                        Grid.Row="0" Grid.Column="1"                                   
+                                        HorizontalAlignment="Left" VerticalAlignment="Stretch" 
                                         ItemContainerStyle="{StaticResource TreeViewItemStyle}" 
                                         ItemTemplate="{StaticResource CheckBoxItemTemplate}" 
                                         Visibility="Hidden" BorderBrush="Black" BorderThickness="1"
                                         PreviewMouseLeftButtonDown="Treemerge_PreviewMouseLeftButtonDown"
                                         PreviewMouseMove="Treemerge_PreviewMouseMove"/>
-                                </Grid>
+                            </Grid>
                             </ScrollViewer>
                         </xcad:LayoutDocument>
                         <xcad:LayoutDocument x:Name="firedtriggerspane" Title="Activated Triggers" ContentId="activatedPane">

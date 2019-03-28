@@ -192,22 +192,21 @@ namespace DAR
     public partial class MainWindow : Window
     {
         #region Properties
-        public int triggergroupid = 0;
-        public int triggerid = 0;
+        //Main Tree
         private TreeViewModel tv;
         private List<TreeViewModel> treeView;
-        private List<TreeViewModel> mergetreeView;
-        private List<TriggerGroup> mergegroups = new List<TriggerGroup>();
-        private List<Trigger> mergetriggers = new List<Trigger>();
-        private TreeViewModel mergeview;
-        private TreeViewModel droptree;
-        public ObservableCollection<CharacterProfile> characterProfiles = new ObservableCollection<CharacterProfile>();
+
+        //Variables
+        private int triggergroupid = 0;
+        private int triggerid = 0;
         private String currentSelection;
         private CharacterProfile currentprofile;
         private Category defaultcategory;
         private String selectedcategory;
         private int categoryindex = 0;
         private Boolean pushbackToggle = false;
+
+        //Locks for threads
         private object _itemsLock = new object();
         private object _timersLock = new object();
         private object _textsLock = new object();
@@ -217,29 +216,34 @@ namespace DAR
 
         //Drag and Drop Merge Triggers
         private Point _lastMouseDown;
-        private TreeViewModel draggedItem;
-        private TreeViewModel targetItem;
+        private ObservableCollection<TreeViewModel> mergetreeView = new ObservableCollection<TreeViewModel>();
+        private List<TriggerGroup> mergegroups = new List<TriggerGroup>();
+        private List<Trigger> mergetriggers = new List<Trigger>();
+        private TreeViewModel mergeview;
+        private TreeViewModel droptree;
+        private int mergetriggercount = 0;
 
-        //basicregex should be used for all character monitoring
-        Regex basicregex = new Regex(@"\[(?<EQTIME>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\]\s(?<DATA>.*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-        //spellregex sould ONLY be used for the Pushback Monitor Feature
-        Regex spellregex = new Regex(@"\[(?<EQTIME>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\]\s(?<CHARACTER>\w+)\sbegins\sto\scast\sa\sspell\.\s\<(?<SPELL>.+)\>", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-        private Dictionary<String, FileSystemWatcher> watchers = new Dictionary<String, FileSystemWatcher>();
-        private Dictionary<Trigger, ArrayList> activeTriggers = new Dictionary<Trigger, ArrayList>();
+        //Overlays
         private ObservableCollection<OverlayTextWindow> textWindows = new ObservableCollection<OverlayTextWindow>();
         private ObservableCollection<OverlayTimerWindow> timerWindows = new ObservableCollection<OverlayTimerWindow>();
         private ObservableCollection<OverlayText> availoverlaytexts = new ObservableCollection<OverlayText>();
         private ObservableCollection<OverlayTimer> availoverlaytimers = new ObservableCollection<OverlayTimer>();
+
+        //Variable Collections
         private ObservableCollection<Category> categorycollection = new ObservableCollection<Category>();
         private ObservableCollection<CategoryWrapper> CategoryTab = new ObservableCollection<CategoryWrapper>();
+        private ObservableCollection<CharacterProfile> characterProfiles = new ObservableCollection<CharacterProfile>();
         private ObservableCollection<ActivatedTrigger> activatedTriggers = new ObservableCollection<ActivatedTrigger>();
+        private Dictionary<Trigger, ArrayList> listoftriggers = new Dictionary<Trigger, ArrayList>();
         private List<Setting> programsettings = new List<Setting>();
+
         //These collections are used for the Pushback Monitor feature
         private ObservableCollection<Pushback> pushbackList = new ObservableCollection<Pushback>();
         private Dictionary<String, Tuple<String, Double>> masterpushbacklist = new Dictionary<String, Tuple<String, Double>>();
         private Dictionary<String, Tuple<String, Double>> masterpushuplist = new Dictionary<String, Tuple<String, Double>>();
         private Dictionary<String, Double> dictpushback = new Dictionary<string, double>();
         private Dictionary<String, Double> dictpushup = new Dictionary<string, double>();
+        
 
         //Trigger Clipboard
         private int triggerclipboard = 0;
@@ -248,6 +252,7 @@ namespace DAR
         private int totallinecount = 0;
 
         #endregion
+        #region Main Program
         public MainWindow()
         {
             InitializeComponent();
@@ -304,6 +309,9 @@ namespace DAR
             BindingOperations.EnableCollectionSynchronization(textWindows, _textsLock);
             BindingOperations.EnableCollectionSynchronization(categorycollection, _categoryLock);
             BindingOperations.EnableCollectionSynchronization(activatedTriggers, _triggerLock);
+
+            //Load Triggers
+            TriggerLoad();
 
             //Prep Views
             UpdateListView();
@@ -376,50 +384,9 @@ namespace DAR
                     newWindow.Show();
                 }
             }
-            //Start Monitoring Enabled Profiles
-            string archivefolder = programsettings.Single<Setting>(i => i.Name == "LogArchiveFolder").Value;
-            string archivemethod = programsettings.Single<Setting>(i => i.Name == "ArchiveMethod").Value;
-            string autodelete = programsettings.Single<Setting>(i => i.Name == "AutoDelete").Value;
-            string compressarchive = programsettings.Single<Setting>(i => i.Name == "CompressArchive").Value;
-            int logsize = Convert.ToInt32(programsettings.Single<Setting>(i => i.Name == "LogSize").Value);
-            int archivedays = Convert.ToInt32(programsettings.Single<Setting>(i => i.Name == "DeleteArchives").Value);
-            foreach (CharacterProfile character in characterProfiles)
-            {                
-                AddResetRibbon();
-                if (File.Exists(character.LogFile) && character.Monitor)
-                {
-                    MonitorCharacter(character);
-                    //Monitor(character);
-                    //Start Log Maintenance
-                    if ((programsettings.Single<Setting>(i => i.Name == "AutoArchive")).Value == "true")
-                    {
-                        switch (archivemethod)
-                        {
-                            case "Size Threshold":
-                                //Start Task, check log size every 5 minutes.
-                                //If log size is greater than programsettings["Log Size"].
-                                //Move File to archive
-                                //Create new file
-                                SizeMaintenance(character.LogFile,archivefolder, logsize, compressarchive, autodelete);
-                                break;
-                            case "Scheduled":
-                                //Start Task, check the date every 5 minutes.
-                                //If today is the scheduled day
-                                //Move File to archive
-                                //Create new file
-                                ScheduledMaintenance(character.LogFile, archivefolder, logsize, compressarchive, autodelete);
-                                break;
-                            default:
-                                break;
-                        }
-                    }
-                }
-                else
-                {
-                    //Don't monitor character
-                }
-            }
+            StartMonitoring();
         }
+        #endregion
         #region Form Functions
         private void CloseProgram()
         {
@@ -685,6 +652,59 @@ namespace DAR
         }
         #endregion
         #region Monitoring
+        private void StartMonitoring()
+        {
+            //Start Monitoring Enabled Profiles
+            string archivefolder = programsettings.Single<Setting>(i => i.Name == "LogArchiveFolder").Value;
+            string archivemethod = programsettings.Single<Setting>(i => i.Name == "ArchiveMethod").Value;
+            string autodelete = programsettings.Single<Setting>(i => i.Name == "AutoDelete").Value;
+            string compressarchive = programsettings.Single<Setting>(i => i.Name == "CompressArchive").Value;
+            int logsize = Convert.ToInt32(programsettings.Single<Setting>(i => i.Name == "LogSize").Value);
+            int archivedays = Convert.ToInt32(programsettings.Single<Setting>(i => i.Name == "DeleteArchives").Value);
+            foreach (CharacterProfile character in characterProfiles)
+            {
+                AddResetRibbon();
+                if (File.Exists(character.LogFile) && character.Monitor)
+                {
+                    MonitorCharacter(character);
+                    //Monitor(character);
+                    //Start Log Maintenance
+                    if ((programsettings.Single<Setting>(i => i.Name == "AutoArchive")).Value == "true")
+                    {
+                        switch (archivemethod)
+                        {
+                            case "Size Threshold":
+                                //Start Task, check log size every 5 minutes.
+                                //If log size is greater than programsettings["Log Size"].
+                                //Move File to archive
+                                //Create new file
+                                SizeMaintenance(character.LogFile, archivefolder, logsize, compressarchive, autodelete);
+                                break;
+                            case "Scheduled":
+                                //Start Task, check the date every 5 minutes.
+                                //If today is the scheduled day
+                                //Move File to archive
+                                //Create new file
+                                ScheduledMaintenance(character.LogFile, archivefolder, logsize, compressarchive, autodelete);
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                }
+                else
+                {
+                    //Don't monitor character
+                }
+            }
+        }
+        private void StopMonitoring()
+        {
+            foreach(CharacterProfile profile in characterProfiles)
+            {
+                profile.Monitor = false;
+            }
+        }
         private async void InitializePushback()
         {
             await Task.Run(() =>
@@ -742,10 +762,6 @@ namespace DAR
                 }
             });
         }
-        private async void Monitor(CharacterProfile character)
-        {
-            await Task.Run(() => { MonitorCharacter(character); });
-        }
         private void UpdateTimer(OverlayTimerWindow otw, Trigger acttrigger, Boolean updown, String charname, Category actcategory)
         {
             syncontext.Post(new SendOrPostCallback(o =>
@@ -772,50 +788,50 @@ namespace DAR
         }
         private async void MonitorCharacter(CharacterProfile character)
         {
+           //Console.WriteLine($"Monitoring {character.Name}");
             #region threading
-            await Task.Run(() =>
+            await Task.Run(async () =>
             {
                 using (FileStream filestream = File.Open(character.LogFile, System.IO.FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
                     filestream.Seek(0, SeekOrigin.End);
                     using (StreamReader streamReader = new StreamReader(filestream))
                     {
-                        using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                        while (true)
                         {
-                            var triggerCollection = db.GetCollection<Trigger>("triggers");
-                            IEnumerable<Trigger> alltriggers = triggerCollection.FindAll();
-                            while (true)
+                            String capturedLine = streamReader.ReadLine();
+                            if (capturedLine != null)
                             {
-                                String capturedLine = streamReader.ReadLine();
-                                if (capturedLine != null)
+                                Stopwatch stopwatch = new Stopwatch();
+                                stopwatch.Start();
+                                UpdateLineCount(1);
+                                foreach (KeyValuePair<Trigger,ArrayList> doc in listoftriggers)
                                 {
-                                    UpdateLineCount(1);
-                                    foreach (var doc in alltriggers)
+                                    MatchCollection matches = Regex.Matches(capturedLine, Regex.Escape(doc.Key.SearchText), RegexOptions.IgnoreCase);
+                                    if (matches.Count > 0 && doc.Value.Contains(character.Id))
                                     {
-                                        MatchCollection matches = Regex.Matches(capturedLine, Regex.Escape(doc.SearchText), RegexOptions.IgnoreCase);
-                                        if (matches.Count > 0)
-                                        {
-                                            TriggerMonitor(doc,character,matches);
-                                        }
-                                    }
-                                    if (pushbackToggle)
-                                    {
-                                        PushMonitor(capturedLine, character.ProfileName);
+                                        await Task.Run( () => { FireTrigger(doc.Key, character, matches); });
                                     }
                                 }
-                                if (characterProfiles.Any(x => x.Monitor == false && x.ProfileName == character.ProfileName))
+                                stopwatch.Stop();
+                                //Console.WriteLine($"Trigger matched in: {stopwatch.Elapsed.ToString()}");
+                                if (pushbackToggle)
                                 {
-                                    break;
+                                    PushMonitor(capturedLine, character.ProfileName);
                                 }
-                                Thread.Sleep(1);
                             }
+                            if (characterProfiles.Any(x => x.Monitor == false && x.ProfileName == character.ProfileName))
+                            {
+                                break;
+                            }
+                            Thread.Sleep(1);
                         }
                     }
                 }
             });
             #endregion
         }
-        private void TriggerMonitor(Trigger activetrigger,CharacterProfile character, MatchCollection matches)
+        private void FireTrigger(Trigger activetrigger,CharacterProfile character, MatchCollection matches)
         {
             //Add stopwatch info for trigger
             Stopwatch stopwatch = new Stopwatch();
@@ -847,7 +863,7 @@ namespace DAR
                     UpdateText(otw, activetrigger);
                 }
                 texttimer.Stop();
-                //Console.WriteLine($"Text: {texttimer.Elapsed.TotalMilliseconds.ToString()}");
+                //Console.WriteLine($"Text: {texttimer.Elapsed.ToString()}");
                 Stopwatch countertimer = new Stopwatch();
                 countertimer.Start();
                 lock (_timersLock)
@@ -869,10 +885,10 @@ namespace DAR
                     }
                 }
                 countertimer.Stop();
-                //Console.WriteLine($"Timer: {countertimer.Elapsed.TotalMilliseconds.ToString()}");
+                //Console.WriteLine($"Timer: {countertimer.Elapsed.ToString()}");
             }
             stopwatch.Stop();
-            //Console.WriteLine($"Trigger Monitor: {stopwatch.Elapsed.TotalSeconds}");
+            //Console.WriteLine($"Trigger Monitor: {stopwatch.Elapsed.ToString()}");
         }
         private void PushMonitor(String line, string profilename)
         {
@@ -933,27 +949,6 @@ namespace DAR
             stopwatch.Stop();
             //Console.WriteLine($"Pushback Monitor: {stopwatch.Elapsed.TotalSeconds}");
         }
-        private void Changed(object sender, FileSystemEventArgs e)
-        {
-            //Check line with trigger and then speak.
-            CharacterProfile fromLog = characterProfiles.Single<CharacterProfile>(i => i.LogFile == e.FullPath);
-            String lastline = File.ReadLines(e.FullPath).Last();
-            foreach (KeyValuePair<Trigger, ArrayList> entry in activeTriggers)
-            {
-                Trigger toCompare = entry.Key;
-                MatchCollection matches = Regex.Matches(lastline, toCompare.SearchText, RegexOptions.IgnoreCase);
-                if (matches.Count > 0)
-                {
-                    foreach (CharacterProfile character in entry.Value)
-                    {
-                        if (character.Monitor)
-                        {
-                            character.Speak(lastline);
-                        }
-                    }
-                }
-            }
-        }
         private void RbnStopAlerts_Click(object sender, RoutedEventArgs e)
         {
             foreach (OverlayTimerWindow timerwindow in timerWindows)
@@ -972,12 +967,26 @@ namespace DAR
         }
         #endregion
         #region Triggers
+        private void TriggerLoad()
+        {
+            listoftriggers.Clear();
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                var colTriggers = db.GetCollection<Trigger>("triggers");
+                IEnumerable<Trigger> triggerlist = colTriggers.FindAll();
+                foreach(Trigger trigger in triggerlist)
+                {
+                    listoftriggers.Add(trigger, trigger.profiles);
+                }
+            }
+        }
         private void TriggerAdd_Click(object sender, RoutedEventArgs e)
         {
             //Build new Trigger
             TreeViewModel selectedGroup = (TreeViewModel)treeViewTriggers.SelectedItem;
             TriggerEditor newTrigger = new TriggerEditor(selectedGroup);
             newTrigger.Show();
+            TriggerLoad();
         }
         private void TriggerRemoved_TreeViewModel(object sender, PropertyChangedEventArgs e)
         {
@@ -1003,6 +1012,7 @@ namespace DAR
                 colTriggers.Update(currentTrigger);
                 colProfiles.Update(currentprofile);
             }
+            //TriggerLoad();
         }
         public void AddTrigger(String triggerName)
         {
@@ -1020,6 +1030,7 @@ namespace DAR
                 colTriggers.Update(currentTrigger);
                 colProfiles.Update(currentprofile);
             }
+            TriggerLoad();
         }
         private void TriggerRemove_Click(object sender, RoutedEventArgs e)
         {
@@ -1029,6 +1040,7 @@ namespace DAR
             {
                 DeleteTrigger(root.Name);
                 UpdateView();
+                TriggerLoad();
             }
         }
         private void TriggerEdit_Click(object sender, RoutedEventArgs e)
@@ -1068,6 +1080,7 @@ namespace DAR
                 triggergroup.Update(getGroup);
                 col.Delete(deadtrigger.Id);
             }
+            TriggerLoad();
         }
         private void DeleteTrigger(int triggerid)
         {
@@ -1088,6 +1101,7 @@ namespace DAR
                 triggergroup.Update(getGroup);
                 col.Delete(triggerid);
             }
+            TriggerLoad();
         }
         private void CopyTrigger(int triggerid, int newgroupid)
         {
@@ -1105,6 +1119,7 @@ namespace DAR
                 basegroup.Triggers.Remove(triggerid);
                 triggergroupCollection.Update(basegroup);
             }
+            TriggerLoad();
         }
         #endregion
         #region Trigger Groups
@@ -1396,12 +1411,6 @@ namespace DAR
                     Parent = importparent,
                     Comments = toimport.Comments,
                 };
-                var currentTriggerGroup = colTriggerGroups.FindOne(Query.EQ("TriggerGroupName", toimport.TriggerGroupName));
-                //If there was an existing group append '-Import' to it.
-                if (currentTriggerGroup != null)
-                {
-                    newgroup.TriggerGroupName += "-Import";
-                }
                 bsonid = colTriggerGroups.Insert(newgroup);
                 //If child groups, recursive call
                 if (toimport.Children.Count > 0)
@@ -1433,82 +1442,38 @@ namespace DAR
         {
             int bsonid = 0;
             toimport.Id = 0;
-            Console.WriteLine($"Inserting Trigger: {toimport.Name}");
+            //Console.WriteLine($"Inserting Trigger: {toimport.Name}");
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 var colTriggers = db.GetCollection<Trigger>("triggers");
-                var colProfiles = db.GetCollection<CharacterProfile>("profiles");
                 toimport.TriggerCategory = defaultcategory.Id;
-                var triggerexist = colTriggers.FindOne(Query.EQ("Name", toimport.Name));                
-                //If a trigger already exists, then append '-Import' to the name
-                if (triggerexist != null)
-                {
-                    toimport.Name += "-Import";
-                }
                 bsonid = colTriggers.Insert(toimport);
+                //Activate trigger for all profiles
+                AllProfileEnableTrigger(bsonid);
+            }
+            return bsonid;
+        }
+        private void AllProfileEnableTrigger(int bsonid)
+        {
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                var colProfiles = db.GetCollection<CharacterProfile>("profiles");
+                var colTriggers = db.GetCollection<Trigger>("triggers");
+                Trigger trigger = colTriggers.FindById(bsonid);
                 //Activate for every profile
-                /*Stopwatch stopwatch = new Stopwatch();
+                Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
                 IEnumerable<CharacterProfile> profiles = colProfiles.FindAll();
                 foreach(CharacterProfile profile in profiles)
                 {
                     profile.AddTrigger(bsonid);
-                    toimport.Profiles.Add(profile.Id);
-                    colTriggers.Update(toimport);
+                    trigger.Profiles.Add(profile.Id);                    
                     colProfiles.Update(profile);
                 }
+                colTriggers.Update(trigger);
                 stopwatch.Stop();
-                Console.WriteLine($"Took {stopwatch.Elapsed.ToString()} to add profiles.");*/
+                Console.WriteLine($"Took {stopwatch.Elapsed.ToString()} to add profiles.");
             }
-            return bsonid;
-        }
-        private void ImportTriggers(TreeViewModel importtree)
-        {
-            //Walk through the tree and verify the node is in the database.
-            //check the root node, then walk through the children.
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                var colTriggerGroups = db.GetCollection<TriggerGroup>("triggergroups");
-                var colProfiles = db.GetCollection<CharacterProfile>("profiles");
-                var colTriggers = db.GetCollection<Trigger>("triggers");
-                //We can only drop onto trigger groups, find the object of the one we dropped on
-                //If it's All triggers, manually set the id to 0
-                TriggerGroup dropTriggerGroup = new TriggerGroup
-                {
-                    Id = 0
-                };
-                if(droptree.Name != "All Triggers")
-                {
-                    dropTriggerGroup = colTriggerGroups.FindOne(Query.EQ("TriggerGroupName", droptree.Name));
-                }            
-                //If we're importing over a trigger group, walk through the tree
-                if (importtree.Type == "triggergroup")
-                {
-                    //Find our object in mergegroups, add self and children to the database.
-                    TriggerGroup rootgroup = mergegroups.Find(x => x.TriggerGroupName == importtree.Name);
-                    //Insert trigger group into database get bsonid return value.                    
-                    //add triggergroup id to dropnode children and update in the database.
-                    int gid = ImportTriggerGroup(rootgroup, droptree.Id);
-                    dropTriggerGroup.AddChild(gid);
-                    colTriggerGroups.Update(dropTriggerGroup);
-                }
-                //If we're dragging over a single trigger, add it to the group which is not All Triggers
-                if(importtree.Type == "trigger" && droptree.Name != "All Triggers")
-                {
-                    //find the id in our mergetriggers and add it.
-                    Trigger roottrigger = mergetriggers.Find(x => x.Name == importtree.Name);
-                    roottrigger.Parent = droptree.Id;
-                    int bsonid = ImportTrigger(roottrigger);
-                    //add the trigger to the drop group
-                    dropTriggerGroup.AddTriggers(bsonid);
-                    colTriggerGroups.Update(dropTriggerGroup);
-                }
-            }
-            //Once we're done with the import, update the trigger view
-            UpdateListView();
-            UpdateTriggerView();
-            //Keep the merge tree up until the user clears it
-            treemerge.Visibility = Visibility.Visible;
         }
         private T FindAncestor<T>(DependencyObject current) where T : DependencyObject
         {
@@ -1788,6 +1753,7 @@ namespace DAR
                                     Type = "trigger"
                                 };
                                 newChildBranch.IsChecked = isChecked;
+                                newChildBranch.Id = getTrigger.Id;
                                 newChildBranch.TriggerAdded += TriggerAdded_TreeViewModel;
                                 newChildBranch.TriggerRemoved += TriggerRemoved_TreeViewModel;
                                 rTree.Children.Add(newChildBranch);
@@ -1813,7 +1779,6 @@ namespace DAR
         public void UpdateListView()
         {
             characterProfiles.Clear();
-            activeTriggers.Clear();
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 var col = db.GetCollection<CharacterProfile>("profiles");
@@ -1825,28 +1790,6 @@ namespace DAR
                         doc.FileExists = true;
                     }
                     characterProfiles.Add(doc);
-                    foreach (int triggerID in doc.Triggers)
-                    {
-                        var triggerCollection = db.GetCollection<Trigger>("triggers");
-                        Trigger addedTrigger = (triggerCollection.FindById(triggerID));
-                        Boolean keyExists = false;
-                        foreach (KeyValuePair<Trigger, ArrayList> entry in activeTriggers)
-                        {
-                            if (entry.Key.Name == addedTrigger.Name)
-                            {
-                                entry.Value.Add(doc);
-                                keyExists = true;
-                            }
-                        }
-                        if (!keyExists)
-                        {
-                            ArrayList newList = new ArrayList
-                            {
-                                doc
-                            };
-                            activeTriggers.Add(addedTrigger, newList);
-                        }
-                    }
                 }
             }
             listviewCharacters.ItemsSource = characterProfiles;
@@ -1873,7 +1816,6 @@ namespace DAR
                     }
                 }
             }
-
         }
         #endregion
         #region Overlays
@@ -2887,7 +2829,7 @@ namespace DAR
                         JToken jsontoken = JObject.Parse(json);
                         triggergroupid = 0;
                         triggerid = 0;
-                        mergetreeView = new List<TreeViewModel>();
+                        mergetreeView.Clear();
                         ParseGina(jsontoken.SelectToken("SharedData"));                     
                     }                        
                 }
@@ -2895,7 +2837,7 @@ namespace DAR
         }
         private void ParseGina(JToken jsontoken)
         {
-            //mergeview = new TreeViewModel((string)jsontoken["TriggerGroups"]["TriggerGroup"]["Name"]);
+            mergetriggercount = 0;
             mergeview = new TreeViewModel("Triggers to Import");
             mergeview.IsChecked = false;
             mergetreeView.Add(mergeview);
@@ -2914,6 +2856,7 @@ namespace DAR
                     {
                         foreach(int item in tg.Triggers)
                         {
+                            mergetriggercount++;
                             Trigger findtrigger = mergetriggers.Find(x => x.id == item);
                             TreeViewModel newChildBranch = new TreeViewModel(findtrigger.Name)
                             {
@@ -2934,6 +2877,7 @@ namespace DAR
             }
             mergeview.Initialize();
             treemerge.ItemsSource = mergetreeView;
+            Console.WriteLine($"{mergetriggercount}");
             treemerge.Visibility = Visibility.Visible;
         }
         private TreeViewModel BuildMergeTree(TriggerGroup branch)
@@ -2947,6 +2891,7 @@ namespace DAR
             {
                 foreach (Int32 item in branch.triggers)
                 {
+                    mergetriggercount++;
                     Trigger findtrigger = mergetriggers.Find(x => x.id == item);
                     TreeViewModel newChildBranch = new TreeViewModel(findtrigger.Name)
                     {
@@ -3063,6 +3008,81 @@ namespace DAR
             mergetriggers.Add(newtrigger);
             triggerid++;
             return rval;
+        }
+        private void ImportTriggers(TreeViewModel importtree)
+        {
+            //Walk through the tree and verify the node is in the database.
+            //check the root node, then walk through the children.
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                var colTriggerGroups = db.GetCollection<TriggerGroup>("triggergroups");
+                var colProfiles = db.GetCollection<CharacterProfile>("profiles");
+                var colTriggers = db.GetCollection<Trigger>("triggers");
+                //We can only drop onto trigger groups, find the object of the one we dropped on
+                //If it's All triggers, manually set the id to 0
+                TriggerGroup dropTriggerGroup = new TriggerGroup
+                {
+                    Id = 0
+                };
+                if (droptree.Name != "All Triggers")
+                {
+                    dropTriggerGroup = colTriggerGroups.FindById(droptree.Id);
+                }
+                //If we're importing over a trigger group, walk through the tree
+                if (importtree.Type == "triggergroup")
+                {
+                    //Find our object in mergegroups, add self and children to the database.
+                    TriggerGroup rootgroup = mergegroups.Find(x => x.TriggerGroupName == importtree.Name);
+                    //Insert trigger group into database get bsonid return value.                    
+                    //add triggergroup id to dropnode children and update in the database.
+                    int gid = ImportTriggerGroup(rootgroup, droptree.Id);
+                    dropTriggerGroup.AddChild(gid);
+                    colTriggerGroups.Update(dropTriggerGroup);
+                }
+                //If we're dragging over a single trigger, add it to the group which is not All Triggers
+                if (importtree.Type == "trigger" && droptree.Name != "All Triggers")
+                {
+                    //find the id in our mergetriggers and add it.
+                    Trigger roottrigger = mergetriggers.Find(x => x.Name == importtree.Name);
+                    roottrigger.Parent = droptree.Id;
+                    int bsonid = ImportTrigger(roottrigger);
+                    //add the trigger to the drop group
+                    dropTriggerGroup.AddTriggers(bsonid);
+                    colTriggerGroups.Update(dropTriggerGroup);
+                }
+            }
+            //Delete Imported triggers/groups from import tree
+            foreach(TreeViewModel tvm in mergetreeView)
+            {
+                DeleteBranch(tvm, importtree.Id);
+            }
+            treemerge.ItemsSource = mergetreeView;
+            //Once we're done with the import, update the trigger view
+            UpdateListView();
+            TriggerLoad();
+            //Keep the merge tree up until the user clears it
+            treemerge.Visibility = Visibility.Visible;
+        }
+        private void DeleteBranch(TreeViewModel tvm, int idtodelete)
+        {
+            Boolean removetrigger = false;
+            TreeViewModel deletetree = new TreeViewModel("deltree");
+            foreach (TreeViewModel child in tvm.Children)
+            {
+                if(child.Children.Count > 0)
+                {
+                    DeleteBranch(child,idtodelete);
+                }
+                if(child.Id == idtodelete)
+                {
+                    removetrigger = true;
+                    deletetree = child;
+                }
+            }
+            if (removetrigger && deletetree.Name != "deltree")
+            {
+                tvm.RemoveChild(deletetree);
+            }
         }
         #endregion
     }

@@ -189,7 +189,6 @@ namespace DAR
                     if (appsetting.Key == "TrustedSenderList")
                     {
                         appsetting.Value.Value = string.Join(",", sharinglist);
-                        string stop = "";
                     }
                     settings.Update(appsetting.Value);
                 }

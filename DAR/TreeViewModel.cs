@@ -6,6 +6,7 @@ using System.Text;
 using System.ComponentModel;
 using System.Windows.Forms;
 using System.Diagnostics;
+using System.Collections.ObjectModel;
 
 namespace DAR
 {
@@ -14,13 +15,11 @@ namespace DAR
         public TreeViewModel(string name)
         {
             Name = name;
-            Children = new List<TreeViewModel>();
+            Children = new ObservableCollection<TreeViewModel>();
         }
-
         #region Properties
-
         public string Name { get; private set; }
-        public List<TreeViewModel> Children { get; private set; }
+        public ObservableCollection<TreeViewModel> Children { get; private set; }
         public bool IsInitiallySelected { get; private set; }
         public string Type { get; set; }
         public int Id { get; set; }
@@ -49,14 +48,20 @@ namespace DAR
             }
             _isChecked = value;
 
-            if (updateChildren && _isChecked.HasValue) Children.ForEach(c => c.SetIsChecked(_isChecked, true, false));
+            if (updateChildren && _isChecked.HasValue)
+            {
+                foreach(TreeViewModel tvm in Children)
+                {
+                    tvm.SetIsChecked(_isChecked, true, false);
+                }
+                //Children.ForEach(c => c.SetIsChecked(_isChecked, true, false));
+            }
 
             if (updateParent && _parent != null) _parent.VerifyCheckedState();
 
             NotifyPropertyChanged("IsChecked");
             
         }
-
         public void VerifyCheckedState()
         {
             bool? state = null;
@@ -77,7 +82,6 @@ namespace DAR
 
             SetIsChecked(state, false, true);
         }
-
         #endregion
         public void Initialize()
         {
@@ -88,20 +92,18 @@ namespace DAR
             }
             
         }
-        public static List<TreeViewModel> SetTree(string topLevelName)
+        public void RemoveChild(TreeViewModel removeview)
         {
-            List<TreeViewModel> treeView = new List<TreeViewModel>();
+            Children.Remove(removeview);
+        }
+        public static ObservableCollection<TreeViewModel> SetTree(string topLevelName)
+        {
+            ObservableCollection<TreeViewModel> treeView = new ObservableCollection<TreeViewModel>();
             TreeViewModel tv = new TreeViewModel(topLevelName);
             treeView.Add(tv);
             tv.Initialize();
             return treeView;
         }
-        public List<string> GetTree()
-        {
-            List<string> selected = new List<string>();            
-            return selected;
-        }
-
         #region INotifyPropertyChanged Members
         void NotifyTriggerRemoved(string info)
         {

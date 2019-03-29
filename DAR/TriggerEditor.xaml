@@ -87,10 +87,10 @@
                         <Grid Margin="0,10,0,0">
                             <Label Name="labelTimerType" Content="Timer Type:" HorizontalAlignment="Left"/>
                             <ComboBox SelectionChanged="ComboTimerType_SelectionChanged" Name="comboTimerType" Width="120" Margin="0,0,410,0">
-                                <ComboBoxItem Name="notimer" Content="No Timer" IsSelected="True"/>
-                                <ComboBoxItem Name="countdown" Content="Timer(Count Down)"/>
-                                <ComboBoxItem Name="countup" Content="Stopwatch(Count Up)"/>
-                                <ComboBoxItem Name="repeating" Content="Repeating Timer"/>
+                                <ComboBoxItem Name="NoTimer" Content="No Timer" IsSelected="True"/>
+                                <ComboBoxItem Name="Timer" Content="Timer(Count Down)"/>
+                                <ComboBoxItem Name="Stopwatch" Content="Stopwatch(Count Up)"/>
+                                <ComboBoxItem Name="RepeatingTimer" Content="Repeating Timer"/>
                             </ComboBox>
                         </Grid>
                         <Grid Margin="0,10,0,0">

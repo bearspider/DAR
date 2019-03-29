@@ -323,6 +323,7 @@
                                     <DataGridTextColumn Header="Trigger Name" Binding="{Binding Name}"  IsReadOnly="True"/>
                                     <DataGridTextColumn Header="From Log" Binding="{Binding FromLog}" IsReadOnly="True"/>
                                     <DataGridTextColumn Header="Triggred At" Binding="{Binding TriggerTime}" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="Triggered Matched" Binding="{Binding TriggerFired}" IsReadOnly="True"/>
                                 </DataGrid.Columns>
                             </DataGrid>
                         </xcad:LayoutDocument>

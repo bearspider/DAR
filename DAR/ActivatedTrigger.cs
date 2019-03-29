@@ -10,13 +10,17 @@ namespace DAR
     {
         public String Name { get; set; }
         public String FromLog { get; set; }
-        public DateTime TriggerTime { get; set; }
+        public String MatchText { get; set; }
+        public String TriggerTime { get; set; }
+        public DateTime TriggerFired { get; set; }
 
         public ActivatedTrigger()
         {
             Name = "";
             FromLog = "";
-            TriggerTime = DateTime.Now;
+            MatchText = "";
+            TriggerTime = "";
+            TriggerFired = DateTime.Now;
         }
     }
 }

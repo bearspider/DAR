@@ -58,7 +58,8 @@ namespace DAR
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 LiteCollection<TriggerGroup> groupsCol = db.GetCollection<TriggerGroup>("triggergroups");
-                var getTriggerGroup = groupsCol.FindOne(Query.And(Query.EQ("TriggerGroupName", selectedGroup.Name), Query.EQ("_id", selectedGroup.Id)));
+                var getTriggerGroup = groupsCol.FindById(selectedGroup.Id);
+                //var getTriggerGroup = groupsCol.FindOne(Query.And(Query.EQ("TriggerGroupName", selectedGroup.Name), Query.EQ("_id", selectedGroup.Id)));
                 selectedGroupId = getTriggerGroup.Id;
             }
             LoadCharacters();
@@ -442,6 +443,8 @@ namespace DAR
                     MessageBoxResult result = MessageBox.Show("Update Trigger?", "Add Trigger Error", MessageBoxButton.YesNo);
                     if (result == MessageBoxResult.Yes)
                     {
+
+                        existingTrigger.TimerType = comboTimerType.Text;
                         existingTrigger.Name = textboxName.Text;
                         existingTrigger.SearchText = textboxSearch.Text;
                         existingTrigger.Comments = textboxComments.Text;
@@ -452,7 +455,6 @@ namespace DAR
                         existingTrigger.Displaytext = textboxBasicDisplay.Text;
                         existingTrigger.Clipboardtext = textboxBasicClipboard.Text;
                         existingTrigger.AudioSettings = basicAudioSettings;
-                        existingTrigger.TimerType = comboTimerType.Text;
                         existingTrigger.TimerName = textboxTimerName.Text;
                         existingTrigger.TimerDuration = GetDuration(textboxTimerHours.Text, textboxTimerMinutes.Text, textboxTimerSeconds.Text);
                         existingTrigger.TriggeredAgain = comboTriggered.SelectedIndex;

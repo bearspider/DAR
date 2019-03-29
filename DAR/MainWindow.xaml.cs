@@ -805,12 +805,15 @@ namespace DAR
                                 Stopwatch stopwatch = new Stopwatch();
                                 stopwatch.Start();
                                 UpdateLineCount(1);
+                                Match eqline = Regex.Match(capturedLine, GlobalVariables.eqRegex);
+                                String tomatch = eqline.Groups["stringToMatch"].Value;
+                                String eqtime = eqline.Groups["eqtime"].Value;
                                 foreach (KeyValuePair<Trigger,ArrayList> doc in listoftriggers)
                                 {
-                                    MatchCollection matches = Regex.Matches(capturedLine, Regex.Escape(doc.Key.SearchText), RegexOptions.IgnoreCase);
-                                    if (matches.Count > 0 && doc.Value.Contains(character.Id))
+                                    Match triggermatch = Regex.Match(tomatch, Regex.Escape(doc.Key.SearchText), RegexOptions.IgnoreCase);
+                                    if (triggermatch.Success && doc.Value.Contains(character.Id))
                                     {
-                                        await Task.Run( () => { FireTrigger(doc.Key, character, matches); });
+                                        await Task.Run( () => { FireTrigger(doc.Key, character, tomatch, eqtime); });
                                     }
                                 }
                                 stopwatch.Stop();
@@ -831,7 +834,7 @@ namespace DAR
             });
             #endregion
         }
-        private void FireTrigger(Trigger activetrigger,CharacterProfile character, MatchCollection matches)
+        private void FireTrigger(Trigger activetrigger,CharacterProfile character, String matchline, String matchtime)
         {
             //Add stopwatch info for trigger
             Stopwatch stopwatch = new Stopwatch();
@@ -840,53 +843,52 @@ namespace DAR
             ActivatedTrigger newactive = new ActivatedTrigger
             {
                 Name = activetrigger.Name,
-                FromLog = character.ProfileName
+                FromLog = character.ProfileName,
+                MatchText = matchline,
+                TriggerTime = matchtime
             };
             lock (_triggerLock)
             {
                 activatedTriggers.Add(newactive);
             }
-            foreach (Match tMatch in matches)
+            if (activetrigger.AudioSettings.AudioType == "tts")
+            { character.Speak(activetrigger.AudioSettings.TTS); }
+            if (activetrigger.AudioSettings.AudioType == "file")
+            { PlaySound(activetrigger.AudioSettings.SoundFileId); }
+            //Add Timer code
+            Category triggeredcategory = categorycollection.Single<Category>(i => i.Id == activetrigger.TriggerCategory);
+            String overlayname = triggeredcategory.TextOverlay;
+            Stopwatch texttimer = new Stopwatch();
+            texttimer.Start();
+            if (activetrigger.Displaytext != null)
             {
-                if (activetrigger.AudioSettings.AudioType == "tts")
-                { character.Speak(activetrigger.AudioSettings.TTS); }
-                if (activetrigger.AudioSettings.AudioType == "file")
-                { PlaySound(activetrigger.AudioSettings.SoundFileId); }
-                //Add Timer code
-                Category triggeredcategory = categorycollection.Single<Category>(i => i.Id == activetrigger.TriggerCategory);
-                String overlayname = triggeredcategory.TextOverlay;
-                Stopwatch texttimer = new Stopwatch();
-                texttimer.Start();
-                if (activetrigger.Displaytext != null)
-                {
-                    OverlayTextWindow otw = textWindows.Single<OverlayTextWindow>(i => i.windowproperties.Name == triggeredcategory.TextOverlay);
-                    UpdateText(otw, activetrigger);
-                }
-                texttimer.Stop();
-                //Console.WriteLine($"Text: {texttimer.Elapsed.ToString()}");
-                Stopwatch countertimer = new Stopwatch();
-                countertimer.Start();
-                lock (_timersLock)
-                {                                                        
-                    switch (activetrigger.TimerType)
-                    {
-                        case "Timer(Count Down)":
-                            OverlayTimerWindow timerwindowdown = timerWindows.Single<OverlayTimerWindow>(i => i.windowproperties.Name == triggeredcategory.TimerOverlay);
-                            UpdateTimer(timerwindowdown, activetrigger, false, character.characterName, triggeredcategory);
-                            break;
-                        case "Stopwatch(Count Up)":
-                            OverlayTimerWindow timerwindowup = timerWindows.Single<OverlayTimerWindow>(i => i.windowproperties.Name == triggeredcategory.TimerOverlay);
-                            UpdateTimer(timerwindowup, activetrigger, true, character.characterName, triggeredcategory);
-                            break;
-                        case "Repeating Timer":
-                            break;
-                        default:
-                            break;
-                    }
-                }
-                countertimer.Stop();
-                //Console.WriteLine($"Timer: {countertimer.Elapsed.ToString()}");
+                OverlayTextWindow otw = textWindows.Single<OverlayTextWindow>(i => i.windowproperties.Name == triggeredcategory.TextOverlay);
+                UpdateText(otw, activetrigger);
             }
+            texttimer.Stop();
+            //Console.WriteLine($"Text: {texttimer.Elapsed.ToString()}");
+            Stopwatch countertimer = new Stopwatch();
+            countertimer.Start();
+            lock (_timersLock)
+            {                                                        
+                switch (activetrigger.TimerType)
+                {
+                    case "Timer(Count Down)":
+                        OverlayTimerWindow timerwindowdown = timerWindows.Single<OverlayTimerWindow>(i => i.windowproperties.Name == triggeredcategory.TimerOverlay);
+                        UpdateTimer(timerwindowdown, activetrigger, false, character.characterName, triggeredcategory);
+                        break;
+                    case "Stopwatch":
+                        OverlayTimerWindow timerwindowup = timerWindows.Single<OverlayTimerWindow>(i => i.windowproperties.Name == triggeredcategory.TimerOverlay);
+                        UpdateTimer(timerwindowup, activetrigger, true, character.characterName, triggeredcategory);
+                        break;
+                    case "Repeating Timer":
+                        break;
+                    default:
+                        break;
+                }
+            }
+            countertimer.Stop();
+            //Console.WriteLine($"Timer: {countertimer.Elapsed.ToString()}");
             stopwatch.Stop();
             //Console.WriteLine($"Trigger Monitor: {stopwatch.Elapsed.ToString()}");
         }
@@ -1038,7 +1040,7 @@ namespace DAR
             MessageBoxResult result = MessageBox.Show($"Are you sure you want to Delete {root.Name}", "Confirmation", MessageBoxButton.YesNo);
             if (result == MessageBoxResult.Yes)
             {
-                DeleteTrigger(root.Name);
+                DeleteTrigger(root.Id);
                 UpdateView();
                 TriggerLoad();
             }
@@ -1049,7 +1051,8 @@ namespace DAR
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 var triggerCollection = db.GetCollection<Trigger>("triggers");
-                var currentTrigger = triggerCollection.FindOne(Query.EQ("Name", root.Name));
+                var currentTrigger = triggerCollection.FindById(root.Id);
+                //var currentTrigger = triggerCollection.FindOne(Query.EQ("Name", root.Name));
                 TriggerEditor triggerDialog = new TriggerEditor(currentTrigger.Id);
                 triggerDialog.Show();
             }
@@ -2617,7 +2620,7 @@ namespace DAR
                 MessageBoxResult result = MessageBox.Show($"Are you sure you want to Delete {root.Name}", "Confirmation", MessageBoxButton.YesNo);
                 if (result == MessageBoxResult.Yes)
                 {
-                    DeleteTriggerGroup(root.Name);
+                    DeleteTriggerGroup(root.Id);
                     UpdateView();
                 }
             }
@@ -2626,7 +2629,7 @@ namespace DAR
                 MessageBoxResult result = MessageBox.Show($"Are you sure you want to Delete {root.Name}", "Confirmation", MessageBoxButton.YesNo);
                 if (result == MessageBoxResult.Yes)
                 {
-                    DeleteTrigger(root.Name);
+                    DeleteTrigger(root.Id);
                     UpdateView();
                 }
             }
@@ -2639,7 +2642,7 @@ namespace DAR
                 using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                 {
                     var triggerCollection = db.GetCollection<Trigger>("triggers");
-                    var currentTrigger = triggerCollection.FindOne(Query.EQ("Name", root.Name));
+                    var currentTrigger = triggerCollection.FindById(root.Id);
                     TriggerEditor triggerDialog = new TriggerEditor(currentTrigger.Id);
                     triggerDialog.Show();
                 }
@@ -2649,7 +2652,8 @@ namespace DAR
                 using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                 {
                     var col = db.GetCollection<TriggerGroup>("triggergroups");
-                    TriggerGroup result = col.FindOne(Query.And(Query.EQ("TriggerGroupName", root.Name), Query.EQ("_id", root.Id)));
+                    TriggerGroup result = col.FindById(root.Id);
+                    //TriggerGroup result = col.FindOne(Query.And(Query.EQ("TriggerGroupName", root.Name), Query.EQ("_id", root.Id)));
                     TriggerGroupEdit triggerDialog = new TriggerGroupEdit(result);
                     triggerDialog.Show();
                 }
@@ -2830,6 +2834,8 @@ namespace DAR
                         triggergroupid = 0;
                         triggerid = 0;
                         mergetreeView.Clear();
+                        mergetriggers.Clear();
+                        mergegroups.Clear();
                         ParseGina(jsontoken.SelectToken("SharedData"));                     
                     }                        
                 }
@@ -2973,6 +2979,11 @@ namespace DAR
         private int GetTrigger(JToken jsontoken, int parentid)
         {
             int rval = triggerid;
+            Dictionary<String, String> timerconversion = new Dictionary<string, string>();
+            timerconversion.Add("NoTimer", "No Timer");
+            timerconversion.Add("Timer", "Timer(Count Down)");
+            timerconversion.Add("Stopwatch", "Timer(Count Up)");
+            timerconversion.Add("RepeatingTimer", "Repeating Timer");
             Trigger newtrigger = new Trigger
             {
                 id = triggerid,
@@ -2987,7 +2998,7 @@ namespace DAR
                 displaytext = (String)jsontoken["DisplayText"],
                 clipboardtext = (String)jsontoken["ClipboardText"],
                 audioSettings = new Audio(),
-                timerType = (String)jsontoken["TimerType"],
+                timerType = timerconversion[(String)jsontoken["TimerType"]],
                 timerName = (String)jsontoken["TimerName"],
                 timerDuration = (int)jsontoken["TimerDuration"],
                 triggeredAgain = 2,
@@ -3061,7 +3072,15 @@ namespace DAR
             UpdateListView();
             TriggerLoad();
             //Keep the merge tree up until the user clears it
-            treemerge.Visibility = Visibility.Visible;
+            if(mergetreeView[0].Children.Count > 0)
+            {
+                treemerge.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                treemerge.Visibility = Visibility.Hidden;
+            }
+            
         }
         private void DeleteBranch(TreeViewModel tvm, int idtodelete)
         {

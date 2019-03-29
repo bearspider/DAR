@@ -1420,7 +1420,7 @@ namespace DAR
                 {
                     foreach(int child in toimport.Children)
                     {
-                        TriggerGroup childgroup = mergegroups[child];
+                        TriggerGroup childgroup = mergegroups.Find(x => x.Id == child);
                         int gid = ImportTriggerGroup(childgroup, bsonid);
                         newgroup.AddChild(gid);
                     }
@@ -3043,12 +3043,19 @@ namespace DAR
                 if (importtree.Type == "triggergroup")
                 {
                     //Find our object in mergegroups, add self and children to the database.
-                    TriggerGroup rootgroup = mergegroups.Find(x => x.TriggerGroupName == importtree.Name);
+                    TriggerGroup rootgroup = mergegroups.Find(x => x.Id == importtree.Id);
                     //Insert trigger group into database get bsonid return value.                    
                     //add triggergroup id to dropnode children and update in the database.
                     int gid = ImportTriggerGroup(rootgroup, droptree.Id);
                     dropTriggerGroup.AddChild(gid);
                     colTriggerGroups.Update(dropTriggerGroup);
+                    //Delete the rootgroup out of the mergegroup
+                    mergegroups.Remove(rootgroup);
+                    //Clean up any groups that might reference rootgroup
+                    foreach(TriggerGroup tg in mergegroups)
+                    {
+                        tg.RemoveChild(rootgroup.Id);
+                    }
                 }
                 //If we're dragging over a single trigger, add it to the group which is not All Triggers
                 if (importtree.Type == "trigger" && droptree.Name != "All Triggers")
@@ -3060,19 +3067,30 @@ namespace DAR
                     //add the trigger to the drop group
                     dropTriggerGroup.AddTriggers(bsonid);
                     colTriggerGroups.Update(dropTriggerGroup);
+                    //Delete the trigger out of mergetriggers
+                    mergetriggers.Remove(roottrigger);
                 }
             }
             //Delete Imported triggers/groups from import tree
+            TreeViewModel toremove = new TreeViewModel("todelete");
             foreach(TreeViewModel tvm in mergetreeView)
             {
                 DeleteBranch(tvm, importtree.Id);
+                if(tvm.Id == importtree.Id)
+                {
+                    toremove = tvm;
+                }
+            }
+            if(toremove.Name != "todelete")
+            {
+                mergetreeView.Remove(toremove);
             }
             treemerge.ItemsSource = mergetreeView;
             //Once we're done with the import, update the trigger view
             UpdateListView();
             TriggerLoad();
             //Keep the merge tree up until the user clears it
-            if(mergetreeView[0].Children.Count > 0)
+            if(mergetreeView.Count > 0)
             {
                 treemerge.Visibility = Visibility.Visible;
             }
@@ -3084,7 +3102,6 @@ namespace DAR
         }
         private void DeleteBranch(TreeViewModel tvm, int idtodelete)
         {
-            Boolean removetrigger = false;
             TreeViewModel deletetree = new TreeViewModel("deltree");
             foreach (TreeViewModel child in tvm.Children)
             {
@@ -3094,11 +3111,10 @@ namespace DAR
                 }
                 if(child.Id == idtodelete)
                 {
-                    removetrigger = true;
                     deletetree = child;
                 }
             }
-            if (removetrigger && deletetree.Name != "deltree")
+            if (deletetree.Name != "deltree")
             {
                 tvm.RemoveChild(deletetree);
             }

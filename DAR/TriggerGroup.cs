@@ -57,7 +57,7 @@ namespace DAR
             get { return parent; }
             set { parent = value; }
         }
-        public void AddChild( int Id )
+        public void AddChild(int Id)
         {
             children.Add(Id);
         }
@@ -73,6 +73,21 @@ namespace DAR
         {
             get { return id; }
             set { id = value; }
+        }
+        public void RemoveChild(int todelete)
+        {
+            Boolean dodelete = false;
+            foreach(int child in Children)
+            {
+                if(child == todelete)
+                {
+                    dodelete = true;
+                }
+            }
+            if(dodelete)
+            {
+                Children.Remove(todelete);
+            }           
         }
         public void RemoveChild( String delGroup )
         {

@@ -3003,8 +3003,7 @@ namespace DAR
                 timerDuration = (int)jsontoken["TimerDuration"],
                 triggeredAgain = 2,
                 endEarlyText = new BindingList<SearchText>(),
-                //endEarlyText = "";
-                timerEndingDuration = (int)jsontoken["TimerVisibleDuration"],
+                timerEndingDuration = 0,
                 timerEndingDisplayText = "",
                 timerEndingClipboardText = "",
                 timerEndingAudio = new Audio(),
@@ -3016,6 +3015,97 @@ namespace DAR
                 resetCounter = (bool)jsontoken["UseCounterResetTimer"],
                 resetCounterDuration = (int)jsontoken["CounterResetDuration"],
             };
+            //Set Timer Behavior
+            switch((String)jsontoken["TimerStartBehavior"])
+            {
+                case "StartNewTimer":
+                    newtrigger.TriggeredAgain = 0;
+                    break;
+                case "RestartTimer":
+                    newtrigger.TriggeredAgain = 1;
+                    break;
+                default:
+                    break;
+            }
+            //Set Audio Settings
+            newtrigger.AudioSettings.Interrupt = (bool)jsontoken["InterruptSpeech"];
+            if((bool)jsontoken["UseTextToVoice"])
+            {
+                newtrigger.AudioSettings.AudioType = "tts";
+                newtrigger.AudioSettings.TTS = (String)jsontoken["TextToVoiceText"];
+            }
+            if((bool)jsontoken["PlayMediaFile"])
+            {
+                newtrigger.AudioSettings.AudioType = "file";
+                //set audio file
+            }
+
+            //Add End Early Text
+            if (jsontoken["TimerEarlyEnders"].Count() > 0)
+            {
+                if (jsontoken["TimerEarlyEnders"]["EarlyEnder"].GetType().ToString() == "Newtonsoft.Json.Linq.JObject")
+                {
+                    SearchText search = new SearchText
+                    {
+                        Searchtext = (String)jsontoken["TimerEarlyEnders"]["EarlyEnder"]["EarlyEndText"],
+                        Regex = (Boolean)jsontoken["TimerEarlyEnders"]["EarlyEnder"]["EnableRegex"]
+                    };
+                    newtrigger.EndEarlyText.Add(search);
+                }
+                else
+                {
+                    JArray earlyenders = (JArray)jsontoken["TimerEarlyEnders"]["EarlyEnder"];
+                    if ((earlyenders.Children()).Count() > 0)
+                    {
+                        foreach (JToken newtoken in earlyenders.Children())
+                        {
+                            SearchText search = new SearchText
+                            {
+                                Searchtext = (String)newtoken["EarlyEndText"],
+                                Regex = (Boolean)newtoken["EnableRegex"]
+                            };
+                            newtrigger.EndEarlyText.Add(search);
+                        }
+                    }
+                }
+            }
+            //Add Timer Ending Trigger
+            if (jsontoken["TimerEndingTrigger"].Count() > 0)
+            {
+                newtrigger.TimerEnding = (bool)jsontoken["TimerEndingTrigger"]["UseText"];
+                newtrigger.TimerEndingDisplayText = (String)jsontoken["TimerEndingTrigger"]["DisplayText"];
+                newtrigger.TimerEndingDuration = (int)jsontoken["TimerEndingTime"];
+                if ((bool)jsontoken["TimerEndingTrigger"]["UseTextToVoice"])
+                {
+                    newtrigger.TimerEndingAudio.AudioType = "tts";
+                    newtrigger.TimerEndingAudio.TTS = (String)jsontoken["TimerEndingTrigger"]["TextToVoiceText"];
+                    newtrigger.TimerEndingAudio.Interrupt = (bool)jsontoken["TimerEndingTrigger"]["InterruptSpeech"];
+                }
+                if((bool)jsontoken["TimerEndingTrigger"]["PlayMediaFile"])
+                {
+                    newtrigger.TimerEndingAudio.AudioType = "file";
+                    newtrigger.TimerEndingAudio.Interrupt = (bool)jsontoken["TimerEndingTrigger"]["InterruptSpeech"];
+                    //add media file
+                }            
+            }
+            //Add Timer Ended Trigger
+            if (jsontoken["TimerEndedTrigger"].Count() > 0)
+            {
+                newtrigger.TimerEnded = (bool)jsontoken["TimerEndedTrigger"]["UseText"];
+                newtrigger.TimerEndedDisplayText = (String)jsontoken["TimerEndedTrigger"]["DisplayText"];
+                if ((bool)jsontoken["TimerEndedTrigger"]["UseTextToVoice"])
+                {
+                    newtrigger.TimerEndedAudio.AudioType = "tts";
+                    newtrigger.TimerEndedAudio.TTS = (String)jsontoken["TimerEndedTrigger"]["TextToVoiceText"];
+                    newtrigger.TimerEndedAudio.Interrupt = (bool)jsontoken["TimerEndedTrigger"]["InterruptSpeech"];
+                }
+                if ((bool)jsontoken["TimerEndedTrigger"]["PlayMediaFile"])
+                {
+                    newtrigger.TimerEndedAudio.AudioType = "file";
+                    newtrigger.TimerEndedAudio.Interrupt = (bool)jsontoken["TimerEndedTrigger"]["InterruptSpeech"];
+                    //add media file
+                }
+            }
             mergetriggers.Add(newtrigger);
             triggerid++;
             return rval;

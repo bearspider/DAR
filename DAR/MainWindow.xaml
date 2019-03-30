@@ -25,6 +25,7 @@
                 <Setter Property="IsSelected" Value="{Binding IsInitiallySelected, Mode=OneTime}" />
                 <Setter Property="KeyboardNavigation.AcceptsReturn" Value="True" />
                 <EventSetter Event="DragOver" Handler="TreeViewItem_DragOver"/>
+                <EventSetter Event="DragLeave" Handler="TreeViewItem_DragLeave"/>
             </Style>
             <HierarchicalDataTemplate x:Key="CheckBoxItemTemplate" ItemsSource="{Binding Children, Mode=OneTime}">
                 <StackPanel Orientation="Horizontal">
@@ -277,10 +278,24 @@
                                         ItemContainerStyle="{StaticResource TreeViewItemStyle}"
                                         ItemTemplate="{StaticResource CheckBoxItemTemplate}" 
                                         DragEnter="TreeViewTriggers_DragEnter"
-                                        Drop="TreeViewTriggers_Drop">
+                                        Drop="TreeViewTriggers_Drop"
+                                        MouseDoubleClick="TreeViewTriggers_MouseDoubleClick"
+                                        PreviewMouseLeftButtonDown="TreeViewTriggers_PreviewMouseLeftButtonDown"
+                                        PreviewMouseMove="TreeViewTriggers_PreviewMouseMove">
                                     <TreeView.ContextMenu>
                                         <ContextMenu>
-                                            <MenuItem Name="cmTreeCopy" Header="Copy" Click="MenuItemTriggerCopy_Click">
+                                                <MenuItem Name="cmAddTriggerGroup" Header="Add New Group" Click="CmAddTriggerGroup_Click">
+                                                    <MenuItem.Icon>
+                                                        <Image Height="20" Source="Images\Oxygen-Icons.org-Oxygen-Actions-edit-copy.ico"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Name="cmAddTrigger" Header="Add New Trigger" Click="CmAddTrigger_Click">
+                                                    <MenuItem.Icon>
+                                                        <Image Height="20" Source="Images\Oxygen-Icons.org-Oxygen-Actions-edit-copy.ico"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <Separator/>
+                                                <MenuItem Name="cmTreeCopy" Header="Copy" Click="MenuItemTriggerCopy_Click">
                                                 <MenuItem.Icon>
                                                     <Image Height="20" Source="Images\Oxygen-Icons.org-Oxygen-Actions-edit-copy.ico"/>
                                                 </MenuItem.Icon>

@@ -248,6 +248,7 @@ namespace DAR
         //Trigger Clipboard
         private int triggerclipboard = 0;
         private int triggergroupclipboard = 0;
+        private string clipboardtype = "";
         private static string version = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion;
         private int totallinecount = 0;
 
@@ -788,7 +789,7 @@ namespace DAR
         }
         private async void MonitorCharacter(CharacterProfile character)
         {
-           //Console.WriteLine($"Monitoring {character.Name}");
+           Console.WriteLine($"Monitoring {character.Name}");
             #region threading
             await Task.Run(async () =>
             {
@@ -813,11 +814,16 @@ namespace DAR
                                     Match triggermatch = Regex.Match(tomatch, Regex.Escape(doc.Key.SearchText), RegexOptions.IgnoreCase);
                                     if (triggermatch.Success && doc.Value.Contains(character.Id))
                                     {
+                                        Console.WriteLine($"Matched Trigger {doc.Key.Id}");
+                                        Stopwatch firetrigger = new Stopwatch();
+                                        firetrigger.Start();
                                         await Task.Run( () => { FireTrigger(doc.Key, character, tomatch, eqtime); });
+                                        firetrigger.Stop();
+                                        Console.WriteLine($"Fired Trigger in {firetrigger.Elapsed.Seconds}");
                                     }
                                 }
                                 stopwatch.Stop();
-                                //Console.WriteLine($"Trigger matched in: {stopwatch.Elapsed.ToString()}");
+                                Console.WriteLine($"Trigger matched in: {stopwatch.Elapsed.ToString()}");
                                 if (pushbackToggle)
                                 {
                                     PushMonitor(capturedLine, character.ProfileName);
@@ -866,7 +872,7 @@ namespace DAR
                 UpdateText(otw, activetrigger);
             }
             texttimer.Stop();
-            //Console.WriteLine($"Text: {texttimer.Elapsed.ToString()}");
+            Console.WriteLine($"Text: {texttimer.Elapsed.ToString()}");
             Stopwatch countertimer = new Stopwatch();
             countertimer.Start();
             lock (_timersLock)
@@ -877,7 +883,7 @@ namespace DAR
                         OverlayTimerWindow timerwindowdown = timerWindows.Single<OverlayTimerWindow>(i => i.windowproperties.Name == triggeredcategory.TimerOverlay);
                         UpdateTimer(timerwindowdown, activetrigger, false, character.characterName, triggeredcategory);
                         break;
-                    case "Stopwatch":
+                    case "Stopwatch(Count Up)":
                         OverlayTimerWindow timerwindowup = timerWindows.Single<OverlayTimerWindow>(i => i.windowproperties.Name == triggeredcategory.TimerOverlay);
                         UpdateTimer(timerwindowup, activetrigger, true, character.characterName, triggeredcategory);
                         break;
@@ -888,9 +894,9 @@ namespace DAR
                 }
             }
             countertimer.Stop();
-            //Console.WriteLine($"Timer: {countertimer.Elapsed.ToString()}");
+            Console.WriteLine($"Timer: {countertimer.Elapsed.ToString()}");
             stopwatch.Stop();
-            //Console.WriteLine($"Trigger Monitor: {stopwatch.Elapsed.ToString()}");
+            Console.WriteLine($"Trigger Monitor: {stopwatch.Elapsed.ToString()}");
         }
         private void PushMonitor(String line, string profilename)
         {
@@ -1119,7 +1125,6 @@ namespace DAR
                 basetrigger.Parent = newgroupid;
                 BsonValue newid = triggerCollection.Insert(basetrigger);
                 basegroup.Triggers.Add(newid);
-                basegroup.Triggers.Remove(triggerid);
                 triggergroupCollection.Update(basegroup);
             }
             TriggerLoad();
@@ -1397,6 +1402,80 @@ namespace DAR
                 stopwatch.Stop();
                 Console.WriteLine($"Imported Triggers in {stopwatch.Elapsed.ToString()}");
             }
+            if(e.Data.GetDataPresent("MainTree"))
+            {
+                TreeViewModel selectedbranch = e.Data.GetData("MainTree") as TreeViewModel;
+                if(selectedbranch.Type == "trigger" && droptree.Id != 0 && selectedbranch.Name != droptree.Name)
+                {
+                    using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                    {
+                        var colTriggers = db.GetCollection<Trigger>("triggers");
+                        var colTriggerGroups = db.GetCollection<TriggerGroup>("triggergroups");
+                        //Find the old parent group and remove it as a child
+                        TriggerGroup oldgroup = colTriggerGroups.FindOne(x => x.Triggers.Contains(selectedbranch.Id));
+                        oldgroup.RemoveTrigger(selectedbranch.Id);
+                        colTriggerGroups.Update(oldgroup);
+                        //Add the trigger as child to droptree
+                        TriggerGroup newgroup = colTriggerGroups.FindById(droptree.Id);
+                        newgroup.Triggers.Add(selectedbranch.Id);
+                        colTriggerGroups.Update(newgroup);
+                        //Change the parent of the trigger
+                        Trigger movetrigger = colTriggers.FindById(selectedbranch.Id);
+                        movetrigger.Parent = droptree.Id;
+                        colTriggers.Update(movetrigger);
+                    }
+                    UpdateTriggerView();
+                }
+                if(selectedbranch.Type == "triggergroup" && selectedbranch.Name != droptree.Name)
+                {
+                    using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                    {
+                        var colTriggerGroups = db.GetCollection<TriggerGroup>("triggergroups");
+                        TriggerGroup currentgroup = colTriggerGroups.FindById(selectedbranch.Id);
+                        if (currentgroup.Parent != 0)
+                        {
+                            //Find the old parent group and remove it as a child
+                            TriggerGroup oldgroup = colTriggerGroups.FindOne(x => x.Children.Contains(selectedbranch.Id));
+                            oldgroup.RemoveChild(selectedbranch.Id);
+                            colTriggerGroups.Update(oldgroup);
+                        }
+                        //update the parent with the new dropbranch id
+                        currentgroup.Parent = droptree.Id;
+                        colTriggerGroups.Update(currentgroup);
+                        if (droptree.Id != 0)
+                        {
+                            //Add the triggergroup as child to droptree
+                            TriggerGroup newgroup = colTriggerGroups.FindById(droptree.Id);
+                            newgroup.AddChild(selectedbranch.Id);
+                            colTriggerGroups.Update(newgroup);
+                        }
+                    }                    
+                }
+                UpdateTriggerView();
+            }
+        }
+        private void TreeViewTriggers_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left)
+            {
+                _lastMouseDown = e.GetPosition(null);
+            }
+        }
+        private void TreeViewTriggers_PreviewMouseMove(object sender, MouseEventArgs e)
+        {
+            Point mouseposition = e.GetPosition(null);
+            Vector diff = _lastMouseDown - mouseposition;
+            if (e.LeftButton == MouseButtonState.Pressed && (Math.Abs(diff.X) > SystemParameters.MinimumHorizontalDragDistance || Math.Abs(diff.Y) > SystemParameters.MinimumVerticalDragDistance))
+            {
+                TreeView tree = sender as TreeView;
+                TreeViewItem treeitem = FindAncestor<TreeViewItem>((DependencyObject)e.OriginalSource);
+                if (treeitem != null)
+                {
+                    TreeViewModel treemodel = (TreeViewModel)treeitem.Header;
+                    DataObject dragdata = new DataObject("MainTree", treemodel);
+                    DragDrop.DoDragDrop(treeitem, dragdata, DragDropEffects.Move);
+                }
+            }
         }
         private int ImportTriggerGroup(TriggerGroup toimport, int importparent)
         {
@@ -1494,16 +1573,20 @@ namespace DAR
         private void TreeViewItem_DragOver(object sender, DragEventArgs e)
         {
             TreeViewModel hover = (TreeViewModel)((TreeViewItem)sender).DataContext;
-            if (hover.Type == "triggergroup")
+            if (hover.Type == "triggergroup" || hover.Name == "All Triggers")
             {
                 droptree = hover;
+                ((TreeViewItem)sender).Background = Brushes.SpringGreen;
                 e.Handled = true;
-            }
-            if (hover.Name == "All Triggers")
+            }     
+        }
+        private void TreeViewItem_DragLeave(object sender, DragEventArgs e)
+        {
+            TreeViewModel hover = (TreeViewModel)((TreeViewItem)sender).DataContext;
+            if(hover.Type == "triggergroup" || hover.Name == "All Triggers")
             {
-                droptree = hover;
-            }
-     
+                ((TreeViewItem)sender).Background = Brushes.LightSteelBlue;
+            }         
         }
         #endregion
         #region Functions
@@ -1778,6 +1861,7 @@ namespace DAR
             tv.Initialize();
             tv.VerifyCheckedState();
             treeViewTriggers.ItemsSource = treeView;
+            TriggerLoad();
         }
         public void UpdateListView()
         {
@@ -2605,9 +2689,11 @@ namespace DAR
             {
                 triggerclipboard = 0;
                 triggergroupclipboard = root.Id;
+                clipboardtype = "triggergroup";
             }
             if (root.Type == "trigger")
             {
+                clipboardtype = "trigger";
                 triggergroupclipboard = 0;
                 triggerclipboard = root.Id;
             }
@@ -2668,21 +2754,50 @@ namespace DAR
                 var triggerCollection = db.GetCollection<Trigger>("triggers");
                 var triggergroupCollection = db.GetCollection<TriggerGroup>("triggergroups");
                 //Add new Trigger
-                if (root.Type == "trigger")
+                if (clipboardtype == "trigger")
                 {
                     CopyTrigger(triggerclipboard, root.Id);
                 }
                 //Add new Trigger Group
-                if (root.Type == "triggergroup")
+                if (clipboardtype == "triggergroup")
                 {
-                    CopyTriggerGroup(triggergroupclipboard, root.Id);
-                }
-                if (root.Name == "All Triggers")
-                {
-                    CopyTriggerGroup(triggergroupclipboard, 0);
+                    if (root.Name == "All Triggers")
+                    {
+                        CopyTriggerGroup(triggergroupclipboard, 0);
+                    }
+                    else
+                    {
+                        CopyTriggerGroup(triggergroupclipboard, root.Id);
+                    }                    
                 }
             }
             UpdateTriggerView();
+        }
+        private void TreeViewTriggers_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
+            if (root.Type == "trigger")
+            {
+                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                {
+                    var triggerCollection = db.GetCollection<Trigger>("triggers");
+                    var currentTrigger = triggerCollection.FindById(root.Id);
+                    TriggerEditor triggerDialog = new TriggerEditor(currentTrigger.Id);
+                    triggerDialog.Show();
+                }
+            }
+            if (root.Type == "triggergroup")
+            {
+                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                {
+                    var col = db.GetCollection<TriggerGroup>("triggergroups");
+                    TriggerGroup result = col.FindById(root.Id);
+                    //TriggerGroup result = col.FindOne(Query.And(Query.EQ("TriggerGroupName", root.Name), Query.EQ("_id", root.Id)));
+                    TriggerGroupEdit triggerDialog = new TriggerGroupEdit(result);
+                    triggerDialog.Show();
+                }
+                UpdateView();
+            }
         }
         private void TreeViewTriggers_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
@@ -2693,17 +2808,13 @@ namespace DAR
                 {
                     cmTreeCopy.IsEnabled = false;
                     cmTreeDelete.IsEnabled = false;
-                    if (root.Type == "triggergroup")
+                    cmTreePaste.IsEnabled = false;
+                    cmTreeEdit.IsEnabled = false;
+                    cmAddTriggerGroup.IsEnabled = true;
+                    cmAddTrigger.IsEnabled = false;
+                    if (triggergroupclipboard != 0)
                     {
-                        if (triggergroupclipboard != 0)
-                        {
-                            cmTreePaste.IsEnabled = true;
-                        }
-                        else
-                        {
-                            cmTreePaste.IsEnabled = false;
-                            cmTreeEdit.IsEnabled = false;
-                        }
+                        cmTreePaste.IsEnabled = true;
                     }
                 }
                 else
@@ -2712,6 +2823,8 @@ namespace DAR
                     cmTreeDelete.IsEnabled = true;
                     if (root.Type == "triggergroup")
                     {
+                        cmAddTriggerGroup.IsEnabled = true;
+                        cmAddTrigger.IsEnabled = true;
                         cmTreeEdit.IsEnabled = true;
                         if (triggergroupclipboard != 0 || triggerclipboard != 0)
                         {
@@ -2725,6 +2838,8 @@ namespace DAR
                     if (root.Type == "trigger")
                     {
                         cmTreeEdit.IsEnabled = true;
+                        cmAddTrigger.IsEnabled = false;
+                        cmAddTriggerGroup.IsEnabled = false;
                         if (triggerclipboard != 0)
                         {
                             cmTreePaste.IsEnabled = true;                            
@@ -2743,6 +2858,19 @@ namespace DAR
                 cmTreePaste.IsEnabled = false;
                 cmTreeEdit.IsEnabled = false;
             }
+        }
+        private void CmAddTriggerGroup_Click(object sender, RoutedEventArgs e)
+        {
+            TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
+            TriggerGroupEdit triggerDialog = new TriggerGroupEdit(root);
+            triggerDialog.Show();
+        }
+        private void CmAddTrigger_Click(object sender, RoutedEventArgs e)
+        {
+            TreeViewModel selectedGroup = (TreeViewModel)treeViewTriggers.SelectedItem;
+            TriggerEditor newTrigger = new TriggerEditor(selectedGroup);
+            newTrigger.Show();
+            TriggerLoad();
         }
         #endregion
         #region Filtering
@@ -3016,7 +3144,7 @@ namespace DAR
                 resetCounterDuration = (int)jsontoken["CounterResetDuration"],
             };
             //Set Timer Behavior
-            switch((String)jsontoken["TimerStartBehavior"])
+            switch ((String)jsontoken["TimerStartBehavior"])
             {
                 case "StartNewTimer":
                     newtrigger.TriggeredAgain = 0;
@@ -3029,12 +3157,12 @@ namespace DAR
             }
             //Set Audio Settings
             newtrigger.AudioSettings.Interrupt = (bool)jsontoken["InterruptSpeech"];
-            if((bool)jsontoken["UseTextToVoice"])
+            if ((bool)jsontoken["UseTextToVoice"])
             {
                 newtrigger.AudioSettings.AudioType = "tts";
                 newtrigger.AudioSettings.TTS = (String)jsontoken["TextToVoiceText"];
             }
-            if((bool)jsontoken["PlayMediaFile"])
+            if ((bool)jsontoken["PlayMediaFile"])
             {
                 newtrigger.AudioSettings.AudioType = "file";
                 //set audio file
@@ -3070,40 +3198,45 @@ namespace DAR
                 }
             }
             //Add Timer Ending Trigger
-            if (jsontoken["TimerEndingTrigger"].Count() > 0)
+            if (jsontoken["TimerEndingTrigger"] != null)
             {
-                newtrigger.TimerEnding = (bool)jsontoken["TimerEndingTrigger"]["UseText"];
-                newtrigger.TimerEndingDisplayText = (String)jsontoken["TimerEndingTrigger"]["DisplayText"];
-                newtrigger.TimerEndingDuration = (int)jsontoken["TimerEndingTime"];
-                if ((bool)jsontoken["TimerEndingTrigger"]["UseTextToVoice"])
+                if (jsontoken["TimerEndingTrigger"].Count() > 0)
                 {
-                    newtrigger.TimerEndingAudio.AudioType = "tts";
-                    newtrigger.TimerEndingAudio.TTS = (String)jsontoken["TimerEndingTrigger"]["TextToVoiceText"];
-                    newtrigger.TimerEndingAudio.Interrupt = (bool)jsontoken["TimerEndingTrigger"]["InterruptSpeech"];
+                    newtrigger.TimerEnding = (bool)jsontoken["TimerEndingTrigger"]["UseText"];
+                    newtrigger.TimerEndingDisplayText = (String)jsontoken["TimerEndingTrigger"]["DisplayText"];
+                    newtrigger.TimerEndingDuration = (int)jsontoken["TimerEndingTime"];
+                    if ((bool)jsontoken["TimerEndingTrigger"]["UseTextToVoice"])
+                    {
+                        newtrigger.TimerEndingAudio.AudioType = "tts";
+                        newtrigger.TimerEndingAudio.TTS = (String)jsontoken["TimerEndingTrigger"]["TextToVoiceText"];
+                        newtrigger.TimerEndingAudio.Interrupt = (bool)jsontoken["TimerEndingTrigger"]["InterruptSpeech"];
+                    }
+                    if ((bool)jsontoken["TimerEndingTrigger"]["PlayMediaFile"])
+                    {
+                        newtrigger.TimerEndingAudio.AudioType = "file";
+                        newtrigger.TimerEndingAudio.Interrupt = (bool)jsontoken["TimerEndingTrigger"]["InterruptSpeech"];
+                    }
                 }
-                if((bool)jsontoken["TimerEndingTrigger"]["PlayMediaFile"])
-                {
-                    newtrigger.TimerEndingAudio.AudioType = "file";
-                    newtrigger.TimerEndingAudio.Interrupt = (bool)jsontoken["TimerEndingTrigger"]["InterruptSpeech"];
-                    //add media file
-                }            
             }
-            //Add Timer Ended Trigger
-            if (jsontoken["TimerEndedTrigger"].Count() > 0)
+            if(jsontoken["TimerEndedTrigger"] != null)
             {
-                newtrigger.TimerEnded = (bool)jsontoken["TimerEndedTrigger"]["UseText"];
-                newtrigger.TimerEndedDisplayText = (String)jsontoken["TimerEndedTrigger"]["DisplayText"];
-                if ((bool)jsontoken["TimerEndedTrigger"]["UseTextToVoice"])
+                //Add Timer Ended Trigger
+                if (jsontoken["TimerEndedTrigger"].Count() > 0)
                 {
-                    newtrigger.TimerEndedAudio.AudioType = "tts";
-                    newtrigger.TimerEndedAudio.TTS = (String)jsontoken["TimerEndedTrigger"]["TextToVoiceText"];
-                    newtrigger.TimerEndedAudio.Interrupt = (bool)jsontoken["TimerEndedTrigger"]["InterruptSpeech"];
-                }
-                if ((bool)jsontoken["TimerEndedTrigger"]["PlayMediaFile"])
-                {
-                    newtrigger.TimerEndedAudio.AudioType = "file";
-                    newtrigger.TimerEndedAudio.Interrupt = (bool)jsontoken["TimerEndedTrigger"]["InterruptSpeech"];
-                    //add media file
+                    newtrigger.TimerEnded = (bool)jsontoken["TimerEndedTrigger"]["UseText"];
+                    newtrigger.TimerEndedDisplayText = (String)jsontoken["TimerEndedTrigger"]["DisplayText"];
+                    if ((bool)jsontoken["TimerEndedTrigger"]["UseTextToVoice"])
+                    {
+                        newtrigger.TimerEndedAudio.AudioType = "tts";
+                        newtrigger.TimerEndedAudio.TTS = (String)jsontoken["TimerEndedTrigger"]["TextToVoiceText"];
+                        newtrigger.TimerEndedAudio.Interrupt = (bool)jsontoken["TimerEndedTrigger"]["InterruptSpeech"];
+                    }
+                    if ((bool)jsontoken["TimerEndedTrigger"]["PlayMediaFile"])
+                    {
+                        newtrigger.TimerEndedAudio.AudioType = "file";
+                        newtrigger.TimerEndedAudio.Interrupt = (bool)jsontoken["TimerEndedTrigger"]["InterruptSpeech"];
+                        //add media file
+                    }
                 }
             }
             mergetriggers.Add(newtrigger);
@@ -3209,6 +3342,8 @@ namespace DAR
                 tvm.RemoveChild(deletetree);
             }
         }
+
+
         #endregion
     }
 }

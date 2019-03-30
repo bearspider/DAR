@@ -12,100 +12,71 @@ namespace DAR
 {
     public class TriggerTimer : INotifyPropertyChanged
     {
-        public string character;
-        public DispatcherTimer dispatcherTimer;
-        public String timerDescription;
-        public int timerDuration;
-        public ProgressBar progress;
-        public Boolean direction; //false is count down, true is count up
-        public double progressValue;
+        public string Character { get; set; }
+        public DispatcherTimer WindowTimer;
+        public String TimerDescription { get; set; }
+        public int TimerDuration { get; set; }
+        public ProgressBar Progress { get; set; }
+        public Boolean Direction { get; set; }//false is count down, true is count up
+        public double ProgressValue { get; set; }
         public string Barcolor { get; set; }
         public string Textcolor { get; set; }
+        private DateTime TriggeredTime;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
         public TriggerTimer ()
         {
-            dispatcherTimer = new DispatcherTimer()
+            WindowTimer = new DispatcherTimer()
             {
                 Interval = new TimeSpan(0, 0, 1)//hours,minutes,seconds
             };
-            timerDescription = "New Timer";
-            timerDuration = 0;
-            direction = false;
-            character = "";
+            TriggeredTime = DateTime.Now;
+            TimerDescription = "New Timer";
+            TimerDuration = 0;
+            Direction = false;
+            Character = "";
             Barcolor = "";
             Textcolor = "";
-            progress = new ProgressBar()
+            Progress = new ProgressBar()
             {
                 Minimum = 0,
                 Maximum = 1
             };
         }
-        public String Character
-        {
-            get { return character; }
-            set { character = value; }
-        }
-        public Boolean Direction
-        {
-            get { return direction; }
-            set { direction = value; }
-        }
         public double Minimum
         {
-            get { return progress.Minimum; }
+            get { return Progress.Minimum; }
         }
         public double Maximum
         {
-            get { return progress.Maximum; }
-        }
-        public double ProgressValue
-        {
-            get { return progressValue; }
-            set { progressValue = value; }
-        }
-        public ProgressBar Progress
-        {
-            get { return progress; }
-            set { progress = value; }
-        }
-        public DispatcherTimer DispatcherTimer
-        {
-            get { return dispatcherTimer; }
-            set { dispatcherTimer = value; }
-        }
-        public String TimerDescription
-        {
-            get { return timerDescription; }
-            set { timerDescription = value; }
-        }
-        public int TimerDuration
-        {
-            get { return timerDuration; }
-            set { timerDuration = value; }
+            get { return Progress.Maximum; }
         }
         public double GetProgress()
         {
-            return progress.Value;
+            return Progress.Value;
         }
         private void DispatcherTimer_Tick(object sender, EventArgs e)
         {
-            if(direction)
+            TimeSpan elapsed = TriggeredTime - DateTime.Now;
+            
+            if (Direction)
             {
-                progress.Value++;                
+                Console.WriteLine(Convert.ToInt32(Math.Abs(elapsed.TotalSeconds)));
+                Progress.Value = Convert.ToInt32(Math.Abs(elapsed.TotalSeconds));
             }
             else
             {
-                progress.Value--;
+                Progress.Value = Convert.ToInt32(elapsed.TotalSeconds) + TimerDuration;
+               
             }
 
             NotifyPropertyChanged("Value");
         }
         public void SetTimer(String description, int duration, Boolean count)
         {
-            timerDescription = description;
-            timerDuration = duration;
+            TimerDescription = description;
+            TimerDuration = duration;
             if(count)
             {
                 Progress.Value = 0;
@@ -114,21 +85,21 @@ namespace DAR
             {
                 Progress.Value = duration;
             }
-            direction = count;
-            dispatcherTimer.Tick += DispatcherTimer_Tick;
+            Direction = count;            
+            WindowTimer.Tick += DispatcherTimer_Tick;
         }
         public void StartTimer()
         {
-            dispatcherTimer.Start();            
+            WindowTimer.Start();            
         }
         public void StopTimer()
         {
-            dispatcherTimer.Stop();
+            WindowTimer.Stop();
         }
         public void SetProgress(int minimum, int maximum)
         {
-            progress.Minimum = minimum;
-            progress.Maximum = maximum;
+            Progress.Minimum = minimum;
+            Progress.Maximum = maximum;
         }
 
         void NotifyPropertyChanged(string info)

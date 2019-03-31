@@ -74,12 +74,13 @@ namespace DAR
             Brush brush = new SolidColorBrush((Color)windowcolor);
             this.Background = brush;
         }
-        public void AddTimer(String description, int duration, Boolean type, String character, Category triggeredcategory)
+        public void AddTimer(Trigger firedtrigger, Boolean type, String character, Category triggeredcategory)
         {
             TriggerTimer newTimer = new TriggerTimer();
+            newTimer.Id = firedtrigger.Id;
             newTimer.Character = character;
-            newTimer.SetProgress(0, duration);
-            newTimer.SetTimer(description, duration, type);
+            newTimer.SetProgress(0, firedtrigger.TimerDuration);
+            newTimer.SetTimer(firedtrigger.TimerName, firedtrigger.TimerDuration, type);
             newTimer.PropertyChanged += Listener_PropertyChanged;
             newTimer.StartTimer();
             newTimer.Barcolor = triggeredcategory.TimerBarColor;
@@ -100,6 +101,13 @@ namespace DAR
             {
                 TimerBars.Remove(removeitem);
             }
+        }
+        public void RemoveTimer(int id)
+        {
+            List<TriggerTimer> timerlist = TimerBars.ToList();
+            TriggerTimer toremove = timerlist.Find(x => x.Id == id);
+            TimerBars.Remove(toremove);
+
         }
         private void Listener_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {

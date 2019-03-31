@@ -784,7 +784,7 @@ namespace DAR
         {
             syncontext.Post(new SendOrPostCallback(o =>
             {
-                otw.AddTimer(((Trigger)o).TimerName, ((Trigger)o).TimerDuration, updown, charname, actcategory); ;
+                otw.AddTimer((Trigger)o, updown, charname, actcategory);
                 otw.DataContext = otw;
             }), acttrigger);
         }
@@ -832,14 +832,36 @@ namespace DAR
                                     Boolean foundmatch = false;
                                     if(doc.Key.Regex)
                                     {
-                                        Match triggermatch = Regex.Match(tomatch, Regex.Escape(doc.Key.SearchText), RegexOptions.IgnoreCase);
-                                        foundmatch = triggermatch.Success;
+                                        foundmatch = (Regex.Match(tomatch, Regex.Escape(doc.Key.SearchText), RegexOptions.IgnoreCase)).Success;
                                     }
                                     else
                                     {
                                         String ucaselog = tomatch.ToUpper();
                                         String ucasetrigger = doc.Key.SearchText.ToUpper();
                                         foundmatch = ucaselog.Contains(ucasetrigger);
+                                    }
+                                    if (doc.Key.EndEarlyText.Count > 0)
+                                    {
+                                        Boolean endearly = false;
+                                        foreach (SearchText earlyend in doc.Key.EndEarlyText)
+                                        {
+                                            if (earlyend.Regex)
+                                            {
+                                                endearly = (Regex.Match(tomatch, Regex.Escape(earlyend.Searchtext), RegexOptions.IgnoreCase)).Success;
+                                            }
+                                            else
+                                            {                                                
+                                                String ucaselog = tomatch.ToUpper();
+                                                String ucasetrigger = earlyend.Searchtext.ToUpper();                                                
+                                                endearly = ucaselog.Contains(ucasetrigger);                                                
+                                            }
+                                            //TO DO: Probably implement extra stuff on a early end trigger
+                                            if (endearly)
+                                            {
+                                                Console.WriteLine($"Early end for {doc.Key.Name} => {endearly}");
+                                                ClearTimer(doc.Key);
+                                            }
+                                        }
                                     }
                                     if (foundmatch && doc.Value.Contains(character.Id))
                                     {
@@ -868,6 +890,35 @@ namespace DAR
                 }
             });
             #endregion
+        }
+        private void ClearTimer(Trigger activetrigger)
+        {
+            Console.WriteLine($"Clearing Timer for {activetrigger.TimerName}");
+            Category triggeredcategory = categorycollection.Single<Category>(i => i.Id == activetrigger.TriggerCategory);
+            lock (_timersLock)
+            {
+                switch (activetrigger.TimerType)
+                {
+                    case "Timer(Count Down)":
+                        OverlayTimerWindow timerwindowdown = timerWindows.Single<OverlayTimerWindow>(i => i.windowproperties.Name == triggeredcategory.TimerOverlay);
+                        syncontext.Post(new SendOrPostCallback(o =>
+                        {
+                            timerwindowdown.RemoveTimer(((Trigger)o).Id);
+                        }), activetrigger);
+                        break;
+                    case "Stopwatch(Count Up)":
+                        OverlayTimerWindow timerwindowup = timerWindows.Single<OverlayTimerWindow>(i => i.windowproperties.Name == triggeredcategory.TimerOverlay);
+                        syncontext.Post(new SendOrPostCallback(o =>
+                        {
+                            timerwindowup.RemoveTimer(((Trigger)o).Id);
+                        }), activetrigger);
+                        break;
+                    case "Repeating Timer":
+                        break;
+                    default:
+                        break;
+                }
+            }
         }
         private void FireTrigger(Trigger activetrigger,CharacterProfile character, String matchline, String matchtime)
         {

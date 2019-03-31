@@ -2993,20 +2993,42 @@ namespace DAR
                     //TO DO:
                     //Archive could contain *.wav files, Export those to folder
                     //Load the xml
-                    ZipArchiveEntry triggersxml = archive.Entries[0];
-                    using (StreamReader streamtriggers = new StreamReader(triggersxml.Open()))
+                    if(archive.Entries.Count > 0)
                     {
-                        XmlDocument doc = new XmlDocument();
-                        doc.LoadXml(streamtriggers.ReadToEnd());
-                        string json = JsonConvert.SerializeXmlNode(doc);
-                        JToken jsontoken = JObject.Parse(json);
-                        triggergroupid = 0;
-                        triggerid = 0;
-                        mergetreeView.Clear();
-                        mergetriggers.Clear();
-                        mergegroups.Clear();
-                        ParseGina(jsontoken.SelectToken("SharedData"));                     
-                    }                        
+                        foreach(ZipArchiveEntry entry in archive.Entries)
+                        {
+                            if(entry.Name == "ShareData.xml")
+                            {
+                                ZipArchiveEntry triggersxml = entry;
+                                using (StreamReader streamtriggers = new StreamReader(triggersxml.Open()))
+                                {
+                                    XmlDocument doc = new XmlDocument();
+                                    doc.LoadXml(streamtriggers.ReadToEnd());
+                                    string json = JsonConvert.SerializeXmlNode(doc);
+                                    JToken jsontoken = JObject.Parse(json);
+                                    triggergroupid = 0;
+                                    triggerid = 0;
+                                    mergetreeView.Clear();
+                                    mergetriggers.Clear();
+                                    mergegroups.Clear();
+                                    ParseGina(jsontoken.SelectToken("SharedData"));
+                                }
+                            }
+                            if(entry.Name.Contains("wav"))
+                            {
+                                //Check if EQAudioTriggers folder exists, if not create.
+                                bool mainPath = Directory.Exists($"{GlobalVariables.defaultPath}\\ImportedSounds");
+                                if (!mainPath)
+                                {
+                                    Directory.CreateDirectory($"{GlobalVariables.defaultPath}\\ImportedSounds");
+                                }
+                                //export file to export sound dir
+                                String extracttofile = $"{GlobalVariables.defaultPath}\\ImportedSounds\\{entry.Name}";
+                                entry.ExtractToFile(extracttofile);
+                            }
+                        }
+                    }
+                      
                 }
             }
         }

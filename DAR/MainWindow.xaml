@@ -27,6 +27,11 @@
                 <EventSetter Event="DragOver" Handler="TreeViewItem_DragOver"/>
                 <EventSetter Event="DragLeave" Handler="TreeViewItem_DragLeave"/>
             </Style>
+            <Style x:Key="MergeViewItemStyle" TargetType="TreeViewItem">
+                <Setter Property="IsExpanded" Value="True" />
+                <EventSetter Event="DragOver" Handler="TreeViewItem_DragOver"/>
+                <EventSetter Event="DragLeave" Handler="TreeViewItem_DragLeave"/>
+            </Style>
             <HierarchicalDataTemplate x:Key="CheckBoxItemTemplate" ItemsSource="{Binding Children, Mode=OneTime}">
                 <StackPanel Orientation="Horizontal">
                     <CheckBox Focusable="True" IsChecked="{Binding IsChecked}" VerticalAlignment="Center" />
@@ -324,7 +329,7 @@
                                         Margin="12,12,0,0" 
                                         Grid.Row="0" Grid.Column="1"                                   
                                         HorizontalAlignment="Left" VerticalAlignment="Stretch" 
-                                        ItemContainerStyle="{StaticResource TreeViewItemStyle}" 
+                                        ItemContainerStyle="{StaticResource MergeViewItemStyle}" 
                                         ItemTemplate="{StaticResource CheckBoxItemTemplate}" 
                                         Visibility="Hidden" BorderBrush="Black" BorderThickness="1"
                                         PreviewMouseLeftButtonDown="Treemerge_PreviewMouseLeftButtonDown"

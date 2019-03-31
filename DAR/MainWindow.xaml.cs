@@ -219,6 +219,7 @@ namespace DAR
         private ObservableCollection<TreeViewModel> mergetreeView = new ObservableCollection<TreeViewModel>();
         private List<TriggerGroup> mergegroups = new List<TriggerGroup>();
         private List<Trigger> mergetriggers = new List<Trigger>();
+        private List<int> addedtriggers = new List<int>();
         private TreeViewModel mergeview;
         private TreeViewModel droptree;
         private int mergetriggercount = 0;
@@ -235,6 +236,8 @@ namespace DAR
         private ObservableCollection<CharacterProfile> characterProfiles = new ObservableCollection<CharacterProfile>();
         private ObservableCollection<ActivatedTrigger> activatedTriggers = new ObservableCollection<ActivatedTrigger>();
         private Dictionary<Trigger, ArrayList> listoftriggers = new Dictionary<Trigger, ArrayList>();
+        private List<TriggerGroup> dballgroups = new List<TriggerGroup>();
+        private List<Trigger> dballtriggers = new List<Trigger>();
         private List<Setting> programsettings = new List<Setting>();
 
         //These collections are used for the Pushback Monitor feature
@@ -312,7 +315,7 @@ namespace DAR
             BindingOperations.EnableCollectionSynchronization(activatedTriggers, _triggerLock);
 
             //Load Triggers
-            TriggerLoad();
+            TriggerLoad("Main Program");
 
             //Prep Views
             UpdateListView();
@@ -328,8 +331,9 @@ namespace DAR
                 LiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");
                 LiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
                 LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                LiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
-                Trigger testtrigger = triggers.FindById(1);
+
+                //Load all groups and triggers into List so we don't have to go back and forth to the database.
+                GenerateMasterList("Main Program");
                 //Check if no overlays or character profiles exist.  If none exist, prompt the editors to create the first entries.
                 if (availoverlaytexts.Count<OverlayText>() == 0)
                 {
@@ -389,6 +393,19 @@ namespace DAR
         }
         #endregion
         #region Form Functions
+        private void GenerateMasterList(String callingfunction)
+        {
+            Console.WriteLine($"Updating Master List From {callingfunction}");
+            dballgroups.Clear();
+            dballtriggers.Clear();
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                LiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
+                LiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
+                dballgroups = (triggergroups.FindAll()).ToList();
+                dballtriggers = (triggers.FindAll()).ToList();
+            }
+        }
         private void CloseProgram()
         {
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
@@ -809,19 +826,31 @@ namespace DAR
                                 Match eqline = Regex.Match(capturedLine, GlobalVariables.eqRegex);
                                 String tomatch = eqline.Groups["stringToMatch"].Value;
                                 String eqtime = eqline.Groups["eqtime"].Value;
-                                foreach (KeyValuePair<Trigger,ArrayList> doc in listoftriggers)
+                                Parallel.ForEach(listoftriggers, (KeyValuePair<Trigger, ArrayList> doc) =>
                                 {
-                                    Match triggermatch = Regex.Match(tomatch, Regex.Escape(doc.Key.SearchText), RegexOptions.IgnoreCase);
-                                    if (triggermatch.Success && doc.Value.Contains(character.Id))
+                                    //Do regex match if enabled otherwise string.contains
+                                    Boolean foundmatch = false;
+                                    if(doc.Key.Regex)
+                                    {
+                                        Match triggermatch = Regex.Match(tomatch, Regex.Escape(doc.Key.SearchText), RegexOptions.IgnoreCase);
+                                        foundmatch = triggermatch.Success;
+                                    }
+                                    else
+                                    {
+                                        String ucaselog = tomatch.ToUpper();
+                                        String ucasetrigger = doc.Key.SearchText.ToUpper();
+                                        foundmatch = ucaselog.Contains(ucasetrigger);
+                                    }
+                                    if (foundmatch && doc.Value.Contains(character.Id))
                                     {
                                         Console.WriteLine($"Matched Trigger {doc.Key.Id}");
                                         Stopwatch firetrigger = new Stopwatch();
                                         firetrigger.Start();
-                                        await Task.Run( () => { FireTrigger(doc.Key, character, tomatch, eqtime); });
+                                        FireTrigger(doc.Key, character, tomatch, eqtime);
                                         firetrigger.Stop();
                                         Console.WriteLine($"Fired Trigger in {firetrigger.Elapsed.Seconds}");
                                     }
-                                }
+                                });
                                 stopwatch.Stop();
                                 Console.WriteLine($"Trigger matched in: {stopwatch.Elapsed.ToString()}");
                                 if (pushbackToggle)
@@ -975,18 +1004,24 @@ namespace DAR
         }
         #endregion
         #region Triggers
-        private void TriggerLoad()
+        private Trigger FindTrigger(int bsonid)
         {
+            return dballtriggers.Find(x => x.Id == bsonid);
+        }
+        private void TriggerLoad(String callingfunction)
+        {
+            Console.WriteLine($"Calling TriggerLoad from {callingfunction}");
+            Stopwatch loadwatch = new Stopwatch();
+            loadwatch.Start();
             listoftriggers.Clear();
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            foreach(Trigger trigger in dballtriggers)
             {
-                var colTriggers = db.GetCollection<Trigger>("triggers");
-                IEnumerable<Trigger> triggerlist = colTriggers.FindAll();
-                foreach(Trigger trigger in triggerlist)
-                {
-                    listoftriggers.Add(trigger, trigger.profiles);
-                }
+                listoftriggers.Add(trigger, trigger.profiles);
             }
+            loadwatch.Stop();
+            Console.WriteLine($"Loaded Triggers in {loadwatch.Elapsed}");
+            //Update the masterlist of groups and triggers from database
+            GenerateMasterList("TriggerLoad");
         }
         private void TriggerAdd_Click(object sender, RoutedEventArgs e)
         {
@@ -994,7 +1029,7 @@ namespace DAR
             TreeViewModel selectedGroup = (TreeViewModel)treeViewTriggers.SelectedItem;
             TriggerEditor newTrigger = new TriggerEditor(selectedGroup);
             newTrigger.Show();
-            TriggerLoad();
+            TriggerLoad("TriggerAdd_Click");
         }
         private void TriggerRemoved_TreeViewModel(object sender, PropertyChangedEventArgs e)
         {
@@ -1020,7 +1055,7 @@ namespace DAR
                 colTriggers.Update(currentTrigger);
                 colProfiles.Update(currentprofile);
             }
-            //TriggerLoad();
+            TriggerLoad("RemoveTrigger");
         }
         public void AddTrigger(String triggerName)
         {
@@ -1038,7 +1073,7 @@ namespace DAR
                 colTriggers.Update(currentTrigger);
                 colProfiles.Update(currentprofile);
             }
-            TriggerLoad();
+            TriggerLoad("AddTrigger");
         }
         private void TriggerRemove_Click(object sender, RoutedEventArgs e)
         {
@@ -1048,7 +1083,7 @@ namespace DAR
             {
                 DeleteTrigger(root.Id);
                 UpdateView();
-                TriggerLoad();
+                TriggerLoad("TriggerRemove_Click");
             }
         }
         private void TriggerEdit_Click(object sender, RoutedEventArgs e)
@@ -1089,7 +1124,7 @@ namespace DAR
                 triggergroup.Update(getGroup);
                 col.Delete(deadtrigger.Id);
             }
-            TriggerLoad();
+            TriggerLoad("DeleteTrigger by name");
         }
         private void DeleteTrigger(int triggerid)
         {
@@ -1110,7 +1145,7 @@ namespace DAR
                 triggergroup.Update(getGroup);
                 col.Delete(triggerid);
             }
-            TriggerLoad();
+            TriggerLoad("DeleteTrigger by id");
         }
         private void CopyTrigger(int triggerid, int newgroupid)
         {
@@ -1127,10 +1162,14 @@ namespace DAR
                 basegroup.Triggers.Add(newid);
                 triggergroupCollection.Update(basegroup);
             }
-            TriggerLoad();
+            TriggerLoad("CopyTrigger");
         }
         #endregion
         #region Trigger Groups
+        private TriggerGroup FindTriggerGroup(int bsonid)
+        {
+            return dballgroups.Find(x => x.Id == bsonid);
+        }
         private void TriggerGroupsAdd_Click(object sender, RoutedEventArgs e)
         {
             TriggerGroupEdit triggerDialog = new TriggerGroupEdit();
@@ -1202,6 +1241,7 @@ namespace DAR
                 }
                 col.Delete(dbid);
             }
+            GenerateMasterList("Delete TriggerGroup by name");
         }
         private void DeleteTriggerGroup(int groupid)
         {
@@ -1229,6 +1269,7 @@ namespace DAR
                 }
                 col.Delete(groupid);
             }
+            GenerateMasterList("Delete TriggerGroup by id");
         }
         private void CopyTriggerGroup(int copyfrom, int parent)
         {
@@ -1263,6 +1304,7 @@ namespace DAR
                     triggergroupCollection.Update(parentgroup);
                 }
             }
+            GenerateMasterList("Copy TriggerGroup");
         }
         #endregion
         #region Tree
@@ -1277,29 +1319,25 @@ namespace DAR
             {
                 foreach (Int32 item in branch.triggers)
                 {
-                    using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                    Boolean isChecked = false;
+                    Trigger getTrigger = dballtriggers.Find(x => x.Id == item);
+                    if (currentSelection != null)
                     {
-                        Boolean isChecked = false;
-                        var col = db.GetCollection<Trigger>("triggers");
-                        var getTrigger = col.FindById(item);
-                        if (currentSelection != null)
+                        CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
+                        if (selectedCharacter.Triggers.Contains(item))
                         {
-                            CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
-                            if (selectedCharacter.Triggers.Contains(item))
-                            {
-                                isChecked = true;
-                            }
+                            isChecked = true;
                         }
-                        TreeViewModel newChildBranch = new TreeViewModel(getTrigger.Name)
-                        {
-                            Type = "trigger",
-                            Id = getTrigger.Id
-                        };
-                        newChildBranch.IsChecked = isChecked;
-                        newChildBranch.TriggerAdded += TriggerAdded_TreeViewModel;
-                        newChildBranch.TriggerRemoved += TriggerRemoved_TreeViewModel;
-                        rTree.Children.Add(newChildBranch);
                     }
+                    TreeViewModel newChildBranch = new TreeViewModel(getTrigger.Name)
+                    {
+                        Type = "trigger",
+                        Id = getTrigger.Id
+                    };
+                    newChildBranch.IsChecked = isChecked;
+                    newChildBranch.TriggerAdded += TriggerAdded_TreeViewModel;
+                    newChildBranch.TriggerRemoved += TriggerRemoved_TreeViewModel;
+                    rTree.Children.Add(newChildBranch);
                 }
             }
             if (branch.Children.Count > 0)
@@ -1315,12 +1353,7 @@ namespace DAR
         }
         private TriggerGroup GetTriggerGroup(int id)
         {
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                var col = db.GetCollection<TriggerGroup>("triggergroups");
-                var record = col.FindById(id);
-                return record;
-            }
+            return dballgroups.Find(x => x.Id == id);
         }
         private void TreeViewTriggers_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
@@ -1531,31 +1564,10 @@ namespace DAR
                 toimport.TriggerCategory = defaultcategory.Id;
                 bsonid = colTriggers.Insert(toimport);
                 //Activate trigger for all profiles
-                AllProfileEnableTrigger(bsonid);
+                //AllProfileEnableTrigger(bsonid);
             }
+            addedtriggers.Add(bsonid);
             return bsonid;
-        }
-        private void AllProfileEnableTrigger(int bsonid)
-        {
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                var colProfiles = db.GetCollection<CharacterProfile>("profiles");
-                var colTriggers = db.GetCollection<Trigger>("triggers");
-                Trigger trigger = colTriggers.FindById(bsonid);
-                //Activate for every profile
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
-                IEnumerable<CharacterProfile> profiles = colProfiles.FindAll();
-                foreach(CharacterProfile profile in profiles)
-                {
-                    profile.AddTrigger(bsonid);
-                    trigger.Profiles.Add(profile.Id);                    
-                    colProfiles.Update(profile);
-                }
-                colTriggers.Update(trigger);
-                stopwatch.Stop();
-                Console.WriteLine($"Took {stopwatch.Elapsed.ToString()} to add profiles.");
-            }
         }
         private T FindAncestor<T>(DependencyObject current) where T : DependencyObject
         {
@@ -1806,54 +1818,50 @@ namespace DAR
             treeView = new List<TreeViewModel>();
             tv = new TreeViewModel("All Triggers");
             treeView.Add(tv);
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+
+            //Get Activated Triggers
+            foreach (var doc in dballgroups)
             {
-                //Get Activated Triggers
-                var col = db.GetCollection<TriggerGroup>("triggergroups");
-                foreach (var doc in col.FindAll())
+                if (doc.Parent == 0)
                 {
-                    if (doc.Parent == 0)
+                    TreeViewModel rTree = new TreeViewModel(doc.TriggerGroupName)
                     {
-                        TreeViewModel rTree = new TreeViewModel(doc.TriggerGroupName)
+                        Type = "triggergroup",
+                        Id = doc.Id
+                    };
+                    if (doc.triggers.Count > 0)
+                    {
+                        foreach (Int32 item in doc.triggers)
                         {
-                            Type = "triggergroup",
-                            Id = doc.Id
-                        };
-                        if (doc.triggers.Count > 0)
-                        {
-                            foreach (Int32 item in doc.triggers)
+                            Boolean isChecked = false;
+                            Trigger getTrigger = dballtriggers.Find(x => x.Id == item);
+                            if (currentSelection != null)
                             {
-                                Boolean isChecked = false;
-                                var collection = db.GetCollection<Trigger>("triggers");
-                                var getTrigger = collection.FindById(item);
-                                if (currentSelection != null)
+                                CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
+                                if (selectedCharacter.Triggers.Contains(item))
                                 {
-                                    CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
-                                    if (selectedCharacter.Triggers.Contains(item))
-                                    {
-                                        isChecked = true;
-                                    }
+                                    isChecked = true;
                                 }
-                                TreeViewModel newChildBranch = new TreeViewModel(getTrigger.Name)
-                                {
-                                    Type = "trigger"
-                                };
-                                newChildBranch.IsChecked = isChecked;
-                                newChildBranch.Id = getTrigger.Id;
-                                newChildBranch.TriggerAdded += TriggerAdded_TreeViewModel;
-                                newChildBranch.TriggerRemoved += TriggerRemoved_TreeViewModel;
-                                rTree.Children.Add(newChildBranch);
-                                rTree.VerifyCheckedState();
                             }
+                            TreeViewModel newChildBranch = new TreeViewModel(getTrigger.Name)
+                            {
+                                Type = "trigger"
+                            };
+                            newChildBranch.IsChecked = isChecked;
+                            newChildBranch.Id = getTrigger.Id;
+                            newChildBranch.TriggerAdded += TriggerAdded_TreeViewModel;
+                            newChildBranch.TriggerRemoved += TriggerRemoved_TreeViewModel;
+                            rTree.Children.Add(newChildBranch);
+                            rTree.VerifyCheckedState();
                         }
-                        if (doc.Children.Count > 0)
-                        {
-                            tv.Children.Add(BuildTree(doc));
-                        }
-                        else
-                        {
-                            tv.Children.Add(rTree);
-                        }
+                    }
+                    if (doc.Children.Count > 0)
+                    {
+                        tv.Children.Add(BuildTree(doc));
+                    }
+                    else
+                    {
+                        tv.Children.Add(rTree);
                     }
                 }
             }
@@ -1861,7 +1869,7 @@ namespace DAR
             tv.Initialize();
             tv.VerifyCheckedState();
             treeViewTriggers.ItemsSource = treeView;
-            TriggerLoad();
+            TriggerLoad("UpdateTriggerView");
         }
         public void UpdateListView()
         {
@@ -2170,6 +2178,7 @@ namespace DAR
                     tabcontrolCategory.SelectedIndex = categoryindex;
                 }
             }
+            GenerateMasterList("CategoryRemove_Click");
         }
         private void CategoryName_LostFocus(object sender, RoutedEventArgs e)
         {
@@ -2725,74 +2734,54 @@ namespace DAR
             TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
             if(root.Type == "trigger")
             {
-                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-                {
-                    var triggerCollection = db.GetCollection<Trigger>("triggers");
-                    var currentTrigger = triggerCollection.FindById(root.Id);
-                    TriggerEditor triggerDialog = new TriggerEditor(currentTrigger.Id);
-                    triggerDialog.Show();
-                }
+                int bsonid = (dballtriggers.Find(x => x.Id == root.Id)).Id;
+                TriggerEditor triggerDialog = new TriggerEditor(bsonid);
+                triggerDialog.Show();
             }
             if(root.Type == "triggergroup")
             {
-                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-                {
-                    var col = db.GetCollection<TriggerGroup>("triggergroups");
-                    TriggerGroup result = col.FindById(root.Id);
-                    //TriggerGroup result = col.FindOne(Query.And(Query.EQ("TriggerGroupName", root.Name), Query.EQ("_id", root.Id)));
-                    TriggerGroupEdit triggerDialog = new TriggerGroupEdit(result);
-                    triggerDialog.Show();
-                }
+                TriggerGroup editgroup = dballgroups.Find(x => x.Id == root.Id);
+                TriggerGroupEdit triggerDialog = new TriggerGroupEdit(editgroup);
+                triggerDialog.Show();
                 UpdateView();
             }
         }
         private void MenuItemTriggerPaste_Click(object sender, RoutedEventArgs e)
         {
             TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //Add new Trigger
+            if (clipboardtype == "trigger")
             {
-                var triggerCollection = db.GetCollection<Trigger>("triggers");
-                var triggergroupCollection = db.GetCollection<TriggerGroup>("triggergroups");
-                //Add new Trigger
-                if (clipboardtype == "trigger")
+                CopyTrigger(triggerclipboard, root.Id);
+            }
+            //Add new Trigger Group
+            if (clipboardtype == "triggergroup")
+            {
+                if (root.Name == "All Triggers")
                 {
-                    CopyTrigger(triggerclipboard, root.Id);
+                    CopyTriggerGroup(triggergroupclipboard, 0);
                 }
-                //Add new Trigger Group
-                if (clipboardtype == "triggergroup")
+                else
                 {
-                    if (root.Name == "All Triggers")
-                    {
-                        CopyTriggerGroup(triggergroupclipboard, 0);
-                    }
-                    else
-                    {
-                        CopyTriggerGroup(triggergroupclipboard, root.Id);
-                    }                    
-                }
+                    CopyTriggerGroup(triggergroupclipboard, root.Id);
+                }                    
             }
             UpdateTriggerView();
         }
         private void TreeViewTriggers_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
-            if (root.Type == "trigger")
+            if (root != null)
             {
-                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                if (root.Type == "trigger")
                 {
-                    var triggerCollection = db.GetCollection<Trigger>("triggers");
-                    var currentTrigger = triggerCollection.FindById(root.Id);
-                    TriggerEditor triggerDialog = new TriggerEditor(currentTrigger.Id);
+                    int bsonid = FindTrigger(root.Id).Id;
+                    TriggerEditor triggerDialog = new TriggerEditor(bsonid);
                     triggerDialog.Show();
                 }
-            }
-            if (root.Type == "triggergroup")
-            {
-                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                if (root.Type == "triggergroup")
                 {
-                    var col = db.GetCollection<TriggerGroup>("triggergroups");
-                    TriggerGroup result = col.FindById(root.Id);
-                    //TriggerGroup result = col.FindOne(Query.And(Query.EQ("TriggerGroupName", root.Name), Query.EQ("_id", root.Id)));
+                    TriggerGroup result = FindTriggerGroup(root.Id);
                     TriggerGroupEdit triggerDialog = new TriggerGroupEdit(result);
                     triggerDialog.Show();
                 }
@@ -2870,7 +2859,7 @@ namespace DAR
             TreeViewModel selectedGroup = (TreeViewModel)treeViewTriggers.SelectedItem;
             TriggerEditor newTrigger = new TriggerEditor(selectedGroup);
             newTrigger.Show();
-            TriggerLoad();
+            TriggerLoad("cmAddTrigger_Click");
         }
         #endregion
         #region Filtering
@@ -2882,7 +2871,6 @@ namespace DAR
             collectionview.LiveFilteringProperties.Add("Name");
             collectionview.Filter = new Predicate<object>(TriggerContains);
         }
-
         private void TextboxPushbackSearch_TextChanged(object sender, TextChangedEventArgs e)
         {
             pushbackpane.IsActive = true;
@@ -2941,7 +2929,6 @@ namespace DAR
         {
 
         }
-
         #endregion
         #region Import Triggers
         private void ImportFromGINA_Click(object sender, RoutedEventArgs e)
@@ -2952,6 +2939,9 @@ namespace DAR
             {
                 using (ZipArchive archive = ZipFile.OpenRead(fileDialog.FileName))
                 {
+                    //TO DO:
+                    //Archive could contain *.wav files, Export those to folder
+                    //Load the xml
                     ZipArchiveEntry triggersxml = archive.Entries[0];
                     using (StreamReader streamtriggers = new StreamReader(triggersxml.Open()))
                     {
@@ -3245,6 +3235,8 @@ namespace DAR
         }
         private void ImportTriggers(TreeViewModel importtree)
         {
+            //clear addedtriggers list
+            addedtriggers.Clear();
             //Walk through the tree and verify the node is in the database.
             //check the root node, then walk through the children.
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
@@ -3262,7 +3254,7 @@ namespace DAR
                 {
                     dropTriggerGroup = colTriggerGroups.FindById(droptree.Id);
                 }
-                //If we're importing over a trigger group, walk through the tree
+                //If we're importing a trigger group, walk through the tree
                 if (importtree.Type == "triggergroup")
                 {
                     //Find our object in mergegroups, add self and children to the database.
@@ -3294,6 +3286,32 @@ namespace DAR
                     mergetriggers.Remove(roottrigger);
                 }
             }
+            //Enable all imported Triggers on all profiles
+            if(addedtriggers.Count > 0)
+            {
+                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                {
+                    var colProfiles = db.GetCollection<CharacterProfile>("profiles");
+                    var colTriggers = db.GetCollection<Trigger>("triggers");
+                    
+                    //Activate for every profile
+                    IEnumerable<CharacterProfile> profiles = colProfiles.FindAll();
+                    foreach (CharacterProfile profile in profiles)
+                    {
+                        //Add the profile to the trigger
+                        //add the trigger to the profile
+                        foreach (int bsonid in addedtriggers)
+                        {
+                            Trigger trigger = colTriggers.FindById(bsonid);
+                            trigger.Profiles.Add(profile.Id);
+                            colTriggers.Update(trigger);
+                            profile.AddTrigger(bsonid);
+                        }
+                        //update the profile when all the triggers are done.
+                        colProfiles.Update(profile);
+                    }                    
+                }
+            }
             //Delete Imported triggers/groups from import tree
             TreeViewModel toremove = new TreeViewModel("todelete");
             foreach(TreeViewModel tvm in mergetreeView)
@@ -3311,7 +3329,7 @@ namespace DAR
             treemerge.ItemsSource = mergetreeView;
             //Once we're done with the import, update the trigger view
             UpdateListView();
-            TriggerLoad();
+            TriggerLoad("ImportTriggers");
             //Keep the merge tree up until the user clears it
             if(mergetreeView.Count > 0)
             {
@@ -3320,8 +3338,7 @@ namespace DAR
             else
             {
                 treemerge.Visibility = Visibility.Hidden;
-            }
-            
+            }            
         }
         private void DeleteBranch(TreeViewModel tvm, int idtodelete)
         {
@@ -3342,8 +3359,6 @@ namespace DAR
                 tvm.RemoveChild(deletetree);
             }
         }
-
-
         #endregion
     }
 }

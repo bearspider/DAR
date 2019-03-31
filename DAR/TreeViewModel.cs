@@ -89,8 +89,7 @@ namespace DAR
             {
                 child._parent = this;
                 child.Initialize();
-            }
-            
+            }            
         }
         public void RemoveChild(TreeViewModel removeview)
         {

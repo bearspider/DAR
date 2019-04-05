@@ -70,10 +70,200 @@
         <Fluent:Ribbon Name="ribbonMain" Grid.Row="0" SelectedTabChanged="RibbonMain_SelectionChanged">
             <!--Backstage-->
             <Fluent:Ribbon.Menu>
-                <Fluent:Backstage>
+                <Fluent:Backstage Name="fluentbackstage">
                     <Fluent:BackstageTabControl>
-                        <Fluent:Button Header="Settings" Click="Settings_Click"/>
-                        <Fluent:Button Header="Update Program"/>
+                        <Fluent:BackstageTabItem Header="General">
+                            <StackPanel>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Fluent:CheckBox Margin="5,10,0,0" Name="checkboxSoundEnable" Header="Enable Sound" IsChecked="True" Grid.Row="0" Grid.Column="0"/>
+                                    <TextBlock Margin="5,5,0,0" Grid.Row="1" Grid.Column="0" Text="Master Volume"/>
+                                    <Slider Grid.Row="1" Grid.Column="1" Name="sliderMasterVol" Value="100" Maximum="100" Minimum="0" Interval="1" IsSnapToTickEnabled="True"/>
+                                    <TextBlock Name="textblockMasterVol" Grid.Row="1" Grid.Column="3" Text="{Binding ElementName=sliderMasterVol, Path=Value}"/>
+                                    <Fluent:CheckBox Margin="5,5,0,0" Name="checkboxEnableText" Header="Enable Text" IsChecked="True" Grid.Row="2" Grid.Column="0"/>
+                                    <Fluent:CheckBox Margin="5,5,0,0" Name="checkboxEnableTimer" Header="Enable Timers" IsChecked="True" Grid.Row="3" Grid.Column="0"/>
+                                    <Fluent:CheckBox Margin="5,5,0,0" Name="checkboxStopTrigger" Header="Stop Trigger Search After First Match" IsChecked="False" Grid.Row="4" Grid.Column="0"/>
+                                    <Fluent:CheckBox Margin="5,5,0,0" Name="checkboxMinimize" Header="Minimize to System Tray" IsChecked="False" Grid.Row="5" Grid.Column="0"/>
+                                    <Fluent:CheckBox Margin="5,5,0,0" Name="checkboxMatchLog" Header="Display Match Log" IsChecked="True" Grid.Row="6" Grid.Column="0"/>
+                                    <Fluent:CheckBox Margin="5,5,0,0" Name="checkboxLogMatches" Header="Log Matches to File: " IsChecked="False" Grid.Row="7" Grid.Column="0"/>
+                                    <Fluent:TextBox Name="textboxLogMatches" Grid.Row="7" Grid.Column="1" Width="400"/>
+                                    <Fluent:Button Margin="5,0,0,0" Name="buttonLogMatch" Grid.Row="7" Grid.Column="2" Height="25" BorderThickness="0" Click="ButtonLogMatch_Click" Size="Middle" Icon="Images\Oxygen-Icons.org-Oxygen-Actions-document-open-folder.ico"/>
+                                </Grid>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Fluent:TextBox Margin="5,5,0,0" Name="textboxClipboard" Grid.Row="1" Grid.Column="0" Header="Clipboard Replacement for {C}: " Width="370"/>
+                                    <Fluent:TextBox Margin="5,5,0,0" Name="textboxEQFolder" Grid.Row="2" Grid.Column="0" Header="Everquest Folder: " />
+                                    <Fluent:Button Name="buttonEQFolder" Grid.Row="2" Grid.Column="1" Height="25" BorderThickness="0" Size="Middle" Icon="Images\Oxygen-Icons.org-Oxygen-Actions-document-open-folder.ico" Click="ButtonEQFolder_Click"/>
+                                    <Fluent:TextBox Margin="5,5,0,0" Name="textboxMediaFolder" Grid.Row="3" Grid.Column="0" Header="Imported Media Folder: "/>
+                                    <Fluent:Button Name="buttonMediaFolder" Grid.Row="3" Grid.Column="1" Height="25" BorderThickness="0" Size="Middle" Icon="Images\Oxygen-Icons.org-Oxygen-Actions-document-open-folder.ico" Click="ButtonMediaFolder_Click"/>
+                                    <Fluent:TextBox Margin="5,5,0,0" Name="textboxDataFolder" Grid.Row="4" Grid.Column="0" Header="EQAudioTriggers Data Folder: "/>
+                                    <Fluent:Button Name="buttonDataFolder" Grid.Row="4" Grid.Column="1" Height="25" BorderThickness="0" Size="Middle" Icon="Images\Oxygen-Icons.org-Oxygen-Actions-document-open-folder.ico" Click="ButtonDataFolder_Click"/>
+                                    <Fluent:TextBox Margin="5,5,0,0" Name="textboxMaxEntries" Grid.Row="5" Grid.Column="0" Header="Maximum Log Entries: " Text="100"/>
+                                    <Fluent:Button Margin="5,5,0,0" Grid.Row="6" Height="35" BorderThickness="0" Header="Save" Size="Middle" Icon="Images\Oxygen-Icons.org-Oxygen-Actions-document-save.ico" Name="buttonSaveGeneral" Click="ButtonSaveGeneral_Click"/>
+                                </Grid>
+                            </StackPanel>
+                        </Fluent:BackstageTabItem>
+                        <Fluent:BackstageTabItem Header="Sharing">
+                            <StackPanel>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Fluent:CheckBox Margin="5,10,0,0" Grid.Row="0" Grid.Column="0" Name="checkboxEnableSharing" IsChecked="False" Header="Enable Sharing" HorizontalAlignment="Left"/>
+                                    <GroupBox Header="Accept Share Invitations From" Grid.Row="1" Grid.Column="0" IsEnabled="{Binding ElementName=checkboxEnableSharing, Path=IsChecked}">
+                                        <StackPanel>
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
+                                                <Fluent:RadioButton Grid.Row="0" Name="radioShareNobody" Header="Nobody" GroupName="sharefrom"/>
+                                                <Fluent:RadioButton Grid.Row="1" Name="radioShareTrusted" Header="Trusted List" GroupName="sharefrom"/>
+                                                <Fluent:RadioButton Grid.Row="2" Name="radioShareAnybody" Header="Anybody" GroupName="sharefrom"/>
+                                            </Grid>
+                                        </StackPanel>
+                                    </GroupBox>
+                                    <GroupBox Header="Automatically Merge Invitations From" Grid.Row="2" Grid.Column="0" IsEnabled="{Binding ElementName=checkboxEnableSharing, Path=IsChecked}">
+                                        <StackPanel>
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
+                                                <Fluent:RadioButton Grid.Row="0" Name="radioMergeNobody" Header="Nobody" GroupName="mergefrom"/>
+                                                <Fluent:RadioButton Grid.Row="1" Name="radioMergeTrusted" Header="Trusted List" GroupName="mergefrom"/>
+                                                <Fluent:RadioButton Grid.Row="2" Name="radioMergeAnybody" Header="Anybody" GroupName="mergefrom"/>
+                                            </Grid>
+                                        </StackPanel>
+                                    </GroupBox>
+                                    <GroupBox Header="Trusted Sender List" Grid.Row="1" Grid.RowSpan="2" Grid.Column="1" IsEnabled="{Binding ElementName=checkboxEnableSharing, Path=IsChecked}">
+                                        <StackPanel>
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="*"/>
+                                                    <RowDefinition Height="*"/>
+                                                    <RowDefinition Height="*"/>
+                                                    <RowDefinition Height="*"/>
+                                                </Grid.RowDefinitions>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Fluent:TextBox Margin="0,5,0,0" Name="textboxAddSender" Header="Name: " Width="200" Grid.Row="0" Grid.Column="0"/>
+                                                <Fluent:Button Margin="5,0,0,0" Name="buttonAddSender" Header="Add" Height="25" Grid.Row="0" Grid.Column="1" Size="Middle" Icon="Images\Oxygen-Icons.org-Oxygen-Actions-list-add.ico" BorderThickness="0" Click="ButtonAddSender_Click"/>
+                                                <ListView Margin="0,5,0,0" Height="100" Grid.Row="1" Grid.RowSpan="2" Grid.ColumnSpan="2" Name="listviewSenderList" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.CanContentScroll="True"/>
+                                                <Fluent:Button BorderThickness="0" Name="buttonRemoveSender" Header="Remove" Height="25" Size="Middle" Grid.Row="3" Grid.Column="0" Icon="Images\Oxygen-Icons.org-Oxygen-Actions-list-remove.ico" Click="ButtonRemoveSender_Click"/>
+                                            </Grid>
+                                        </StackPanel>
+                                    </GroupBox>
+                                    <Fluent:Button Grid.Row="3" Height="35" BorderThickness="0" Header="Save" Size="Middle" Icon="Images\Oxygen-Icons.org-Oxygen-Actions-document-save.ico" Name="buttonSaveSharing" Click="ButtonSaveSharing_Click"/>
+                                </Grid>
+                            </StackPanel>
+                        </Fluent:BackstageTabItem>
+                        <Fluent:BackstageTabItem Header="Log Maintenance">
+                            <StackPanel>
+                                <Grid Margin="10,20,10,0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Fluent:CheckBox Grid.Row="0" Name="checkboxAutoArchive" Header="Auto-Archive Log Files" IsChecked="True"/>
+                                    <Fluent:TextBox Margin="0,0,0,0" Grid.Row="1" Grid.Column="0" Width="400" Name="textboxArchiveFolder" Header="Log Archive Folder: " IsEnabled="{Binding ElementName=checkboxAutoArchive, Path=IsChecked}"/>
+                                    <Fluent:Button Height="35" Margin="5,0,0,0" Grid.Row="1" Grid.Column="1" BorderThickness="0" Size="Middle" 
+                                                   Icon="Images\Oxygen-Icons.org-Oxygen-Actions-document-open-folder.ico" 
+                                                   Name="buttonLoadArchive" Click="ButtonLoadArchive_Click"
+                                                   IsEnabled="{Binding ElementName=checkboxAutoArchive, Path=IsChecked}"/>                                  
+                                    <Fluent:ComboBox SelectedIndex="0" HorizontalAlignment="Left" Grid.Row="2" Name="comboboxArchiveSchedule" Header="Archive Schedule" IsEnabled="{Binding ElementName=checkboxAutoArchive, Path=IsChecked}">
+                                        <ComboBoxItem Content="Daily"/>
+                                        <ComboBoxItem Content="Weekly"/>
+                                    </Fluent:ComboBox>
+                                    <Fluent:CheckBox Grid.Row="3" Name="checkboxCompress" Header="Compress Archived Log Files" IsChecked="False" IsEnabled="{Binding ElementName=checkboxAutoArchive, Path=IsChecked}"/>
+                                    <StackPanel Grid.Row="4">
+                                        <Grid Margin="0,0,0,0">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Fluent:CheckBox Grid.Row="0" Grid.Column="0" Name="checkboxDeleteArchive" Header="Delete Archived Log Files Over " IsChecked="False" IsEnabled="{Binding ElementName=checkboxAutoArchive, Path=IsChecked}"/>
+                                            <Fluent:TextBox Grid.Row="0" Grid.Column="1" Name="textboxArchiveDays" Header=" days old" Width="90" FlowDirection="RightToLeft" IsEnabled="{Binding ElementName=checkboxAutoArchive, Path=IsChecked}"/>                                            
+                                        </Grid>
+                                    </StackPanel>
+                                    <Fluent:Button Grid.Row="5" Height="35" BorderThickness="0" Header="Save" Size="Middle" Icon="Images\Oxygen-Icons.org-Oxygen-Actions-document-save.ico" Name="buttonSaveArchive" Click="ButtonSaveArchive_Click"/>
+                                </Grid>
+                            </StackPanel>
+                        </Fluent:BackstageTabItem>
+                        <Fluent:BackstageTabItem Header="Advanced">
+                            <StackPanel>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Fluent:TextBox Margin="0,10,0,0" HorizontalAlignment="Left" Grid.Row="0" Name="textboxShareURI" Header="Share Service URI: " Width="450"/>
+                                    <Fluent:TextBox Margin="0,10,0,0" HorizontalAlignment="Left" Grid.Row="1" Name="textboxSelfReference" Header="Reference to Self: " Text="You" Width="200"/>
+                                    <Fluent:CheckBox Margin="5,10,0,0" Grid.Row="2" Name="checkboxShareDebug" IsChecked="False" Header="Enable Debug Logging"/>
+                                    <Fluent:Button Grid.Row="3" Height="35" BorderThickness="0" Header="Save" Size="Middle" Icon="Images\Oxygen-Icons.org-Oxygen-Actions-document-save.ico" Name="buttonSaveShare" Click="ButtonSaveShare_Click"/>
+                                </Grid>
+                            </StackPanel>
+                        </Fluent:BackstageTabItem>
                         <Fluent:Button Header="Update Pushback List" Click="UpdatePushback_Click"/>
                         <Fluent:BackstageTabItem Header="About">
                             <StackPanel>
@@ -195,7 +385,7 @@
         <xcad:DockingManager 
                            AllowMixedOrientation="True"
                            BorderBrush="Black"
-                           BorderThickness="5" Margin="0,137,0,0" Grid.RowSpan="2">
+                           BorderThickness="5" Margin="0,0,0,0" Grid.Row="1">
             <xcad:DockingManager.Theme>
                 <xcad:VS2010Theme />
             </xcad:DockingManager.Theme>
@@ -565,7 +755,7 @@
                 </xcad:LayoutPanel>
             </xcad:LayoutRoot>
         </xcad:DockingManager>
-        <Fluent:StatusBar Grid.Row="3" Grid.ColumnSpan="2">
+        <Fluent:StatusBar Grid.Row="2" Grid.ColumnSpan="2">
             <Fluent:StatusBarItem Name="statusbarStatus" Title="Staus" Content="{Binding Path=., StringFormat=\{0\}}" HorizontalAlignment="Right"/>
             <Fluent:StatusBarItem Content=" lines of logs processed" HorizontalAlignment="Right"/>
         </Fluent:StatusBar>

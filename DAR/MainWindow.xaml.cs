@@ -255,6 +255,10 @@ namespace DAR
         private static string version = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion;
         private int totallinecount = 0;
 
+        //Maintenance
+        Maintenance logmaintenance = new Maintenance();
+        ObservableCollection<String> trustedsenders = new ObservableCollection<String>();
+
         #endregion
         #region Main Program
         public MainWindow()
@@ -283,8 +287,9 @@ namespace DAR
                 {
                     foreach(Setting programsetting in settings.FindAll())
                     {
-                        programsettings.Add(programsetting);                        
+                        programsettings.Add(programsetting);                     
                     }
+                    LoadSettingsTab();
                 }
             }
 
@@ -575,7 +580,7 @@ namespace DAR
                 colProfiles.Update(currentProfile);
                 if (currentProfile.Monitor)
                 {
-                    MonitorCharacter(currentProfile);
+                    MonitorCharacter(currentProfile, logmaintenance);
                 }
             }
 
@@ -637,7 +642,7 @@ namespace DAR
                 colProfiles.Update(currentProfile);
                 if (currentProfile.Monitor)
                 {
-                    MonitorCharacter(currentProfile);
+                    MonitorCharacter(currentProfile, logmaintenance);
                 }
             }
             UpdateListView();
@@ -673,42 +678,13 @@ namespace DAR
         private void StartMonitoring()
         {
             //Start Monitoring Enabled Profiles
-            string archivefolder = programsettings.Single<Setting>(i => i.Name == "LogArchiveFolder").Value;
-            string archivemethod = programsettings.Single<Setting>(i => i.Name == "ArchiveMethod").Value;
-            string autodelete = programsettings.Single<Setting>(i => i.Name == "AutoDelete").Value;
-            string compressarchive = programsettings.Single<Setting>(i => i.Name == "CompressArchive").Value;
-            int logsize = Convert.ToInt32(programsettings.Single<Setting>(i => i.Name == "LogSize").Value);
-            int archivedays = Convert.ToInt32(programsettings.Single<Setting>(i => i.Name == "DeleteArchives").Value);
+
             foreach (CharacterProfile character in characterProfiles)
             {
                 AddResetRibbon();
                 if (File.Exists(character.LogFile) && character.Monitor)
                 {
-                    MonitorCharacter(character);
-                    //Monitor(character);
-                    //Start Log Maintenance
-                    if ((programsettings.Single<Setting>(i => i.Name == "AutoArchive")).Value == "true")
-                    {
-                        switch (archivemethod)
-                        {
-                            case "Size Threshold":
-                                //Start Task, check log size every 5 minutes.
-                                //If log size is greater than programsettings["Log Size"].
-                                //Move File to archive
-                                //Create new file
-                                SizeMaintenance(character.LogFile, archivefolder, logsize, compressarchive, autodelete);
-                                break;
-                            case "Scheduled":
-                                //Start Task, check the date every 5 minutes.
-                                //If today is the scheduled day
-                                //Move File to archive
-                                //Create new file
-                                ScheduledMaintenance(character.LogFile, archivefolder, logsize, compressarchive, autodelete);
-                                break;
-                            default:
-                                break;
-                        }
-                    }
+                    MonitorCharacter(character, logmaintenance);
                 }
                 else
                 {
@@ -804,9 +780,14 @@ namespace DAR
                 statusbarStatus.DataContext = totallinecount;
             }), value);
         }
-        private async void MonitorCharacter(CharacterProfile character)
+        private async void MonitorCharacter(CharacterProfile character, Maintenance logmaintenance)
         {
            Console.WriteLine($"Monitoring {character.Name}");
+            //Start Log Maintenance before monitoring
+            if ( logmaintenance.AutoArchive == "true")
+            {
+                        ScheduledMaintenance(character.LogFile, logmaintenance);
+            }
             #region threading
             await Task.Run(async () =>
             {
@@ -2942,43 +2923,81 @@ namespace DAR
         }
         #endregion
         #region Logfile Maintenance
-        private async void SizeMaintenance(String logfile, String folder, int filesize, String compress, String delete)
+        private void ScheduledMaintenance(String logfile, Maintenance logmaintenance)
         {
-            await Task.Run(() =>
+            Boolean dailycheck = false;
+            TimeSpan duration = DateTime.Now - logmaintenance.LastArchive;
+            if(duration.Days > 1)
             {
-                while(true)
+                dailycheck = true;
+            }
+            if(dailycheck || ((DateTime.Now - logmaintenance.LastArchive).Days >= 7))
+            {
+                //check if archive folder exists and create it if missing
+                if(!Directory.Exists(logmaintenance.ArchiveFolder))
                 {
-                    FileInfo fileinfo = new FileInfo(logfile);
-                    if(fileinfo.Length > filesize)
-                    {
-                        ArchiveLog(logfile, folder);
-                    }
-                    Thread.Sleep(300000);
+                    Directory.CreateDirectory(logmaintenance.ArchiveFolder);
                 }
-            });
-        }
-        private async void ScheduledMaintenance(String logfile, String folder, int filesize, String compress, String delete)
-        {
-            await Task.Run(() => {
-                while(true)
+                //move file
+                String filepostfix = DateTime.Now.ToString("MMddyyyy_HHmmss");
+                Regex regexfilename = new Regex(@"(?<path>.*?\\)(?<filename>eqlog.*?)(?<extension>\.txt)",RegexOptions.Compiled);
+                Match matchfile = regexfilename.Match(logfile);
+                String newpath = "";
+                if (matchfile.Success)
                 {
-                    FileInfo fileinfo = new FileInfo(logfile);
+                    newpath = logmaintenance.ArchiveFolder + @"\" + matchfile.Groups["filename"].Value.ToString() + "_" + filepostfix + ".txt";
+                    File.Move(logfile, newpath);
+                    //create new file
+                    FileStream created = File.Create(logfile);
+                    created.Close();
                 }
-            });
+            }
+            if(logmaintenance.CompressArchive == "true")
+            {
+                CompressLog(logmaintenance.ArchiveFolder);
+            }
+            if(logmaintenance.AutoDelete == "true")
+            {
+                AutoDeleteArchive(logmaintenance.ArchiveFolder, logmaintenance.ArchiveDays);
+            }
+            Properties.Settings.Default.LastLogMaintenance = DateTime.Now;
+            Properties.Settings.Default.Save();
         }
-        private void ArchiveLog(string logfile, string archivefolder)
+        private void AutoDeleteArchive(string archivefolder, int archivedays)
         {
-            //string filedate = (DateTime.Now).ToFileTime().ToString();
-            //string[] logsplits = logfile.Split('\\');
-            //string[] filesplit = logsplits[2].Split('.');
-            //string newfilename = filesplit[0] + "_" + filedate + '.' + filesplit[1];
-            //string archivefile = archivefolder + '\\' + newfilename;
-            //File.Move(logfile, archivefile);
-            //File.Create(logfile);
+            string[] archivelogs = Directory.GetFiles(archivefolder);
+            foreach (string archivelog in archivelogs)
+            {
+                TimeSpan duration = DateTime.Now - File.GetCreationTime(archivelog);
+                if(duration.Days > archivedays)
+                {
+                    File.Delete(archivelog);
+                }
+            }
         }
         private void CompressLog(string archivefolder)
         {
-
+            //Go through all of the files and determine if it needs compressed
+            string[] archivelogs = Directory.GetFiles(archivefolder);
+            Regex regexfilename = new Regex(@"(?<directory>.*)\\(?<filename>.*\.txt)", RegexOptions.Compiled);
+            foreach(string archivelog in archivelogs)
+            {
+                //create archive
+                String newzip = archivelog.Replace(@".txt",@".zip");
+                Match namematch = regexfilename.Match(archivelog);
+                if(namematch.Success)
+                {
+                    using (FileStream fs = new FileStream(newzip, System.IO.FileMode.Create))
+                    {
+                        using (ZipArchive arch = new ZipArchive(fs, ZipArchiveMode.Create))
+                        {
+                            arch.CreateEntryFromFile(archivelog, namematch.Groups["filename"].Value.ToString());
+                        }
+                    }
+                    //Delete log
+                    File.Delete(archivelog);
+                }
+            }
         }
         #endregion
         #region Import Triggers
@@ -3433,5 +3452,216 @@ namespace DAR
             }
         }
         #endregion
+        private String SelectFolder()
+        {
+            String rval = "";
+            System.Windows.Forms.FolderBrowserDialog folderDialog = new System.Windows.Forms.FolderBrowserDialog();
+            System.Windows.Forms.DialogResult result = folderDialog.ShowDialog();
+            if (result == System.Windows.Forms.DialogResult.OK)
+            {
+                rval = folderDialog.SelectedPath;
+            }
+            return rval;
+        }
+        private void ButtonLoadArchive_Click(object sender, RoutedEventArgs e)
+        {
+            fluentbackstage.IsOpen = true;
+            textboxArchiveFolder.Text = SelectFolder();
+        }
+        private void ButtonSaveArchive_Click(object sender, RoutedEventArgs e)
+        {
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                LiteCollection<Setting> settings = db.GetCollection<Setting>("settings");
+                //update settings
+                Setting autoarchive = settings.FindOne(Query.EQ("Name", "AutoArchive"));
+                autoarchive.Value = checkboxAutoArchive.IsChecked.ToString();
+                settings.Update(autoarchive);
+                Setting archivefolder = settings.FindOne(Query.EQ("Name", "LogArchiveFolder"));
+                archivefolder.Value = textboxArchiveFolder.Text;
+                settings.Update(archivefolder);
+                Setting archiveschedule = settings.FindOne(Query.EQ("Name", "ArchiveSchedule"));
+                archiveschedule.Value = comboboxArchiveSchedule.Text;
+                settings.Update(archiveschedule);
+                Setting autodelete = settings.FindOne(Query.EQ("Name", "AutoDelete"));
+                autodelete.Value = checkboxDeleteArchive.IsChecked.ToString();
+                settings.Update(autodelete);
+                Setting compressarchive = settings.FindOne(Query.EQ("Name", "CompressArchive"));
+                compressarchive.Value = checkboxCompress.IsChecked.ToString();
+                settings.Update(compressarchive);
+                Setting archivedays = settings.FindOne(Query.EQ("Name", "DeleteArchives"));
+                archivedays.Value = textboxArchiveDays.Text;
+                settings.Update(archivedays);
+            }
+        }
+        private void ButtonSaveShare_Click(object sender, RoutedEventArgs e)
+        {
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                LiteCollection<Setting> settings = db.GetCollection<Setting>("settings");
+                Setting shareuri = settings.FindOne(Query.EQ("Name", "ShareServiceURI"));
+                shareuri.Value = textboxShareURI.Text;
+                settings.Update(shareuri);
+                Setting selfref = settings.FindOne(Query.EQ("Name", "Reference"));
+                selfref.Value = textboxSelfReference.Text;
+                settings.Update(selfref);
+                Setting enabledebug = settings.FindOne(Query.EQ("Name", "EnableDebug"));
+                enabledebug.Value = checkboxShareDebug.IsChecked.ToString();
+                settings.Update(enabledebug);
+            }
+        }
+        private void LoadSettingsTab()
+        {
+            textboxArchiveFolder.Text = logmaintenance.AutoArchive = programsettings.Single<Setting>(i => i.Name == "AutoArchive").Value;
+            logmaintenance.ArchiveFolder = programsettings.Single<Setting>(i => i.Name == "LogArchiveFolder").Value;
+            comboboxArchiveSchedule.Text = logmaintenance.ArchiveSchedule = programsettings.Single<Setting>(i => i.Name == "ArchiveSchedule").Value;
+            logmaintenance.AutoDelete = programsettings.Single<Setting>(i => i.Name == "AutoDelete").Value;
+            logmaintenance.CompressArchive = programsettings.Single<Setting>(i => i.Name == "CompressArchive").Value;
+            logmaintenance.ArchiveDays = Convert.ToInt32(programsettings.Single<Setting>(i => i.Name == "DeleteArchives").Value);
+            logmaintenance.LastArchive = Properties.Settings.Default.LastLogMaintenance;
+            checkboxDeleteArchive.IsChecked = Convert.ToBoolean(logmaintenance.AutoDelete);
+            checkboxAutoArchive.IsChecked = Convert.ToBoolean(logmaintenance.AutoArchive);
+            checkboxCompress.IsChecked = Convert.ToBoolean(logmaintenance.CompressArchive);
+            textboxArchiveDays.Text = logmaintenance.ArchiveDays.ToString();
+            textboxShareURI.Text = programsettings.Single<Setting>(i => i.Name == "ShareServiceURI").Value;
+            textboxSelfReference.Text = programsettings.Single<Setting>(i => i.Name == "Reference").Value;
+            checkboxShareDebug.IsChecked = Convert.ToBoolean(programsettings.Single<Setting>(i => i.Name == "EnableDebug").Value);
+            checkboxEnableSharing.IsChecked = Convert.ToBoolean(programsettings.Single<Setting>(i => i.Name == "SharingEnabled").Value);
+            int shareindex = Convert.ToInt32(programsettings.Single<Setting>(i => i.Name == "AcceptInvitationsFrom").Value);
+            switch (shareindex)
+            {
+                case 0:
+                    radioShareNobody.IsChecked = true;
+                    break;
+                case 1:
+                    radioShareTrusted.IsChecked = true;
+                    break;
+                case 2:
+                    radioShareAnybody.IsChecked = true;
+                    break;
+                default:
+                    radioShareNobody.IsChecked = true;
+                    break;
+            }
+            int mergeindex = Convert.ToInt32(programsettings.Single<Setting>(i => i.Name == "MergeFrom").Value);
+            switch (mergeindex)
+            {
+                case 0:
+                    radioMergeNobody.IsChecked = true;
+                    break;
+                case 1:
+                    radioMergeTrusted.IsChecked = true;
+                    break;
+                case 2:
+                    radioMergeAnybody.IsChecked = true;
+                    break;
+                default:
+                    radioMergeNobody.IsChecked = true;
+                    break;
+            }
+            String senders = programsettings.Single<Setting>(i => i.Name == "TrustedSenderList").Value;
+            string[] senderarray = senders.Split(',');
+            foreach(string sender in senderarray)
+            {
+                trustedsenders.Add(sender);
+            }
+            listviewSenderList.ItemsSource = trustedsenders;
+            checkboxSoundEnable.IsChecked = Convert.ToBoolean(programsettings.Single<Setting>(i => i.Name == "EnableSound").Value);
+            sliderMasterVol.Value = Convert.ToInt32(programsettings.Single<Setting>(i => i.Name == "MasterVolume").Value);
+            checkboxEnableText.IsChecked = Convert.ToBoolean(programsettings.Single<Setting>(i => i.Name == "EnableText").Value);
+            checkboxEnableTimer.IsChecked = Convert.ToBoolean(programsettings.Single<Setting>(i => i.Name == "EnableTimers").Value);
+            checkboxStopTrigger.IsChecked = Convert.ToBoolean(programsettings.Single<Setting>(i => i.Name == "StopTriggerSearch").Value);
+            checkboxMinimize.IsChecked = Convert.ToBoolean(programsettings.Single<Setting>(i => i.Name == "Minimize").Value);
+            checkboxMatchLog.IsChecked = Convert.ToBoolean(programsettings.Single<Setting>(i => i.Name == "LogMatchesToFile").Value);
+            textboxLogMatches.Text = programsettings.Single<Setting>(i => i.Name == "LogMatchFilename").Value;
+            textboxClipboard.Text = programsettings.Single<Setting>(i => i.Name == "Clipboard").Value;
+            textboxEQFolder.Text = programsettings.Single<Setting>(i => i.Name == "EQFolder").Value;
+            textboxMediaFolder.Text = programsettings.Single<Setting>(i => i.Name == "ImportedMediaFolder").Value;
+            textboxDataFolder.Text = programsettings.Single<Setting>(i => i.Name == "DataFolder").Value;
+            textboxMaxEntries.Text = programsettings.Single<Setting>(i => i.Name == "MaxLogEntry").Value;
+        }
+        private void ButtonSaveSharing_Click(object sender, RoutedEventArgs e)
+        {
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                LiteCollection<Setting> settings = db.GetCollection<Setting>("settings");
+                Setting enablesharing = settings.FindOne(Query.EQ("Name", "SharingEnabled"));
+                enablesharing.Value = checkboxEnableSharing.IsChecked.ToString();
+                settings.Update(enablesharing);
+                Setting acceptfrom = settings.FindOne(Query.EQ("Name", "AcceptInvitationsFrom"));
+                //Get which radio button is selected
+                if((bool)radioShareNobody.IsChecked)
+                {
+                    acceptfrom.Value = "0";
+                }
+                if((bool)radioShareTrusted.IsChecked)
+                {
+                    acceptfrom.Value = "1";
+                }
+                if((bool)radioShareAnybody.IsChecked)
+                {
+                    acceptfrom.Value = "2";
+                }
+                settings.Update(acceptfrom);
+                Setting mergefrom = settings.FindOne(Query.EQ("Name", "MergeFrom"));
+                if((bool)radioMergeNobody.IsChecked)
+                {
+                    mergefrom.Value = "0";
+                }
+                if((bool)radioMergeTrusted.IsChecked)
+                {
+                    mergefrom.Value = "1";
+                }
+                if((bool)radioMergeAnybody.IsChecked)
+                {
+                    mergefrom.Value = "2";
+                }
+                settings.Update(mergefrom);
+                Setting trustedlist = settings.FindOne(Query.EQ("Name", "TrustedSenderList"));
+                trustedlist.Value = String.Join(",", trustedsenders.Select(x => x.ToString()).ToArray());
+                settings.Update(trustedlist);
+            }
+        }
+        private void ButtonRemoveSender_Click(object sender, RoutedEventArgs e)
+        {
+            fluentbackstage.IsOpen = true;
+            if (listviewSenderList.SelectedItem != null)
+            {
+                trustedsenders.Remove(listviewSenderList.SelectedItem.ToString());
+            }
+        }
+        private void ButtonAddSender_Click(object sender, RoutedEventArgs e)
+        {
+            fluentbackstage.IsOpen = true;
+            if (textboxAddSender.Text != null)
+            {
+                trustedsenders.Add(textboxAddSender.Text);
+                textboxAddSender.Text = "";
+            }
+        }
+        private void ButtonSaveGeneral_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+        private void ButtonLogMatch_Click(object sender, RoutedEventArgs e)
+        {
+            fluentbackstage.IsOpen = true;
+            textboxLogMatches.Text = SelectFolder();
+        }
+        private void ButtonEQFolder_Click(object sender, RoutedEventArgs e)
+        {
+            fluentbackstage.IsOpen = true;
+            textboxEQFolder.Text = SelectFolder();
+        }
+        private void ButtonMediaFolder_Click(object sender, RoutedEventArgs e)
+        {
+            fluentbackstage.IsOpen = true;
+            textboxMediaFolder.Text = SelectFolder();
+        }
+        private void ButtonDataFolder_Click(object sender, RoutedEventArgs e)
+        {
+            fluentbackstage.IsOpen = true;
+            textboxDataFolder.Text = SelectFolder();
+        }
     }
 }

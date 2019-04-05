@@ -208,38 +208,11 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Name="textblockArchiveMethod" VerticalAlignment="Center" Grid.Row="0" Grid.Column="0" Text="Archive Method" IsEnabled="False"/>
-                            <ComboBox IsEnabled="False" Margin="5,0,0,0" Name="comboArchiveMethod" Grid.Row="0" Grid.Column="1" SelectedIndex="0" SelectionChanged="ComboArchiveMethod_SelectionChanged">
-                                <ComboBoxItem Content="Size Threshold"/>
-                                <ComboBoxItem Content="Scheduled"/>
-                            </ComboBox>
-                            <TextBlock Name="textblockArchiveSchedule" Margin="5,0,0,0" VerticalAlignment="Center" Grid.Row="0" Grid.Column="2" Text="Archive Schedule" Visibility="Hidden"/>
-                            <ComboBox Margin="5,0,0,0" Name="comboArchiveSchedule" Grid.Row="0" Grid.Column="3" SelectedIndex="0" Visibility="Hidden" SelectionChanged="ComboArchiveSchedule_SelectionChanged" IsVisibleChanged="ComboArchiveSchedule_IsVisibleChanged">
+                            <TextBlock Name="textblockArchiveSchedule" Margin="5,0,0,0" VerticalAlignment="Center" Grid.Row="0" Grid.Column="2" Text="Archive Schedule"/>
+                            <ComboBox Margin="5,0,0,0" Name="comboArchiveSchedule" Grid.Row="0" Grid.Column="3" SelectedIndex="0" SelectionChanged="ComboArchiveSchedule_SelectionChanged">
                                 <ComboBoxItem Content="Daily"/>
-                                <ComboBoxItem Content="Weekly(Sunday)"/>
-                                <ComboBoxItem Content="Weekly(Monday)"/>
-                                <ComboBoxItem Content="Weekly(Tuesday)"/>
-                                <ComboBoxItem Content="Weekly(Wednesday)"/>
-                                <ComboBoxItem Content="Weekly(Thursday)"/>
-                                <ComboBoxItem Content="Weekly(Friday)"/>
-                                <ComboBoxItem Content="Weekly(Saturday)"/>
-                                <ComboBoxItem Content="Monthly"/>
-                                <ComboBoxItem Content="Quarterly"/>
-                                <ComboBoxItem Content="Yearly"/>
+                                <ComboBoxItem Content="Weekly"/>
                             </ComboBox>
-                        </Grid>
-                        <Grid Margin="0,10,0,0">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="40"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Name="textblockLogSize" IsEnabled="False" VerticalAlignment="Center" Grid.Row="0" Grid.Column="0" Text="Log File Size:"/>
-                            <TextBox IsEnabled="False" Margin="5,0,0,0" Name="textboxLogSize" Grid.Row="0" Grid.Column="1" TextChanged="TextboxLogSize_TextChanged"/>
-                            <TextBlock Name="textblockMB" IsEnabled="False" VerticalAlignment="Center" Margin="5,0,0,0" Grid.Row="0" Grid.Column="2" Text="MB"/>
                         </Grid>
                         <Grid Margin="0,10,0,0">
                             <Grid.RowDefinitions>

@@ -143,17 +143,11 @@ namespace DAR
                         case "CompressArchive":
                             checkboxCompress.IsChecked = Convert.ToBoolean(appsetting.Value);
                             break;
-                        case "ArchiveMethod":
-                            comboArchiveMethod.Text = appsetting.Value;
-                            break;
                         case "ArchiveSchedule":
                             if(appsetting.Value != "")
                             {
                                 comboArchiveSchedule.Text = appsetting.Value;
                             }
-                            break;
-                        case "LogSize":
-                            textboxLogSize.Text = appsetting.Value;
                             break;
                         case "DeleteArchives":
                             textboxDeleteDays.Text = appsetting.Value;                            
@@ -420,13 +414,8 @@ namespace DAR
                 settinglist["AutoArchive"].Value = checkboxAutoArchive.IsChecked.ToString();
                 checkboxDelete.IsEnabled = true;
                 checkboxCompress.IsEnabled = true;
-                textblockArchiveMethod.IsEnabled = true;
-                comboArchiveMethod.IsEnabled = true;
                 textblockArchiveSchedule.IsEnabled = true;
                 comboArchiveSchedule.IsEnabled = true;
-                textblockLogSize.IsEnabled = true;
-                textboxLogSize.IsEnabled = true;
-                textblockMB.IsEnabled = true;
                 textboxDeleteDays.IsEnabled = true;
                 textblockDeleteDays.IsEnabled = true;
             }
@@ -440,13 +429,8 @@ namespace DAR
                 checkboxCompress.IsEnabled = false;
                 checkboxDelete.IsChecked = false;
                 checkboxCompress.IsChecked = false;
-                textblockArchiveMethod.IsEnabled = false;
-                comboArchiveMethod.IsEnabled = false;
                 textblockArchiveSchedule.IsEnabled = false;
                 comboArchiveSchedule.IsEnabled = false;
-                textblockLogSize.IsEnabled = false;
-                textboxLogSize.IsEnabled = false;
-                textblockMB.IsEnabled = false;
                 textboxDeleteDays.IsEnabled = false;
                 textblockDeleteDays.IsEnabled = false;
             }
@@ -460,31 +444,6 @@ namespace DAR
         {
             if (checkboxCompress != null && settinglist.Count > 0)
             { settinglist["CompressArchive"].Value = checkboxCompress.IsChecked.ToString(); }
-        }
-        private void ComboArchiveMethod_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if(comboArchiveMethod != null && settinglist.Count > 0)
-            {
-                if (comboArchiveMethod.SelectedItem != null)
-                {
-                    settinglist["ArchiveMethod"].Value = (e.AddedItems[0] as ComboBoxItem).Content as string;
-                }
-                if((e.AddedItems[0] as ComboBoxItem).Content as string == "Scheduled")
-                {
-                    textblockArchiveSchedule.Visibility = Visibility.Visible;
-                    comboArchiveSchedule.Visibility = Visibility.Visible;
-                }
-                else
-                {
-                    textblockArchiveSchedule.Visibility = Visibility.Hidden;
-                    comboArchiveSchedule.Visibility = Visibility.Hidden;
-                }
-            }
-        }
-        private void TextboxLogSize_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            if(textboxLogSize != null && settinglist.Count > 0)
-            { settinglist["LogSize"].Value = textboxLogSize.Text; }
         }
         private void CheckboxDelete_Checked(object sender, RoutedEventArgs e)
         {
@@ -532,17 +491,6 @@ namespace DAR
                 if (comboArchiveSchedule.Text != null)
                 { settinglist["ArchiveSchedule"].Value = (e.AddedItems[0] as ComboBoxItem).Content as string; }
             }
-        }
-        private void ComboArchiveSchedule_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
-        {
-            if(comboArchiveSchedule != null && settinglist.Count > 0)
-            {
-                if (settinglist["ArchiveSchedule"].Value == "")
-                {
-                    settinglist["ArchiveSchedule"].Value = "Daily";
-                    comboArchiveSchedule.Text = "Daily";
-                }
-            }           
         }
         private void ButtonAddSender_Click(object sender, RoutedEventArgs e)
         {

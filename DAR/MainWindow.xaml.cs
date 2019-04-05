@@ -3452,6 +3452,7 @@ namespace DAR
             }
         }
         #endregion
+        #region Fluent Backstage
         private String SelectFolder()
         {
             String rval = "";
@@ -3663,5 +3664,6 @@ namespace DAR
             fluentbackstage.IsOpen = true;
             textboxDataFolder.Text = SelectFolder();
         }
+        #endregion
     }
 }

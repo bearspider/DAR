@@ -1,4 +1,7 @@
 ﻿using LiteDB;
+using Microsoft.Win32;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -6,36 +9,23 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
-using System.Drawing.Text;
 using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Media;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using System.Windows.Shell;
-using Xceed.Wpf.AvalonDock;
-using System.Reflection;
-using System.Windows.Threading;
-using Microsoft.Win32;
 using System.Xml;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace DAR
 {
@@ -47,7 +37,7 @@ namespace DAR
         public static string defaultPath = @"C:\EQAudioTriggers";
         public static string defaultDB = $"{defaultPath}\\eqtriggers.db";
         public static string eqRegex = @"\[(?<eqtime>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\](?<stringToMatch>.*)";
-        public static Regex eqspellRegex = new Regex(@"(\[(?<eqtime>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\])\s((?<character>\w+)\sbegin\s(casting|singing)\s(?<spellname>.*)\.)|(\[(?<eqtime>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\])\s(?<character>\w+)\s(begins\sto\s(cast|sing)\s.*\<(?<spellname>.*)\>)",RegexOptions.Compiled);
+        public static Regex eqspellRegex = new Regex(@"(\[(?<eqtime>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\])\s((?<character>\w+)\sbegin\s(casting|singing)\s(?<spellname>.*)\.)|(\[(?<eqtime>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\])\s(?<character>\w+)\s(begins\sto\s(cast|sing)\s.*\<(?<spellname>.*)\>)", RegexOptions.Compiled);
         public static string pathRegex = @"(?<logdir>.*\\)(?<logname>eqlog_.*\.txt)";
         public static string pushbackurl = @"https://raw.githubusercontent.com/bearspider/EQ-LogParsers/master/pushback.csv";
         public static string pushupurl = @"https://raw.githubusercontent.com/bearspider/EQ-LogParsers/master/pushup.csv";
@@ -188,6 +178,27 @@ namespace DAR
             throw new NotImplementedException();
         }
     }
+    public class ViewConverter: IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            String rString = "";
+            if ((Boolean)value)
+            {
+                rString = "Visible";
+            }
+            else
+            {
+                rString = "Hidden";
+            }
+            return rString;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
     #endregion
     public partial class MainWindow : Window
     {
@@ -246,7 +257,7 @@ namespace DAR
         private Dictionary<String, Tuple<String, Double>> masterpushuplist = new Dictionary<String, Tuple<String, Double>>();
         private Dictionary<String, Double> dictpushback = new Dictionary<string, double>();
         private Dictionary<String, Double> dictpushup = new Dictionary<string, double>();
-        
+
 
         //Trigger Clipboard
         private int triggerclipboard = 0;
@@ -256,8 +267,20 @@ namespace DAR
         private int totallinecount = 0;
 
         //Maintenance
-        Maintenance logmaintenance = new Maintenance();
-        ObservableCollection<String> trustedsenders = new ObservableCollection<String>();
+        private Maintenance logmaintenance = new Maintenance();
+
+        //Settings variables
+        private ObservableCollection<String> trustedsenders = new ObservableCollection<String>();
+        private Boolean soundenabled = true;
+        private Boolean textenabled = true;
+        private Boolean timerenabled = true;
+        private Boolean stopfirstmatch = true;
+        private Boolean logmatchestofile = true;
+        private String clipboard = @"{C}";
+        private Int32 mastervolume = 100;
+
+        //System Tray Icons
+        private System.Windows.Forms.NotifyIcon MyNotifyIcon;
 
         #endregion
         #region Main Program
@@ -285,14 +308,18 @@ namespace DAR
                 }
                 else
                 {
-                    foreach(Setting programsetting in settings.FindAll())
+                    foreach (Setting programsetting in settings.FindAll())
                     {
-                        programsettings.Add(programsetting);                     
+                        programsettings.Add(programsetting);
                     }
                     LoadSettingsTab();
                 }
             }
-
+            //Setup the system tray
+            MyNotifyIcon = new System.Windows.Forms.NotifyIcon();
+            Stream iconStream = Application.GetResourceStream(new Uri("pack://application:,,,/DAR;component/Images/Tonev-Windows-7-Windows-7-headphone.ico")).Stream;
+            MyNotifyIcon.Icon = new System.Drawing.Icon(iconStream);
+            MyNotifyIcon.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(MyNotifyIcon_MouseDoubleClick);
             //Initialize pushback monitor
             image_pushbackindicator.DataContext = pushbackToggle;
             datagrid_pushback.ItemsSource = pushbackList;
@@ -394,10 +421,34 @@ namespace DAR
                     newWindow.Show();
                 }
             }
+            
             StartMonitoring();
         }
         #endregion
         #region Form Functions
+        private void MyNotifyIcon_MouseDoubleClick(object sender, System.Windows.Forms.MouseEventArgs e)
+        {
+            this.WindowState = WindowState.Normal;
+        }
+        private void Window_StateChanged(object sender, EventArgs e)
+        {
+            if((bool)checkboxMinimize.IsChecked)
+            {
+                if (this.WindowState == WindowState.Minimized)
+                {
+                    this.ShowInTaskbar = false;
+                    MyNotifyIcon.BalloonTipTitle = "Minimize Sucessful";
+                    MyNotifyIcon.BalloonTipText = "Minimized the app ";
+                    MyNotifyIcon.ShowBalloonTip(400);
+                    MyNotifyIcon.Visible = true;
+                }
+                else if (this.WindowState == WindowState.Normal)
+                {
+                    MyNotifyIcon.Visible = false;
+                    this.ShowInTaskbar = true;
+                }
+            }
+        }
         private void GenerateMasterList(String callingfunction)
         {
             Console.WriteLine($"Updating Master List From {callingfunction}");
@@ -673,6 +724,13 @@ namespace DAR
                 cmStartMonitor.IsEnabled = true;
             }
         }
+        private void UpdateVolume()
+        {
+            foreach(CharacterProfile profile in characterProfiles)
+            {
+                profile.UpdateVolume(mastervolume);
+            }
+        }
         #endregion
         #region Monitoring
         private void StartMonitoring()
@@ -694,7 +752,7 @@ namespace DAR
         }
         private void StopMonitoring()
         {
-            foreach(CharacterProfile profile in characterProfiles)
+            foreach (CharacterProfile profile in characterProfiles)
             {
                 profile.Monitor = false;
             }
@@ -782,11 +840,11 @@ namespace DAR
         }
         private async void MonitorCharacter(CharacterProfile character, Maintenance logmaintenance)
         {
-           Console.WriteLine($"Monitoring {character.Name}");
+            Console.WriteLine($"Monitoring {character.Name}");
             //Start Log Maintenance before monitoring
-            if ( logmaintenance.AutoArchive == "true")
+            if (logmaintenance.AutoArchive == "true")
             {
-                        ScheduledMaintenance(character.LogFile, logmaintenance);
+                ScheduledMaintenance(character.LogFile, logmaintenance);
             }
             #region threading
             await Task.Run(async () =>
@@ -807,53 +865,57 @@ namespace DAR
                                 Match eqline = Regex.Match(capturedLine, GlobalVariables.eqRegex);
                                 String tomatch = eqline.Groups["stringToMatch"].Value;
                                 String eqtime = eqline.Groups["eqtime"].Value;
-                                Parallel.ForEach(listoftriggers, (KeyValuePair<Trigger, ArrayList> doc) =>
-                                {
+                                Parallel.ForEach(listoftriggers,(KeyValuePair<Trigger, ArrayList> doc, ParallelLoopState state) =>
+                                  {
                                     //Do regex match if enabled otherwise string.contains
                                     Boolean foundmatch = false;
-                                    if(doc.Key.Regex)
-                                    {
-                                        foundmatch = (Regex.Match(tomatch, Regex.Escape(doc.Key.SearchText), RegexOptions.IgnoreCase)).Success;
-                                    }
-                                    else
-                                    {
-                                        String ucaselog = tomatch.ToUpper();
-                                        String ucasetrigger = doc.Key.SearchText.ToUpper();
-                                        foundmatch = ucaselog.Contains(ucasetrigger);
-                                    }
-                                    if (doc.Key.EndEarlyText.Count > 0)
-                                    {
-                                        Boolean endearly = false;
-                                        foreach (SearchText earlyend in doc.Key.EndEarlyText)
-                                        {
-                                            if (earlyend.Regex)
-                                            {
-                                                endearly = (Regex.Match(tomatch, Regex.Escape(earlyend.Searchtext), RegexOptions.IgnoreCase)).Success;
-                                            }
-                                            else
-                                            {                                                
-                                                String ucaselog = tomatch.ToUpper();
-                                                String ucasetrigger = earlyend.Searchtext.ToUpper();                                                
-                                                endearly = ucaselog.Contains(ucasetrigger);                                                
-                                            }
+                                      if (doc.Key.Regex)
+                                      {
+                                          foundmatch = (Regex.Match(tomatch, Regex.Escape(doc.Key.SearchText), RegexOptions.IgnoreCase)).Success;
+                                      }
+                                      else
+                                      {
+                                          String ucaselog = tomatch.ToUpper();
+                                          String ucasetrigger = doc.Key.SearchText.ToUpper();
+                                          foundmatch = ucaselog.Contains(ucasetrigger);
+                                      }
+                                      if (doc.Key.EndEarlyText.Count > 0)
+                                      {
+                                          Boolean endearly = false;
+                                          foreach (SearchText earlyend in doc.Key.EndEarlyText)
+                                          {
+                                              if (earlyend.Regex)
+                                              {
+                                                  endearly = (Regex.Match(tomatch, Regex.Escape(earlyend.Searchtext), RegexOptions.IgnoreCase)).Success;
+                                              }
+                                              else
+                                              {
+                                                  String ucaselog = tomatch.ToUpper();
+                                                  String ucasetrigger = earlyend.Searchtext.ToUpper();
+                                                  endearly = ucaselog.Contains(ucasetrigger);
+                                              }
                                             //TO DO: Probably implement extra stuff on a early end trigger
                                             if (endearly)
-                                            {
-                                                Console.WriteLine($"Early end for {doc.Key.Name} => {endearly}");
-                                                ClearTimer(doc.Key);
-                                            }
-                                        }
-                                    }
-                                    if (foundmatch && doc.Value.Contains(character.Id))
-                                    {
-                                        Console.WriteLine($"Matched Trigger {doc.Key.Id}");
-                                        Stopwatch firetrigger = new Stopwatch();
-                                        firetrigger.Start();
-                                        FireTrigger(doc.Key, character, tomatch, eqtime);
-                                        firetrigger.Stop();
-                                        Console.WriteLine($"Fired Trigger in {firetrigger.Elapsed.Seconds}");
-                                    }
-                                });
+                                              {
+                                                  Console.WriteLine($"Early end for {doc.Key.Name} => {endearly}");
+                                                  ClearTimer(doc.Key);
+                                              }
+                                          }
+                                      }
+                                      if (foundmatch && doc.Value.Contains(character.Id))
+                                      {
+                                          if(stopfirstmatch)
+                                          {
+                                              state.Break();
+                                          }                                          
+                                          Console.WriteLine($"Matched Trigger {doc.Key.Id}");
+                                          Stopwatch firetrigger = new Stopwatch();
+                                          firetrigger.Start();
+                                          FireTrigger(doc.Key, character, tomatch, eqtime);
+                                          firetrigger.Stop();
+                                          Console.WriteLine($"Fired Trigger in {firetrigger.Elapsed.Seconds}");
+                                      }
+                                  });
                                 stopwatch.Stop();
                                 Console.WriteLine($"Trigger matched in: {stopwatch.Elapsed.ToString()}");
                                 if (pushbackToggle)
@@ -901,12 +963,11 @@ namespace DAR
                 }
             }
         }
-        private void FireTrigger(Trigger activetrigger,CharacterProfile character, String matchline, String matchtime)
+        private void FireTrigger(Trigger activetrigger, CharacterProfile character, String matchline, String matchtime)
         {
             //Add stopwatch info for trigger
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
-
             ActivatedTrigger newactive = new ActivatedTrigger
             {
                 Name = activetrigger.Name,
@@ -914,20 +975,27 @@ namespace DAR
                 MatchText = matchline,
                 TriggerTime = matchtime
             };
+            if(logmatchestofile && textboxLogMatches.Text != null)
+            {
+                using (FileStream fs = File.OpenWrite(textboxLogMatches.Text))
+                {
+                    AddText(fs,$"{matchtime}-{character.ProfileName}[{activetrigger.Name}]-{matchline}");
+                }
+            }
             lock (_triggerLock)
             {
                 activatedTriggers.Add(newactive);
             }
-            if (activetrigger.AudioSettings.AudioType == "tts")
+            if (activetrigger.AudioSettings.AudioType == "tts" && soundenabled)
             { character.Speak(activetrigger.AudioSettings.TTS); }
-            if (activetrigger.AudioSettings.AudioType == "file")
+            if (activetrigger.AudioSettings.AudioType == "file" && soundenabled)
             { PlaySound(activetrigger.AudioSettings.SoundFileId); }
             //Add Timer code
             Category triggeredcategory = categorycollection.Single<Category>(i => i.Id == activetrigger.TriggerCategory);
             String overlayname = triggeredcategory.TextOverlay;
             Stopwatch texttimer = new Stopwatch();
             texttimer.Start();
-            if (activetrigger.Displaytext != null)
+            if (activetrigger.Displaytext != null && textenabled)
             {
                 OverlayTextWindow otw = textWindows.Single<OverlayTextWindow>(i => i.windowproperties.Name == triggeredcategory.TextOverlay);
                 UpdateText(otw, activetrigger);
@@ -936,22 +1004,25 @@ namespace DAR
             Console.WriteLine($"Text: {texttimer.Elapsed.ToString()}");
             Stopwatch countertimer = new Stopwatch();
             countertimer.Start();
-            lock (_timersLock)
-            {                                                        
-                switch (activetrigger.TimerType)
+            if(timerenabled)
+            {
+                lock (_timersLock)
                 {
-                    case "Timer(Count Down)":
-                        OverlayTimerWindow timerwindowdown = timerWindows.Single<OverlayTimerWindow>(i => i.windowproperties.Name == triggeredcategory.TimerOverlay);
-                        UpdateTimer(timerwindowdown, activetrigger, false, character.characterName, triggeredcategory);
-                        break;
-                    case "Stopwatch(Count Up)":
-                        OverlayTimerWindow timerwindowup = timerWindows.Single<OverlayTimerWindow>(i => i.windowproperties.Name == triggeredcategory.TimerOverlay);
-                        UpdateTimer(timerwindowup, activetrigger, true, character.characterName, triggeredcategory);
-                        break;
-                    case "Repeating Timer":
-                        break;
-                    default:
-                        break;
+                    switch (activetrigger.TimerType)
+                    {
+                        case "Timer(Count Down)":
+                            OverlayTimerWindow timerwindowdown = timerWindows.Single<OverlayTimerWindow>(i => i.windowproperties.Name == triggeredcategory.TimerOverlay);
+                            UpdateTimer(timerwindowdown, activetrigger, false, character.characterName, triggeredcategory);
+                            break;
+                        case "Stopwatch(Count Up)":
+                            OverlayTimerWindow timerwindowup = timerWindows.Single<OverlayTimerWindow>(i => i.windowproperties.Name == triggeredcategory.TimerOverlay);
+                            UpdateTimer(timerwindowup, activetrigger, true, character.characterName, triggeredcategory);
+                            break;
+                        case "Repeating Timer":
+                            break;
+                        default:
+                            break;
+                    }
                 }
             }
             countertimer.Stop();
@@ -966,7 +1037,7 @@ namespace DAR
             stopwatch.Start();
             Match pushmatch = GlobalVariables.eqspellRegex.Match(line);
             if (pushmatch.Success)
-            {                    
+            {
                 String logspell = pushmatch.Groups["spellname"].Value;
                 #region pushback
                 foreach (KeyValuePair<String, Tuple<String, Double>> spell in masterpushbacklist)
@@ -1034,6 +1105,11 @@ namespace DAR
             }
             e.Handled = true;
         }
+        private static void AddText(FileStream fs, string value)
+        {
+            byte[] info = new UTF8Encoding(true).GetBytes(value);
+            fs.Write(info, 0, info.Length);
+        }
         #endregion
         #region Triggers
         private Trigger FindTrigger(int bsonid)
@@ -1046,7 +1122,7 @@ namespace DAR
             Stopwatch loadwatch = new Stopwatch();
             loadwatch.Start();
             listoftriggers.Clear();
-            foreach(Trigger trigger in dballtriggers)
+            foreach (Trigger trigger in dballtriggers)
             {
                 listoftriggers.Add(trigger, trigger.profiles);
             }
@@ -1437,28 +1513,28 @@ namespace DAR
             Point mouseposition = e.GetPosition(null);
             Vector diff = _lastMouseDown - mouseposition;
 
-            if(e.LeftButton == MouseButtonState.Pressed && (Math.Abs(diff.X) > SystemParameters.MinimumHorizontalDragDistance || Math.Abs(diff.Y) > SystemParameters.MinimumVerticalDragDistance))
+            if (e.LeftButton == MouseButtonState.Pressed && (Math.Abs(diff.X) > SystemParameters.MinimumHorizontalDragDistance || Math.Abs(diff.Y) > SystemParameters.MinimumVerticalDragDistance))
             {
                 TreeView tree = sender as TreeView;
                 TreeViewItem treeitem = FindAncestor<TreeViewItem>((DependencyObject)e.OriginalSource);
-                if(treeitem != null)
+                if (treeitem != null)
                 {
                     TreeViewModel treemodel = (TreeViewModel)treeitem.Header;
                     DataObject dragdata = new DataObject("TreeViewModel", treemodel);
                     DragDrop.DoDragDrop(treeitem, dragdata, DragDropEffects.Move);
-                }                               
+                }
             }
         }
         private void TreeViewTriggers_DragEnter(object sender, DragEventArgs e)
         {
-            if(sender == e.Source)
+            if (sender == e.Source)
             {
                 e.Effects = DragDropEffects.None;
             }
         }
         private void TreeViewTriggers_Drop(object sender, DragEventArgs e)
         {
-            if(e.Data.GetDataPresent("TreeViewModel"))
+            if (e.Data.GetDataPresent("TreeViewModel"))
             {
                 TreeViewModel copytriggers = e.Data.GetData("TreeViewModel") as TreeViewModel;
                 Stopwatch stopwatch = new Stopwatch();
@@ -1467,10 +1543,10 @@ namespace DAR
                 stopwatch.Stop();
                 Console.WriteLine($"Imported Triggers in {stopwatch.Elapsed.ToString()}");
             }
-            if(e.Data.GetDataPresent("MainTree"))
+            if (e.Data.GetDataPresent("MainTree"))
             {
                 TreeViewModel selectedbranch = e.Data.GetData("MainTree") as TreeViewModel;
-                if(selectedbranch.Type == "trigger" && droptree.Id != 0 && selectedbranch.Name != droptree.Name)
+                if (selectedbranch.Type == "trigger" && droptree.Id != 0 && selectedbranch.Name != droptree.Name)
                 {
                     using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                     {
@@ -1491,7 +1567,7 @@ namespace DAR
                     }
                     UpdateTriggerView();
                 }
-                if(selectedbranch.Type == "triggergroup" && selectedbranch.Name != droptree.Name)
+                if (selectedbranch.Type == "triggergroup" && selectedbranch.Name != droptree.Name)
                 {
                     using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                     {
@@ -1514,7 +1590,7 @@ namespace DAR
                             newgroup.AddChild(selectedbranch.Id);
                             colTriggerGroups.Update(newgroup);
                         }
-                    }                    
+                    }
                 }
                 UpdateTriggerView();
             }
@@ -1562,26 +1638,26 @@ namespace DAR
                 //If child groups, recursive call
                 if (toimport.Children.Count > 0)
                 {
-                    foreach(int child in toimport.Children)
+                    foreach (int child in toimport.Children)
                     {
                         TriggerGroup childgroup = mergegroups.Find(x => x.Id == child);
                         int gid = ImportTriggerGroup(childgroup, bsonid);
                         newgroup.AddChild(gid);
                     }
                 }
-                if(toimport.Triggers.Count > 0)
+                if (toimport.Triggers.Count > 0)
                 {
-                    foreach(int child in toimport.Triggers)
+                    foreach (int child in toimport.Triggers)
                     {
                         Trigger childtrigger = mergetriggers[child];
                         childtrigger.Parent = bsonid;
                         childtrigger.Id = 0;
                         int tid = ImportTrigger(childtrigger);
                         newgroup.AddTriggers(tid);
-                    }                    
+                    }
                 }
                 //Update the database after we've entered in all the children triggers and groups
-                colTriggerGroups.Update(newgroup);               
+                colTriggerGroups.Update(newgroup);
             }
             return bsonid;
         }
@@ -1622,15 +1698,15 @@ namespace DAR
                 droptree = hover;
                 ((TreeViewItem)sender).Background = Brushes.SpringGreen;
                 e.Handled = true;
-            }     
+            }
         }
         private void TreeViewItem_DragLeave(object sender, DragEventArgs e)
         {
             TreeViewModel hover = (TreeViewModel)((TreeViewItem)sender).DataContext;
-            if(hover.Type == "triggergroup" || hover.Name == "All Triggers")
+            if (hover.Type == "triggergroup" || hover.Name == "All Triggers")
             {
                 ((TreeViewItem)sender).Background = Brushes.LightSteelBlue;
-            }         
+            }
         }
         #endregion
         #region Functions
@@ -2124,7 +2200,7 @@ namespace DAR
         }
         private void RibbonMain_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            switch(ribbonMain.SelectedTabIndex)
+            switch (ribbonMain.SelectedTabIndex)
             {
                 case 3:
                     categoriesDocument.IsSelected = true;
@@ -2764,13 +2840,13 @@ namespace DAR
         private void MenuItemTriggerEdit_Click(object sender, RoutedEventArgs e)
         {
             TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
-            if(root.Type == "trigger")
+            if (root.Type == "trigger")
             {
                 int bsonid = (dballtriggers.Find(x => x.Id == root.Id)).Id;
                 TriggerEditor triggerDialog = new TriggerEditor(bsonid);
                 triggerDialog.Show();
             }
-            if(root.Type == "triggergroup")
+            if (root.Type == "triggergroup")
             {
                 TriggerGroup editgroup = dballgroups.Find(x => x.Id == root.Id);
                 TriggerGroupEdit triggerDialog = new TriggerGroupEdit(editgroup);
@@ -2796,7 +2872,7 @@ namespace DAR
                 else
                 {
                     CopyTriggerGroup(triggergroupclipboard, root.Id);
-                }                    
+                }
             }
             UpdateTriggerView();
         }
@@ -2863,7 +2939,7 @@ namespace DAR
                         cmAddTriggerGroup.IsEnabled = false;
                         if (triggerclipboard != 0)
                         {
-                            cmTreePaste.IsEnabled = true;                            
+                            cmTreePaste.IsEnabled = true;
                         }
                         else
                         {
@@ -2927,20 +3003,20 @@ namespace DAR
         {
             Boolean dailycheck = false;
             TimeSpan duration = DateTime.Now - logmaintenance.LastArchive;
-            if(duration.Days > 1)
+            if (duration.Days > 1)
             {
                 dailycheck = true;
             }
-            if(dailycheck || ((DateTime.Now - logmaintenance.LastArchive).Days >= 7))
+            if (dailycheck || ((DateTime.Now - logmaintenance.LastArchive).Days >= 7))
             {
                 //check if archive folder exists and create it if missing
-                if(!Directory.Exists(logmaintenance.ArchiveFolder))
+                if (!Directory.Exists(logmaintenance.ArchiveFolder))
                 {
                     Directory.CreateDirectory(logmaintenance.ArchiveFolder);
                 }
                 //move file
                 String filepostfix = DateTime.Now.ToString("MMddyyyy_HHmmss");
-                Regex regexfilename = new Regex(@"(?<path>.*?\\)(?<filename>eqlog.*?)(?<extension>\.txt)",RegexOptions.Compiled);
+                Regex regexfilename = new Regex(@"(?<path>.*?\\)(?<filename>eqlog.*?)(?<extension>\.txt)", RegexOptions.Compiled);
                 Match matchfile = regexfilename.Match(logfile);
                 String newpath = "";
                 if (matchfile.Success)
@@ -2952,11 +3028,11 @@ namespace DAR
                     created.Close();
                 }
             }
-            if(logmaintenance.CompressArchive == "true")
+            if (logmaintenance.CompressArchive == "true")
             {
                 CompressLog(logmaintenance.ArchiveFolder);
             }
-            if(logmaintenance.AutoDelete == "true")
+            if (logmaintenance.AutoDelete == "true")
             {
                 AutoDeleteArchive(logmaintenance.ArchiveFolder, logmaintenance.ArchiveDays);
             }
@@ -2969,7 +3045,7 @@ namespace DAR
             foreach (string archivelog in archivelogs)
             {
                 TimeSpan duration = DateTime.Now - File.GetCreationTime(archivelog);
-                if(duration.Days > archivedays)
+                if (duration.Days > archivedays)
                 {
                     File.Delete(archivelog);
                 }
@@ -2980,12 +3056,12 @@ namespace DAR
             //Go through all of the files and determine if it needs compressed
             string[] archivelogs = Directory.GetFiles(archivefolder);
             Regex regexfilename = new Regex(@"(?<directory>.*)\\(?<filename>.*\.txt)", RegexOptions.Compiled);
-            foreach(string archivelog in archivelogs)
+            foreach (string archivelog in archivelogs)
             {
                 //create archive
-                String newzip = archivelog.Replace(@".txt",@".zip");
+                String newzip = archivelog.Replace(@".txt", @".zip");
                 Match namematch = regexfilename.Match(archivelog);
-                if(namematch.Success)
+                if (namematch.Success)
                 {
                     using (FileStream fs = new FileStream(newzip, System.IO.FileMode.Create))
                     {
@@ -3001,22 +3077,26 @@ namespace DAR
         }
         #endregion
         #region Import Triggers
+        private void ImportFromExternal(string json)
+        {
+            dynamic back2json = JsonConvert.DeserializeObject(json);
+        }
         private void ImportFromGINA_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog fileDialog = new OpenFileDialog();
             fileDialog.Filter = "GINA Trigger Package|*.gtp";
-            if(fileDialog.ShowDialog() == true)
+            if (fileDialog.ShowDialog() == true)
             {
                 using (ZipArchive archive = ZipFile.OpenRead(fileDialog.FileName))
                 {
                     //TO DO:
                     //Archive could contain *.wav files, Export those to folder
                     //Load the xml
-                    if(archive.Entries.Count > 0)
+                    if (archive.Entries.Count > 0)
                     {
-                        foreach(ZipArchiveEntry entry in archive.Entries)
+                        foreach (ZipArchiveEntry entry in archive.Entries)
                         {
-                            if(entry.Name == "ShareData.xml")
+                            if (entry.Name == "ShareData.xml")
                             {
                                 ZipArchiveEntry triggersxml = entry;
                                 using (StreamReader streamtriggers = new StreamReader(triggersxml.Open()))
@@ -3033,7 +3113,7 @@ namespace DAR
                                     ParseGina(jsontoken.SelectToken("SharedData"));
                                 }
                             }
-                            if(entry.Name.Contains("wav"))
+                            if (entry.Name.Contains("wav"))
                             {
                                 //Check if EQAudioTriggers folder exists, if not create.
                                 bool mainPath = Directory.Exists($"{GlobalVariables.defaultPath}\\ImportedSounds");
@@ -3047,7 +3127,7 @@ namespace DAR
                             }
                         }
                     }
-                      
+
                 }
             }
         }
@@ -3057,20 +3137,20 @@ namespace DAR
             mergeview = new TreeViewModel("Triggers to Import");
             mergeview.IsChecked = false;
             mergetreeView.Add(mergeview);
-            int result = GetTriggerGroups(jsontoken.SelectToken("TriggerGroups.TriggerGroup"),triggergroupid);
+            int result = GetTriggerGroups(jsontoken.SelectToken("TriggerGroups.TriggerGroup"), triggergroupid);
             //build tree
-            foreach(TriggerGroup tg in mergegroups)
+            foreach (TriggerGroup tg in mergegroups)
             {
-                if(tg.Parent == 0)
+                if (tg.Parent == 0)
                 {
                     TreeViewModel rTree = new TreeViewModel(tg.TriggerGroupName)
                     {
                         Type = "triggergroup",
                         Id = tg.Id
                     };
-                    if(tg.Triggers.Count > 0)
+                    if (tg.Triggers.Count > 0)
                     {
-                        foreach(int item in tg.Triggers)
+                        foreach (int item in tg.Triggers)
                         {
                             mergetriggercount++;
                             Trigger findtrigger = mergetriggers.Find(x => x.id == item);
@@ -3081,7 +3161,7 @@ namespace DAR
                             rTree.Children.Add(newChildBranch);
                         }
                     }
-                    if(tg.Children.Count > 0)
+                    if (tg.Children.Count > 0)
                     {
                         mergeview.Children.Add(BuildMergeTree(tg));
                     }
@@ -3144,7 +3224,7 @@ namespace DAR
             mergegroups.Add(newgroup);
             foreach (JToken token in jsontoken.Children())
             {
-                switch(((JProperty)token).Name)
+                switch (((JProperty)token).Name)
                 {
                     case "TriggerGroups":
                         if ((jsontoken["TriggerGroups"]["TriggerGroup"]).GetType().ToString() == "Newtonsoft.Json.Linq.JArray")
@@ -3152,7 +3232,7 @@ namespace DAR
                             foreach (JToken newtoken in ((JArray)(jsontoken["TriggerGroups"]["TriggerGroup"])).Children())
                             {
                                 triggergroupid++;
-                                newgroup.Children.Add(GetTriggerGroups(newtoken,triggergroupid));
+                                newgroup.Children.Add(GetTriggerGroups(newtoken, triggergroupid));
                             }
                         }
                         else
@@ -3182,8 +3262,8 @@ namespace DAR
                         break;
                     default:
                         break;
-                }                
-            }            
+                }
+            }
             return rval;
         }
         private int GetTrigger(JToken jsontoken, int parentid)
@@ -3300,7 +3380,7 @@ namespace DAR
                     }
                 }
             }
-            if(jsontoken["TimerEndedTrigger"] != null)
+            if (jsontoken["TimerEndedTrigger"] != null)
             {
                 //Add Timer Ended Trigger
                 if (jsontoken["TimerEndedTrigger"].Count() > 0)
@@ -3359,7 +3439,7 @@ namespace DAR
                     //Delete the rootgroup out of the mergegroup
                     mergegroups.Remove(rootgroup);
                     //Clean up any groups that might reference rootgroup
-                    foreach(TriggerGroup tg in mergegroups)
+                    foreach (TriggerGroup tg in mergegroups)
                     {
                         tg.RemoveChild(rootgroup.Id);
                     }
@@ -3379,13 +3459,13 @@ namespace DAR
                 }
             }
             //Enable all imported Triggers on all profiles
-            if(addedtriggers.Count > 0)
+            if (addedtriggers.Count > 0)
             {
                 using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                 {
                     var colProfiles = db.GetCollection<CharacterProfile>("profiles");
                     var colTriggers = db.GetCollection<Trigger>("triggers");
-                    
+
                     //Activate for every profile
                     IEnumerable<CharacterProfile> profiles = colProfiles.FindAll();
                     foreach (CharacterProfile profile in profiles)
@@ -3401,20 +3481,20 @@ namespace DAR
                         }
                         //update the profile when all the triggers are done.
                         colProfiles.Update(profile);
-                    }                    
+                    }
                 }
             }
             //Delete Imported triggers/groups from import tree
             TreeViewModel toremove = new TreeViewModel("todelete");
-            foreach(TreeViewModel tvm in mergetreeView)
+            foreach (TreeViewModel tvm in mergetreeView)
             {
                 DeleteBranch(tvm, importtree.Id);
-                if(tvm.Id == importtree.Id)
+                if (tvm.Id == importtree.Id)
                 {
                     toremove = tvm;
                 }
             }
-            if(toremove.Name != "todelete")
+            if (toremove.Name != "todelete")
             {
                 mergetreeView.Remove(toremove);
             }
@@ -3423,25 +3503,25 @@ namespace DAR
             UpdateListView();
             TriggerLoad("ImportTriggers");
             //Keep the merge tree up until the user clears it
-            if(mergetreeView.Count > 0)
+            if (mergetreeView.Count > 0)
             {
                 treemerge.Visibility = Visibility.Visible;
             }
             else
             {
                 treemerge.Visibility = Visibility.Hidden;
-            }            
+            }
         }
         private void DeleteBranch(TreeViewModel tvm, int idtodelete)
         {
             TreeViewModel deletetree = new TreeViewModel("deltree");
             foreach (TreeViewModel child in tvm.Children)
             {
-                if(child.Children.Count > 0)
+                if (child.Children.Count > 0)
                 {
-                    DeleteBranch(child,idtodelete);
+                    DeleteBranch(child, idtodelete);
                 }
-                if(child.Id == idtodelete)
+                if (child.Id == idtodelete)
                 {
                     deletetree = child;
                 }
@@ -3452,11 +3532,48 @@ namespace DAR
             }
         }
         #endregion
-        #region Fluent Backstage
-        private String SelectFolder()
+        #region Export Triggers
+        private void ExportTriggers()
         {
-            String rval = "";
+            StringBuilder sb = new StringBuilder();
+            sb.Append(SelectFolder(textboxDataFolder.Text));
+            sb.Append(@"\dataexport_");
+            sb.Append(DateTime.Now.ToString("MMddyyyy_HHmmss"));
+            sb.Append(@".json");
+            string json = Newtonsoft.Json.JsonConvert.SerializeObject(treeView[0]);
+            String newzip = sb.ToString().Replace(@".json", @".zip");
+            using (var memoryStream = new MemoryStream())
+            {
+                using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
+                {
+                    var newfile = archive.CreateEntry(newzip);
+
+                    using (var entryStream = newfile.Open())
+                    using (var streamWriter = new StreamWriter(entryStream))
+                    {
+                        streamWriter.Write(json);
+                    }
+                }
+
+                using (var fileStream = new FileStream(newzip, System.IO.FileMode.Create))
+                {
+                    memoryStream.Seek(0, SeekOrigin.Begin);
+                    memoryStream.CopyTo(fileStream);
+                }
+            }
+        }
+        private void ButtonExport_Click(object sender, RoutedEventArgs e)
+        {
+            ExportTriggers();
+            Xceed.Wpf.Toolkit.MessageBox.Show("Export Complete", "Data Export", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        #endregion
+        #region Fluent Backstage
+        private String SelectFolder(String currentpath)
+        {
+            String rval = currentpath;
             System.Windows.Forms.FolderBrowserDialog folderDialog = new System.Windows.Forms.FolderBrowserDialog();
+            folderDialog.SelectedPath = currentpath;
             System.Windows.Forms.DialogResult result = folderDialog.ShowDialog();
             if (result == System.Windows.Forms.DialogResult.OK)
             {
@@ -3466,8 +3583,7 @@ namespace DAR
         }
         private void ButtonLoadArchive_Click(object sender, RoutedEventArgs e)
         {
-            fluentbackstage.IsOpen = true;
-            textboxArchiveFolder.Text = SelectFolder();
+            textboxArchiveFolder.Text = SelectFolder(textboxArchiveFolder.Text);
         }
         private void ButtonSaveArchive_Click(object sender, RoutedEventArgs e)
         {
@@ -3513,7 +3629,7 @@ namespace DAR
         }
         private void LoadSettingsTab()
         {
-            textboxArchiveFolder.Text = logmaintenance.AutoArchive = programsettings.Single<Setting>(i => i.Name == "AutoArchive").Value;
+            textboxArchiveFolder.Text = logmaintenance.ArchiveFolder = programsettings.Single<Setting>(i => i.Name == "LogArchiveFolder").Value;
             logmaintenance.ArchiveFolder = programsettings.Single<Setting>(i => i.Name == "LogArchiveFolder").Value;
             comboboxArchiveSchedule.Text = logmaintenance.ArchiveSchedule = programsettings.Single<Setting>(i => i.Name == "ArchiveSchedule").Value;
             logmaintenance.AutoDelete = programsettings.Single<Setting>(i => i.Name == "AutoDelete").Value;
@@ -3521,6 +3637,7 @@ namespace DAR
             logmaintenance.ArchiveDays = Convert.ToInt32(programsettings.Single<Setting>(i => i.Name == "DeleteArchives").Value);
             logmaintenance.LastArchive = Properties.Settings.Default.LastLogMaintenance;
             checkboxDeleteArchive.IsChecked = Convert.ToBoolean(logmaintenance.AutoDelete);
+            logmaintenance.AutoArchive = programsettings.Single<Setting>(i => i.Name == "AutoArchive").Value;
             checkboxAutoArchive.IsChecked = Convert.ToBoolean(logmaintenance.AutoArchive);
             checkboxCompress.IsChecked = Convert.ToBoolean(logmaintenance.CompressArchive);
             textboxArchiveDays.Text = logmaintenance.ArchiveDays.ToString();
@@ -3561,10 +3678,13 @@ namespace DAR
                     break;
             }
             String senders = programsettings.Single<Setting>(i => i.Name == "TrustedSenderList").Value;
-            string[] senderarray = senders.Split(',');
-            foreach(string sender in senderarray)
+            if(senders != "")
             {
-                trustedsenders.Add(sender);
+                string[] senderarray = senders.Split(',');
+                foreach (string sender in senderarray)
+                {
+                    trustedsenders.Add(sender);
+                }
             }
             listviewSenderList.ItemsSource = trustedsenders;
             checkboxSoundEnable.IsChecked = Convert.ToBoolean(programsettings.Single<Setting>(i => i.Name == "EnableSound").Value);
@@ -3573,7 +3693,8 @@ namespace DAR
             checkboxEnableTimer.IsChecked = Convert.ToBoolean(programsettings.Single<Setting>(i => i.Name == "EnableTimers").Value);
             checkboxStopTrigger.IsChecked = Convert.ToBoolean(programsettings.Single<Setting>(i => i.Name == "StopTriggerSearch").Value);
             checkboxMinimize.IsChecked = Convert.ToBoolean(programsettings.Single<Setting>(i => i.Name == "Minimize").Value);
-            checkboxMatchLog.IsChecked = Convert.ToBoolean(programsettings.Single<Setting>(i => i.Name == "LogMatchesToFile").Value);
+            checkboxMatchLog.IsChecked = Convert.ToBoolean(programsettings.Single<Setting>(i => i.Name == "DisplayMatchLog").Value);
+            checkboxLogMatches.IsChecked = Convert.ToBoolean(programsettings.Single<Setting>(i => i.Name == "LogMatchesToFile").Value);
             textboxLogMatches.Text = programsettings.Single<Setting>(i => i.Name == "LogMatchFilename").Value;
             textboxClipboard.Text = programsettings.Single<Setting>(i => i.Name == "Clipboard").Value;
             textboxEQFolder.Text = programsettings.Single<Setting>(i => i.Name == "EQFolder").Value;
@@ -3591,29 +3712,29 @@ namespace DAR
                 settings.Update(enablesharing);
                 Setting acceptfrom = settings.FindOne(Query.EQ("Name", "AcceptInvitationsFrom"));
                 //Get which radio button is selected
-                if((bool)radioShareNobody.IsChecked)
+                if ((bool)radioShareNobody.IsChecked)
                 {
                     acceptfrom.Value = "0";
                 }
-                if((bool)radioShareTrusted.IsChecked)
+                if ((bool)radioShareTrusted.IsChecked)
                 {
                     acceptfrom.Value = "1";
                 }
-                if((bool)radioShareAnybody.IsChecked)
+                if ((bool)radioShareAnybody.IsChecked)
                 {
                     acceptfrom.Value = "2";
                 }
                 settings.Update(acceptfrom);
                 Setting mergefrom = settings.FindOne(Query.EQ("Name", "MergeFrom"));
-                if((bool)radioMergeNobody.IsChecked)
+                if ((bool)radioMergeNobody.IsChecked)
                 {
                     mergefrom.Value = "0";
                 }
-                if((bool)radioMergeTrusted.IsChecked)
+                if ((bool)radioMergeTrusted.IsChecked)
                 {
                     mergefrom.Value = "1";
                 }
-                if((bool)radioMergeAnybody.IsChecked)
+                if ((bool)radioMergeAnybody.IsChecked)
                 {
                     mergefrom.Value = "2";
                 }
@@ -3642,27 +3763,83 @@ namespace DAR
         }
         private void ButtonSaveGeneral_Click(object sender, RoutedEventArgs e)
         {
-
+            if ((bool)checkboxLogMatches.IsChecked && textboxLogMatches.Text == "")
+            {
+                buttonSaveGeneral.IsDefinitive = false;
+                Xceed.Wpf.Toolkit.MessageBox.Show("Invalid Match Log Location!", "Invalid Setting", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            else
+            {
+                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                {
+                    LiteCollection<Setting> settings = db.GetCollection<Setting>("settings");
+                    Setting enablesound = settings.FindOne(Query.EQ("Name", "EnableSound"));
+                    enablesound.Value = checkboxSoundEnable.IsChecked.ToString();
+                    settings.Update(enablesound);
+                    soundenabled = (bool)checkboxSoundEnable.IsChecked;
+                    Setting mastervol = settings.FindOne(Query.EQ("Name", "MasterVolume"));
+                    mastervol.Value = sliderMasterVol.Value.ToString();
+                    settings.Update(mastervol);
+                    mastervolume = Convert.ToInt32(sliderMasterVol.Value);
+                    UpdateVolume();
+                    Setting enabletext = settings.FindOne(Query.EQ("Name", "EnableText"));
+                    enabletext.Value = checkboxEnableText.IsChecked.ToString();
+                    settings.Update(enabletext);
+                    textenabled = (bool)checkboxEnableText.IsChecked;
+                    Setting enabletimers = settings.FindOne(Query.EQ("Name", "EnableTimers"));
+                    enabletimers.Value = checkboxEnableTimer.IsChecked.ToString();
+                    settings.Update(enabletimers);
+                    timerenabled = (bool)checkboxEnableTimer.IsChecked;
+                    Setting stoptrigger = settings.FindOne(Query.EQ("Name", "StopTriggerSearch"));
+                    stoptrigger.Value = checkboxStopTrigger.IsChecked.ToString();
+                    settings.Update(stoptrigger);
+                    stopfirstmatch = (bool)checkboxStopTrigger.IsChecked;
+                    Setting minimize = settings.FindOne(Query.EQ("Name", "Minimize"));
+                    minimize.Value = checkboxMinimize.IsChecked.ToString();
+                    settings.Update(minimize);
+                    Setting displaymatch = settings.FindOne(Query.EQ("Name", "DisplayMatchLog"));
+                    displaymatch.Value = checkboxMatchLog.IsChecked.ToString();
+                    settings.Update(displaymatch);
+                    Setting logmatches = settings.FindOne(Query.EQ("Name", "LogMatchesToFile"));
+                    logmatches.Value = checkboxLogMatches.IsChecked.ToString();
+                    settings.Update(logmatches);
+                    logmatchestofile = (bool)checkboxLogMatches.IsChecked;
+                    Setting logmatchfilename = settings.FindOne(Query.EQ("Name", "LogMatchFilename"));
+                    logmatchfilename.Value = textboxLogMatches.Text;
+                    settings.Update(logmatchfilename);
+                    Setting clipboard = settings.FindOne(Query.EQ("Name", "Clipboard"));
+                    clipboard.Value = textboxClipboard.Text;
+                    settings.Update(clipboard);
+                    Setting eqfolder = settings.FindOne(Query.EQ("Name", "EQFolder"));
+                    eqfolder.Value = textboxEQFolder.Text;
+                    settings.Update(eqfolder);
+                    Setting importmedia = settings.FindOne(Query.EQ("Name", "ImportedMediaFolder"));
+                    importmedia.Value = textboxMediaFolder.Text;
+                    settings.Update(importmedia);
+                    Setting datafolder = settings.FindOne(Query.EQ("Name", "DataFolder"));
+                    datafolder.Value = textboxDataFolder.Text;
+                    settings.Update(datafolder);
+                    Setting maxlogentry = settings.FindOne(Query.EQ("Name", "MaxLogEntry"));
+                    maxlogentry.Value = textboxMaxEntries.Text;
+                    settings.Update(maxlogentry);
+                }
+            }            
         }
         private void ButtonLogMatch_Click(object sender, RoutedEventArgs e)
         {
-            fluentbackstage.IsOpen = true;
-            textboxLogMatches.Text = SelectFolder();
+            textboxLogMatches.Text = SelectFolder(textboxLogMatches.Text);
         }
         private void ButtonEQFolder_Click(object sender, RoutedEventArgs e)
         {
-            fluentbackstage.IsOpen = true;
-            textboxEQFolder.Text = SelectFolder();
+            textboxEQFolder.Text = SelectFolder(textboxEQFolder.Text);
         }
         private void ButtonMediaFolder_Click(object sender, RoutedEventArgs e)
         {
-            fluentbackstage.IsOpen = true;
-            textboxMediaFolder.Text = SelectFolder();
+            textboxMediaFolder.Text = SelectFolder(textboxMediaFolder.Text);
         }
         private void ButtonDataFolder_Click(object sender, RoutedEventArgs e)
         {
-            fluentbackstage.IsOpen = true;
-            textboxDataFolder.Text = SelectFolder();
+            textboxDataFolder.Text = SelectFolder(textboxDataFolder.Text);
         }
         #endregion
     }

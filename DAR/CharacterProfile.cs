@@ -126,6 +126,11 @@ namespace DAR
             get { return fileexists; }
             set {fileexists = value;}
         }
+        public void UpdateVolume(int volume)
+        {
+            int newvolume = (VolumeValue / 100) * (volume / 100);
+            synth.Volume = newvolume;
+        }
     }
 
 

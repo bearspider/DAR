@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.ComponentModel;
+using Newtonsoft.Json;
 using System.Windows.Forms;
 using System.Diagnostics;
 using System.Collections.ObjectModel;
@@ -11,7 +12,7 @@ using System.Collections.ObjectModel;
 namespace DAR
 {
     public class TreeViewModel : INotifyPropertyChanged
-    {
+    {        
         public TreeViewModel(string name)
         {
             Name = name;

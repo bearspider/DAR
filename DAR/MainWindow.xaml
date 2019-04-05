@@ -10,7 +10,8 @@
         xmlns:Fluent="urn:fluent-ribbon"
     xmlns:wpf="http://schemas.microsoft.com/netfx/2009/xaml/presentation" x:Class="DAR.MainWindow"
         mc:Ignorable="d"
-        Title="EQ Audio Triggers" Height="812" Width="1170" Icon="Images/Tonev-Windows-7-Windows-7-headphone.ico" WindowStyle="ThreeDBorderWindow" SizeChanged="Window_SizeChanged" Closing="Window_Closing">
+        Title="EQ Audio Triggers" Height="812" Width="1170" Icon="Images/Tonev-Windows-7-Windows-7-headphone.ico" 
+    WindowStyle="ThreeDBorderWindow" SizeChanged="Window_SizeChanged" Closing="Window_Closing" StateChanged="Window_StateChanged">
     <Window.Resources>
         <ResourceDictionary>
             <local:MonitoringStatusConverter x:Key="converter" />
@@ -19,6 +20,7 @@
             <local:BorderConverter x:Key="borderconverter"/>
             <local:DefaultCategoryConverter x:Key="defaultcategoryconverter"/>
             <local:PushbackConverter x:Key="pushbackconverter" />
+            <local:ViewConverter x:Key="viewconverter"/>
 
             <Style x:Key="TreeViewItemStyle" TargetType="TreeViewItem">
                 <Setter Property="IsExpanded" Value="False" />
@@ -107,7 +109,9 @@
                                     <Fluent:CheckBox Margin="5,5,0,0" Name="checkboxMatchLog" Header="Display Match Log" IsChecked="True" Grid.Row="6" Grid.Column="0"/>
                                     <Fluent:CheckBox Margin="5,5,0,0" Name="checkboxLogMatches" Header="Log Matches to File: " IsChecked="False" Grid.Row="7" Grid.Column="0"/>
                                     <Fluent:TextBox Name="textboxLogMatches" Grid.Row="7" Grid.Column="1" Width="400"/>
-                                    <Fluent:Button Margin="5,0,0,0" Name="buttonLogMatch" Grid.Row="7" Grid.Column="2" Height="25" BorderThickness="0" Click="ButtonLogMatch_Click" Size="Middle" Icon="Images\Oxygen-Icons.org-Oxygen-Actions-document-open-folder.ico"/>
+                                    <Fluent:Button Margin="5,0,0,0" Name="buttonLogMatch" Grid.Row="7" Grid.Column="2" Height="25" BorderThickness="0" 
+                                                   Click="ButtonLogMatch_Click" IsDefinitive="False"
+                                                   Size="Middle" Icon="Images\Oxygen-Icons.org-Oxygen-Actions-document-open-folder.ico"/>
                                 </Grid>
                                 <Grid>
                                     <Grid.RowDefinitions>
@@ -126,11 +130,17 @@
                                     </Grid.ColumnDefinitions>
                                     <Fluent:TextBox Margin="5,5,0,0" Name="textboxClipboard" Grid.Row="1" Grid.Column="0" Header="Clipboard Replacement for {C}: " Width="370"/>
                                     <Fluent:TextBox Margin="5,5,0,0" Name="textboxEQFolder" Grid.Row="2" Grid.Column="0" Header="Everquest Folder: " />
-                                    <Fluent:Button Name="buttonEQFolder" Grid.Row="2" Grid.Column="1" Height="25" BorderThickness="0" Size="Middle" Icon="Images\Oxygen-Icons.org-Oxygen-Actions-document-open-folder.ico" Click="ButtonEQFolder_Click"/>
+                                    <Fluent:Button Name="buttonEQFolder" Grid.Row="2" Grid.Column="1" Height="25" BorderThickness="0" 
+                                                   Size="Middle" Icon="Images\Oxygen-Icons.org-Oxygen-Actions-document-open-folder.ico" 
+                                                   Click="ButtonEQFolder_Click" IsDefinitive="False"/>
                                     <Fluent:TextBox Margin="5,5,0,0" Name="textboxMediaFolder" Grid.Row="3" Grid.Column="0" Header="Imported Media Folder: "/>
-                                    <Fluent:Button Name="buttonMediaFolder" Grid.Row="3" Grid.Column="1" Height="25" BorderThickness="0" Size="Middle" Icon="Images\Oxygen-Icons.org-Oxygen-Actions-document-open-folder.ico" Click="ButtonMediaFolder_Click"/>
+                                    <Fluent:Button Name="buttonMediaFolder" Grid.Row="3" Grid.Column="1" Height="25" BorderThickness="0" 
+                                                   Size="Middle" Icon="Images\Oxygen-Icons.org-Oxygen-Actions-document-open-folder.ico" 
+                                                   Click="ButtonMediaFolder_Click" IsDefinitive="False"/>
                                     <Fluent:TextBox Margin="5,5,0,0" Name="textboxDataFolder" Grid.Row="4" Grid.Column="0" Header="EQAudioTriggers Data Folder: "/>
-                                    <Fluent:Button Name="buttonDataFolder" Grid.Row="4" Grid.Column="1" Height="25" BorderThickness="0" Size="Middle" Icon="Images\Oxygen-Icons.org-Oxygen-Actions-document-open-folder.ico" Click="ButtonDataFolder_Click"/>
+                                    <Fluent:Button Name="buttonDataFolder" Grid.Row="4" Grid.Column="1" Height="25" BorderThickness="0" 
+                                                   Size="Middle" Icon="Images\Oxygen-Icons.org-Oxygen-Actions-document-open-folder.ico" 
+                                                   Click="ButtonDataFolder_Click" IsDefinitive="False"/>
                                     <Fluent:TextBox Margin="5,5,0,0" Name="textboxMaxEntries" Grid.Row="5" Grid.Column="0" Header="Maximum Log Entries: " Text="100"/>
                                     <Fluent:Button Margin="5,5,0,0" Grid.Row="6" Height="35" BorderThickness="0" Header="Save" Size="Middle" Icon="Images\Oxygen-Icons.org-Oxygen-Actions-document-save.ico" Name="buttonSaveGeneral" Click="ButtonSaveGeneral_Click"/>
                                 </Grid>
@@ -192,9 +202,13 @@
                                                     <ColumnDefinition Width="*"/>
                                                 </Grid.ColumnDefinitions>
                                                 <Fluent:TextBox Margin="0,5,0,0" Name="textboxAddSender" Header="Name: " Width="200" Grid.Row="0" Grid.Column="0"/>
-                                                <Fluent:Button Margin="5,0,0,0" Name="buttonAddSender" Header="Add" Height="25" Grid.Row="0" Grid.Column="1" Size="Middle" Icon="Images\Oxygen-Icons.org-Oxygen-Actions-list-add.ico" BorderThickness="0" Click="ButtonAddSender_Click"/>
+                                                <Fluent:Button Margin="5,0,0,0" Name="buttonAddSender" Header="Add" Height="25" Grid.Row="0" Grid.Column="1" 
+                                                               Size="Middle" Icon="Images\Oxygen-Icons.org-Oxygen-Actions-list-add.ico" BorderThickness="0" 
+                                                               Click="ButtonAddSender_Click" IsDefinitive="False"/>
                                                 <ListView Margin="0,5,0,0" Height="100" Grid.Row="1" Grid.RowSpan="2" Grid.ColumnSpan="2" Name="listviewSenderList" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.CanContentScroll="True"/>
-                                                <Fluent:Button BorderThickness="0" Name="buttonRemoveSender" Header="Remove" Height="25" Size="Middle" Grid.Row="3" Grid.Column="0" Icon="Images\Oxygen-Icons.org-Oxygen-Actions-list-remove.ico" Click="ButtonRemoveSender_Click"/>
+                                                <Fluent:Button BorderThickness="0" Name="buttonRemoveSender" Header="Remove" Height="25" 
+                                                               Size="Middle" Grid.Row="3" Grid.Column="0" IsDefinitive="False"
+                                                               Icon="Images\Oxygen-Icons.org-Oxygen-Actions-list-remove.ico" Click="ButtonRemoveSender_Click"/>
                                             </Grid>
                                         </StackPanel>
                                     </GroupBox>
@@ -223,7 +237,7 @@
                                     <Fluent:TextBox Margin="0,0,0,0" Grid.Row="1" Grid.Column="0" Width="400" Name="textboxArchiveFolder" Header="Log Archive Folder: " IsEnabled="{Binding ElementName=checkboxAutoArchive, Path=IsChecked}"/>
                                     <Fluent:Button Height="35" Margin="5,0,0,0" Grid.Row="1" Grid.Column="1" BorderThickness="0" Size="Middle" 
                                                    Icon="Images\Oxygen-Icons.org-Oxygen-Actions-document-open-folder.ico" 
-                                                   Name="buttonLoadArchive" Click="ButtonLoadArchive_Click"
+                                                   Name="buttonLoadArchive" Click="ButtonLoadArchive_Click" IsDefinitive="False"
                                                    IsEnabled="{Binding ElementName=checkboxAutoArchive, Path=IsChecked}"/>                                  
                                     <Fluent:ComboBox SelectedIndex="0" HorizontalAlignment="Left" Grid.Row="2" Name="comboboxArchiveSchedule" Header="Archive Schedule" IsEnabled="{Binding ElementName=checkboxAutoArchive, Path=IsChecked}">
                                         <ComboBoxItem Content="Daily"/>
@@ -351,10 +365,7 @@
                         <Fluent:Button Size="Middle" Header="From Everquest"/>
                         <Fluent:Button Size="Middle" Header="From GINA" Click="ImportFromGINA_Click"/>
                     </Fluent:SplitButton>
-                    <Fluent:SplitButton Header="Export" LargeIcon="Images/Oxygen-Icons.org-Oxygen-Actions-svn-commit.ico">
-                        <Fluent:Button Size="Middle" Header="To Package"/>
-                        <Fluent:Button Size="Middle" Header="To Everquest"/>
-                    </Fluent:SplitButton>
+                    <Fluent:Button Header="Export" LargeIcon="Images/Oxygen-Icons.org-Oxygen-Actions-svn-commit.ico" Click="ButtonExport_Click"/>
                 </Fluent:RibbonGroupBox>
             </Fluent:RibbonTabItem>
             <Fluent:RibbonTabItem Name="taboverlays" Header="Overlays">
@@ -387,7 +398,7 @@
                            BorderBrush="Black"
                            BorderThickness="5" Margin="0,0,0,0" Grid.Row="1">
             <xcad:DockingManager.Theme>
-                <xcad:VS2010Theme />
+                <xcad:Vs2013DarkTheme />
             </xcad:DockingManager.Theme>
 
             <xcad:LayoutRoot x:Name="_layoutRoot">
@@ -395,7 +406,7 @@
                     <xcad:LayoutAnchorablePaneGroup DockWidth="200">
                         <xcad:LayoutAnchorablePane Name="characterpane">
                             <xcad:LayoutAnchorable x:Name="characters" Title="Characters" ContentId="charactersPane" CanHide="False">
-                                <ListView ContextMenuOpening="ListviewCharacters_ContextMenuOpening" MouseDoubleClick="ListviewCharacters_MouseDoubleClick" SelectionChanged="ListviewCharacters_SelectionChanged" x:Name="listviewCharacters" IsSynchronizedWithCurrentItem="True">
+                                <ListView Background="LightSteelBlue" ContextMenuOpening="ListviewCharacters_ContextMenuOpening" MouseDoubleClick="ListviewCharacters_MouseDoubleClick" SelectionChanged="ListviewCharacters_SelectionChanged" x:Name="listviewCharacters" IsSynchronizedWithCurrentItem="True">
                                     <ListView.ContextMenu>
                                         <ContextMenu>
                                             <MenuItem Header="Edit Character" Click="MenuItemCharEdit_Click">
@@ -528,7 +539,7 @@
                             </ScrollViewer>
                         </xcad:LayoutDocument>
                         <xcad:LayoutDocument x:Name="firedtriggerspane" Title="Activated Triggers" ContentId="activatedPane">
-                            <DataGrid Grid.Row="0" Grid.Column="0" Name="datagrid_activated" AutoGenerateColumns="False" CanUserAddRows="False">
+                            <DataGrid Grid.Row="0" Grid.Column="0" Name="datagrid_activated" AutoGenerateColumns="False" CanUserAddRows="False" Visibility="{Binding ElementName=checkboxMatchLog, Path=IsChecked, Converter={StaticResource viewconverter}}">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Trigger Name" Binding="{Binding Name}"  IsReadOnly="True"/>
                                     <DataGridTextColumn Header="From Log" Binding="{Binding FromLog}" IsReadOnly="True"/>

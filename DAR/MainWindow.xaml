@@ -362,7 +362,7 @@
                 </Fluent:RibbonGroupBox>
                 <Fluent:RibbonGroupBox Header="Share">
                     <Fluent:SplitButton Header="Import" LargeIcon="Images/Oxygen-Icons.org-Oxygen-Actions-svn-update.ico">
-                        <Fluent:Button Size="Middle" Header="From Everquest"/>
+                        <Fluent:Button Size="Middle" Header="From EQ Audio Triggers" Click="ImportAudioTriggers_Click"/>
                         <Fluent:Button Size="Middle" Header="From GINA" Click="ImportFromGINA_Click"/>
                     </Fluent:SplitButton>
                     <Fluent:Button Header="Export" LargeIcon="Images/Oxygen-Icons.org-Oxygen-Actions-svn-commit.ico" Click="ButtonExport_Click"/>
@@ -545,6 +545,7 @@
                                     <DataGridTextColumn Header="From Log" Binding="{Binding FromLog}" IsReadOnly="True"/>
                                     <DataGridTextColumn Header="Triggred At" Binding="{Binding TriggerTime}" IsReadOnly="True"/>
                                     <DataGridTextColumn Header="Triggered Matched" Binding="{Binding TriggerFired}" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="Trigger ID" Binding="{Binding Id}" IsReadOnly="True"/>
                                 </DataGrid.Columns>
                             </DataGrid>
                         </xcad:LayoutDocument>

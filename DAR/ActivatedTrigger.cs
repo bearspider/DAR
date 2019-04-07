@@ -12,6 +12,7 @@ namespace DAR
         public String FromLog { get; set; }
         public String MatchText { get; set; }
         public String TriggerTime { get; set; }
+        public int Id { get; set; }
         public DateTime TriggerFired { get; set; }
 
         public ActivatedTrigger()
@@ -20,6 +21,7 @@ namespace DAR
             FromLog = "";
             MatchText = "";
             TriggerTime = "";
+            Id = 0;
             TriggerFired = DateTime.Now;
         }
     }

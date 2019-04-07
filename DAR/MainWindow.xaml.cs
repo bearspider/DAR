@@ -36,6 +36,7 @@ namespace DAR
     {
         public static string defaultPath = @"C:\EQAudioTriggers";
         public static string defaultDB = $"{defaultPath}\\eqtriggers.db";
+        public static string backupDB = $"{defaultPath}\\BackupDB";
         public static string eqRegex = @"\[(?<eqtime>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\](?<stringToMatch>.*)";
         public static Regex eqspellRegex = new Regex(@"(\[(?<eqtime>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\])\s((?<character>\w+)\sbegin\s(casting|singing)\s(?<spellname>.*)\.)|(\[(?<eqtime>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\])\s(?<character>\w+)\s(begins\sto\s(cast|sing)\s.*\<(?<spellname>.*)\>)", RegexOptions.Compiled);
         public static string pathRegex = @"(?<logdir>.*\\)(?<logname>eqlog_.*\.txt)";
@@ -296,7 +297,15 @@ namespace DAR
             {
                 Directory.CreateDirectory(GlobalVariables.defaultPath);
             }
-
+            //Check if database exists, if it does, make a backup
+            if(File.Exists(GlobalVariables.defaultDB))
+            {
+                if (!Directory.Exists(GlobalVariables.backupDB))
+                {
+                    Directory.CreateDirectory(GlobalVariables.backupDB);
+                }
+                File.Copy(GlobalVariables.defaultDB, (GlobalVariables.backupDB + @"\eqtriggers.db"),true);
+            }
             //Load settings
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -917,7 +926,7 @@ namespace DAR
                                       }
                                   });
                                 stopwatch.Stop();
-                                Console.WriteLine($"Trigger matched in: {stopwatch.Elapsed.ToString()}");
+                                //Console.WriteLine($"Trigger matched in: {stopwatch.Elapsed.ToString()}");
                                 if (pushbackToggle)
                                 {
                                     PushMonitor(capturedLine, character.ProfileName);
@@ -973,15 +982,20 @@ namespace DAR
                 Name = activetrigger.Name,
                 FromLog = character.ProfileName,
                 MatchText = matchline,
-                TriggerTime = matchtime
+                TriggerTime = matchtime,
+                Id = activetrigger.Id
             };
-            if(logmatchestofile && textboxLogMatches.Text != null)
+            //TO DO: Fix write by accessing calling thread
+            syncontext.Post(new SendOrPostCallback(o =>
             {
-                using (FileStream fs = File.OpenWrite(textboxLogMatches.Text))
+                if (logmatchestofile && textboxLogMatches.Text != null)
                 {
-                    AddText(fs,$"{matchtime}-{character.ProfileName}[{activetrigger.Name}]-{matchline}");
+                    using (FileStream fs = File.OpenWrite((String)o))
+                    {
+                        AddText(fs, $"{matchtime}-{character.ProfileName}[{activetrigger.Name}]-{matchline}");
+                    }
                 }
-            }
+            }), textboxLogMatches.Text);    
             lock (_triggerLock)
             {
                 activatedTriggers.Add(newactive);
@@ -3077,9 +3091,96 @@ namespace DAR
         }
         #endregion
         #region Import Triggers
+        private void ImportAudioTriggers_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog fileDialog = new OpenFileDialog();
+            fileDialog.Filter = "EQ Audio Trigger Package|*.zip";
+            if (fileDialog.ShowDialog() == true)
+            {
+                using (ZipArchive archive = ZipFile.OpenRead(fileDialog.FileName))
+                {
+                    //Load the json
+                    if (archive.Entries.Count > 0)
+                    {
+                        foreach (ZipArchiveEntry entry in archive.Entries)
+                        {
+                            if (entry.Name == "DataExport.json")
+                            {
+                                ZipArchiveEntry triggersjson = entry;
+                                using (StreamReader streamtriggers = new StreamReader(triggersjson.Open()))
+                                {
+                                    ImportFromExternal(streamtriggers.ReadToEnd());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
         private void ImportFromExternal(string json)
         {
             dynamic back2json = JsonConvert.DeserializeObject(json);
+            JToken first = ((JToken)back2json).SelectToken("Children");
+            mergetriggercount = 0;
+            mergeview = new TreeViewModel("Triggers to Import");
+            mergeview.IsChecked = false;
+            mergetreeView.Add(mergeview);
+            int result = BuildImport(first, triggergroupid);
+        }
+        private int BuildImport(JToken json, int parentid)
+        {
+            int rval = triggergroupid;
+            TriggerGroup newgroup = new TriggerGroup
+            {
+                TriggerGroupName = json["Name"].ToString(),
+                Comments = json["Comments"].ToString(),
+                Id = triggergroupid,
+                Parent = parentid
+            };
+            mergegroups.Add(newgroup);
+            foreach (JToken token in json.Children())
+            {
+                switch (((JProperty)token).Name)
+                {
+                    case "TriggerGroups":
+                        if ((json["TriggerGroups"]["TriggerGroup"]).GetType().ToString() == "Newtonsoft.Json.Linq.JArray")
+                        {
+                            foreach (JToken newtoken in ((JArray)(json["TriggerGroups"]["TriggerGroup"])).Children())
+                            {
+                                triggergroupid++;
+                                newgroup.Children.Add(GetTriggerGroups(newtoken, triggergroupid));
+                            }
+                        }
+                        else
+                        {
+                            if ((json["TriggerGroups"]["TriggerGroup"]).GetType().ToString() == "Newtonsoft.Json.Linq.JObject")
+                            {
+                                triggergroupid++;
+                                newgroup.Children.Add(GetTriggerGroups(json["TriggerGroups"]["TriggerGroup"], triggergroupid));
+                            }
+                        }
+                        break;
+                    case "Triggers":
+                        if ((json["Triggers"]["Trigger"]).GetType().ToString() == "Newtonsoft.Json.Linq.JArray")
+                        {
+                            foreach (JToken newtoken in ((JArray)(json["Triggers"]["Trigger"])).Children())
+                            {
+                                newgroup.Triggers.Add(GetTrigger(newtoken, triggergroupid));
+                            }
+                        }
+                        else
+                        {
+                            if ((json["Triggers"]["Trigger"]).GetType().ToString() == "Newtonsoft.Json.Linq.JObject")
+                            {
+                                newgroup.Triggers.Add(GetTrigger(json["Triggers"]["Trigger"], triggergroupid));
+                            }
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+            return rval;
         }
         private void ImportFromGINA_Click(object sender, RoutedEventArgs e)
         {
@@ -3089,8 +3190,6 @@ namespace DAR
             {
                 using (ZipArchive archive = ZipFile.OpenRead(fileDialog.FileName))
                 {
-                    //TO DO:
-                    //Archive could contain *.wav files, Export those to folder
                     //Load the xml
                     if (archive.Entries.Count > 0)
                     {
@@ -3533,28 +3632,147 @@ namespace DAR
         }
         #endregion
         #region Export Triggers
+        private JObject ExportGroup(TriggerGroup group)
+        {
+            JArray triggers = new JArray();
+            if(group.Triggers.Count > 0)
+            {
+                foreach(int triggerid in group.Triggers)
+                {
+                    triggers.Add(GetExportTrigger(triggerid));
+                }
+            }
+            JArray subgroups = new JArray();
+            if(group.Children.Count > 0)
+            {
+                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                {
+                    LiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
+                    foreach (int groupid in group.Children)
+                    {
+                        subgroups.Add(ExportGroup(triggergroups.FindById(groupid)));
+                    }
+                }
+            }
+            JObject rval = new JObject(
+                new JProperty("Id",group.Id),
+                new JProperty("TriggerGroupName",group.TriggerGroupName),
+                new JProperty("Comments",group.Comments),
+                new JProperty("DefaultEnabled",group.DefaultEnabled),
+                new JProperty("Parent",group.Parent),
+                new JProperty("children",subgroups),
+                new JProperty("triggers", triggers)                
+                );
+            return rval;
+        }
+        private JObject GetExportTrigger(int triggerid)
+        {
+            Trigger exporttrigger = new Trigger();
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                LiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
+                exporttrigger = triggers.FindById(triggerid);
+            }
+            JObject rval = new JObject(
+                new JProperty("id",exporttrigger.Id),
+                new JProperty("name",exporttrigger.Name),
+                new JProperty("searchText",exporttrigger.SearchText),
+                new JProperty("comments",exporttrigger.Comments),
+                new JProperty("regex",exporttrigger.Regex),
+                new JProperty("fastcheck",exporttrigger.Fastcheck),
+                new JProperty("parent",exporttrigger.Parent),
+                new JProperty("triggerCategory",exporttrigger.TriggerCategory),
+                new JProperty("displaytext",exporttrigger.Displaytext),
+                new JProperty("clipboardtext",exporttrigger.Clipboardtext),
+                new JProperty("audioSettings", 
+                    new JObject(
+                        new JProperty("audioType",exporttrigger.AudioSettings.AudioType),
+                        new JProperty("tts",exporttrigger.AudioSettings.TTS),
+                        new JProperty("interrupt",exporttrigger.AudioSettings.Interrupt),
+                        new JProperty("soundfile",exporttrigger.AudioSettings.SoundFileId)
+                        )
+                    ),
+                new JProperty("timerType",exporttrigger.TimerType),
+                new JProperty("timerName",exporttrigger.TimerName),
+                new JProperty("timerDuration",exporttrigger.TimerDuration),
+                new JProperty("triggeredAgain",exporttrigger.TriggeredAgain),
+                new JProperty("endEarlyText", 
+                    new JArray(
+                        from p in exporttrigger.EndEarlyText
+                        select new JObject(
+                            new JProperty("searchtext",p.Searchtext),
+                            new JProperty("regexEnabled",p.Regex)
+                            )
+                        )
+                    ),
+                new JProperty("timerEndingDuration",exporttrigger.TimerEndingDuration),
+                new JProperty("timerEndingDisplayText",exporttrigger.TimerEndingDisplayText),
+                new JProperty("timerEndingClipboardText",exporttrigger.TimerEndingClipboardText),
+                new JProperty("timerEndingAudio", 
+                    new JObject(    
+                        new JProperty("audioType", exporttrigger.TimerEndingAudio.AudioType),
+                        new JProperty("tts", exporttrigger.TimerEndingAudio.TTS),
+                        new JProperty("interrupt", exporttrigger.TimerEndingAudio.Interrupt),
+                        new JProperty("soundfile", exporttrigger.TimerEndingAudio.SoundFileId)
+                        )
+                    ),
+                new JProperty("timerEnding",exporttrigger.TimerEnding),
+                new JProperty("timerEndedDisplayText",exporttrigger.TimerEndedDisplayText),
+                new JProperty("timerEndedClipboardText",exporttrigger.TimerEndedClipboardText),
+                new JProperty("timerEnded",exporttrigger.TimerEnded),
+                new JProperty("timerEndedAudio",
+                    new JObject(
+                        new JProperty("audioType", exporttrigger.TimerEndedAudio.AudioType),
+                        new JProperty("tts", exporttrigger.TimerEndedAudio.TTS),
+                        new JProperty("interrupt", exporttrigger.TimerEndedAudio.Interrupt),
+                        new JProperty("soundfile", exporttrigger.TimerEndedAudio.SoundFileId)
+                        )
+                    ),
+                new JProperty("resetCounter",exporttrigger.resetCounter),
+                new JProperty("resetCounterDuration",exporttrigger.ResetCounterDuration)
+                );
+            string stop = "";
+            return rval;
+        }
         private void ExportTriggers()
         {
+            //Get the folder location to export to
+            String exportfolder = SelectFolder(textboxDataFolder.Text);
+            //build the zip file name
             StringBuilder sb = new StringBuilder();
-            sb.Append(SelectFolder(textboxDataFolder.Text));
-            sb.Append(@"\dataexport_");
+            sb.Append(@"dataexport_");
             sb.Append(DateTime.Now.ToString("MMddyyyy_HHmmss"));
-            sb.Append(@".json");
-            string json = Newtonsoft.Json.JsonConvert.SerializeObject(treeView[0]);
-            String newzip = sb.ToString().Replace(@".json", @".zip");
+            sb.Append(@".zip");
+            //build the json
+            JArray rootnodes = new JArray();
+            foreach (TreeViewModel child in treeView[0].Children)
+            {
+                Console.WriteLine($"Exporting {child.Name}");
+                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                {
+                    LiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
+                    TriggerGroup exportgroup = triggergroups.FindById(child.Id);
+                    rootnodes.Add(ExportGroup(exportgroup));
+                }                
+            }
+            JObject exportjson = new JObject(
+                new JProperty("rootnodes", rootnodes));
+            string json = JsonConvert.SerializeObject(exportjson);
             using (var memoryStream = new MemoryStream())
             {
                 using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
                 {
-                    var newfile = archive.CreateEntry(newzip);
+                    var newfile = archive.CreateEntry("DataExport.json");
 
                     using (var entryStream = newfile.Open())
-                    using (var streamWriter = new StreamWriter(entryStream))
                     {
-                        streamWriter.Write(json);
+                        using (var streamWriter = new StreamWriter(entryStream))
+                        {
+                            streamWriter.Write(json);
+                        }
                     }
                 }
-
+                String newzip = exportfolder + @"\" + sb.ToString();
                 using (var fileStream = new FileStream(newzip, System.IO.FileMode.Create))
                 {
                     memoryStream.Seek(0, SeekOrigin.Begin);
@@ -3694,7 +3912,7 @@ namespace DAR
             checkboxStopTrigger.IsChecked = Convert.ToBoolean(programsettings.Single<Setting>(i => i.Name == "StopTriggerSearch").Value);
             checkboxMinimize.IsChecked = Convert.ToBoolean(programsettings.Single<Setting>(i => i.Name == "Minimize").Value);
             checkboxMatchLog.IsChecked = Convert.ToBoolean(programsettings.Single<Setting>(i => i.Name == "DisplayMatchLog").Value);
-            checkboxLogMatches.IsChecked = Convert.ToBoolean(programsettings.Single<Setting>(i => i.Name == "LogMatchesToFile").Value);
+            checkboxLogMatches.IsChecked = logmatchestofile = Convert.ToBoolean(programsettings.Single<Setting>(i => i.Name == "LogMatchesToFile").Value);
             textboxLogMatches.Text = programsettings.Single<Setting>(i => i.Name == "LogMatchFilename").Value;
             textboxClipboard.Text = programsettings.Single<Setting>(i => i.Name == "Clipboard").Value;
             textboxEQFolder.Text = programsettings.Single<Setting>(i => i.Name == "EQFolder").Value;
@@ -3842,5 +4060,6 @@ namespace DAR
             textboxDataFolder.Text = SelectFolder(textboxDataFolder.Text);
         }
         #endregion
+
     }
 }

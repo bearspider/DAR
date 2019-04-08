@@ -3093,7 +3093,7 @@ namespace DAR
         }
         #endregion
         #region Import Triggers
-        private void ImportAudioTriggers_Click(object sender, RoutedEventArgs e)
+        private void ImportClick()
         {
             OpenFileDialog fileDialog = new OpenFileDialog();
             fileDialog.Filter = "EQ Audio Trigger Package|*.zip";
@@ -3119,69 +3119,154 @@ namespace DAR
                 }
             }
         }
+        private void SplitButtonImport_Click(object sender, RoutedEventArgs e)
+        {
+            ImportClick();
+        }
+        private void ImportAudioTriggers_Click(object sender, RoutedEventArgs e)
+        {
+            ImportClick();
+        }
         private void ImportFromExternal(string json)
         {
-            dynamic back2json = JsonConvert.DeserializeObject(json);
-            JToken first = ((JToken)back2json).SelectToken("Children");
-            mergetriggercount = 0;
+            ClearMergeInfo();
             mergeview = new TreeViewModel("Triggers to Import");
             mergeview.IsChecked = false;
             mergetreeView.Add(mergeview);
-            int result = BuildImport(first, triggergroupid);
+            dynamic back2json = JsonConvert.DeserializeObject(json);
+            JToken token = ((JToken)back2json).SelectToken("rootnodes");
+            int result = BuildImport(token, triggergroupid);
+            InitializeTree();
+        }
+        private void ClearMergeInfo()
+        {
+            triggergroupid = 0;
+            mergetriggercount = 0;
+            mergetriggers.Clear();
+            mergegroups.Clear();
+            mergetreeView.Clear();
         }
         private int BuildImport(JToken json, int parentid)
         {
-            int rval = triggergroupid;
-            TriggerGroup newgroup = new TriggerGroup
+            int rval = ++triggergroupid;
+            //Check if its an array or object
+            if (json.GetType().ToString() == "Newtonsoft.Json.Linq.JArray")
             {
-                TriggerGroupName = json["Name"].ToString(),
-                Comments = json["Comments"].ToString(),
-                Id = triggergroupid,
-                Parent = parentid
-            };
-            mergegroups.Add(newgroup);
-            foreach (JToken token in json.Children())
-            {
-                switch (((JProperty)token).Name)
+                foreach(JToken group in json)
                 {
-                    case "TriggerGroups":
-                        if ((json["TriggerGroups"]["TriggerGroup"]).GetType().ToString() == "Newtonsoft.Json.Linq.JArray")
+                    TriggerGroup newgroup = new TriggerGroup
+                    {
+                        TriggerGroupName = (string)group.SelectToken("TriggerGroupName"),
+                        Id = triggergroupid,
+                        Parent = parentid
+                    };
+                    JToken comments = group.SelectToken("Comments");
+                    if (comments != null)
+                    {
+                        newgroup.Comments = (string)comments;
+                    }
+                    mergegroups.Add(newgroup);
+                    foreach (JToken token in group["children"])
+                    {                        
+                        newgroup.Children.Add(BuildImport(token, triggergroupid));
+                    }
+                    JToken triggers = group.SelectToken("triggers");
+                    if(triggers != null)
+                    {
+                        foreach (JToken triggertoken in triggers)
                         {
-                            foreach (JToken newtoken in ((JArray)(json["TriggerGroups"]["TriggerGroup"])).Children())
-                            {
-                                triggergroupid++;
-                                newgroup.Children.Add(GetTriggerGroups(newtoken, triggergroupid));
-                            }
+                            newgroup.Triggers.Add(BuildTrigger(triggertoken, triggergroupid));
                         }
-                        else
-                        {
-                            if ((json["TriggerGroups"]["TriggerGroup"]).GetType().ToString() == "Newtonsoft.Json.Linq.JObject")
-                            {
-                                triggergroupid++;
-                                newgroup.Children.Add(GetTriggerGroups(json["TriggerGroups"]["TriggerGroup"], triggergroupid));
-                            }
-                        }
-                        break;
-                    case "Triggers":
-                        if ((json["Triggers"]["Trigger"]).GetType().ToString() == "Newtonsoft.Json.Linq.JArray")
-                        {
-                            foreach (JToken newtoken in ((JArray)(json["Triggers"]["Trigger"])).Children())
-                            {
-                                newgroup.Triggers.Add(GetTrigger(newtoken, triggergroupid));
-                            }
-                        }
-                        else
-                        {
-                            if ((json["Triggers"]["Trigger"]).GetType().ToString() == "Newtonsoft.Json.Linq.JObject")
-                            {
-                                newgroup.Triggers.Add(GetTrigger(json["Triggers"]["Trigger"], triggergroupid));
-                            }
-                        }
-                        break;
-                    default:
-                        break;
+                    }
                 }
             }
+            else if (json.GetType().ToString() == "Newtonsoft.Json.Linq.JObject")
+            {
+                TriggerGroup newgroup = new TriggerGroup
+                {
+                    TriggerGroupName = (string)json.SelectToken("TriggerGroupName"),
+                    Id = triggergroupid,
+                    Parent = parentid
+                };
+                JToken comments = json.SelectToken("Comments");
+                if (comments != null)
+                {
+                    newgroup.Comments = (string)comments;
+                }
+                mergegroups.Add(newgroup);
+                foreach (JToken token in json["children"])
+                {
+                    newgroup.Children.Add(BuildImport(token, triggergroupid));
+                }
+                JToken triggers = json.SelectToken("triggers");
+                if (triggers != null)
+                {
+                    foreach (JToken triggertoken in triggers)
+                    {
+                        newgroup.Triggers.Add(BuildTrigger(triggertoken, triggergroupid));
+                    }
+                }
+            }
+
+            return rval;
+        }
+        private int BuildTrigger(JToken jsontoken, int parentid)
+        {
+            int rval = triggerid;
+            Trigger newtrigger = new Trigger
+            {
+                id = triggerid,
+                name = jsontoken["name"].ToString(),
+                profiles = new ArrayList(),
+                searchText = (String)jsontoken["searchText"],
+                comments = (String)jsontoken["comments"],
+                regex = (bool)jsontoken["regex"],
+                fastcheck = (bool)jsontoken["fastcheck"],
+                parent = parentid,
+                triggerCategory = 0,
+                displaytext = (String)jsontoken["displaytext"],
+                clipboardtext = (String)jsontoken["clipboardtext"],
+                audioSettings = new Audio(),
+                timerType = (String)jsontoken["timerType"],
+                timerName = (String)jsontoken["timerName"],
+                timerDuration = (int)jsontoken["timerDuration"],
+                triggeredAgain = (int)jsontoken["triggeredAgain"],
+                endEarlyText = new BindingList<SearchText>(),
+                timerEndingDuration = (int)jsontoken["timerEndingDuration"],
+                timerEndingDisplayText = (String)jsontoken["timerEndingDisplayText"],
+                timerEndingClipboardText = (String)jsontoken["timerEndingClipboardText"],
+                timerEndingAudio = new Audio(),
+                timerEnding = (bool)jsontoken["timerEnding"],
+                timerEndedClipboardText = (String)jsontoken["timerEndedClipboardText"],
+                timerEndedDisplayText = (String)jsontoken["timerEndedDisplayText"],
+                timerEnded = (bool)jsontoken["timerEnded"],
+                timerEndedAudio = new Audio(),
+                resetCounter = (bool)jsontoken["resetCounter"],
+                resetCounterDuration = (int)jsontoken["resetCounterDuration"],
+            };
+            newtrigger.audioSettings.AudioType = (String)jsontoken["audioSettings"]["audioType"];
+            newtrigger.audioSettings.TTS = (String)jsontoken["audioSettings"]["tts"];
+            newtrigger.audioSettings.Interrupt = (bool)jsontoken["audioSettings"]["interrupt"];
+            newtrigger.audioSettings.SoundFileId = (String)jsontoken["audioSettings"]["soundfile"];
+            newtrigger.TimerEndingAudio.AudioType = (String)jsontoken["timerEndingAudio"]["audioType"];
+            newtrigger.TimerEndingAudio.TTS = (String)jsontoken["timerEndingAudio"]["tts"];
+            newtrigger.TimerEndingAudio.Interrupt = (bool)jsontoken["timerEndingAudio"]["interrupt"];
+            newtrigger.TimerEndingAudio.SoundFileId = (String)jsontoken["timerEndingAudio"]["soundfile"];
+            newtrigger.TimerEndedAudio.AudioType = (String)jsontoken["timerEndedAudio"]["audioType"];
+            newtrigger.TimerEndedAudio.TTS = (String)jsontoken["timerEndedAudio"]["tts"];
+            newtrigger.TimerEndedAudio.Interrupt = (bool)jsontoken["timerEndedAudio"]["interrupt"];
+            newtrigger.TimerEndedAudio.SoundFileId = (String)jsontoken["timerEndedAudio"]["soundfile"];
+            foreach(JToken earlytoken in jsontoken["endEarlyText"])
+            {
+                SearchText st = new SearchText
+                {
+                    regexEnabled = (bool)earlytoken["regexEnabled"],
+                    Searchtext = (String)earlytoken["searchtext"]
+                };
+                newtrigger.EndEarlyText.Add(st);                
+            }
+            mergetriggers.Add(newtrigger);
+            triggerid++;
             return rval;
         }
         private void ImportFromGINA_Click(object sender, RoutedEventArgs e)
@@ -3232,13 +3317,8 @@ namespace DAR
                 }
             }
         }
-        private void ParseGina(JToken jsontoken)
+        private void InitializeTree()
         {
-            mergetriggercount = 0;
-            mergeview = new TreeViewModel("Triggers to Import");
-            mergeview.IsChecked = false;
-            mergetreeView.Add(mergeview);
-            int result = GetTriggerGroups(jsontoken.SelectToken("TriggerGroups.TriggerGroup"), triggergroupid);
             //build tree
             foreach (TriggerGroup tg in mergegroups)
             {
@@ -3276,6 +3356,16 @@ namespace DAR
             treemerge.ItemsSource = mergetreeView;
             Console.WriteLine($"{mergetriggercount}");
             treemerge.Visibility = Visibility.Visible;
+            buttonDoneMerge.Visibility = Visibility.Visible;
+        }
+        private void ParseGina(JToken jsontoken)
+        {
+            ClearMergeInfo();
+            mergeview = new TreeViewModel("Triggers to Import");
+            mergeview.IsChecked = false;
+            mergetreeView.Add(mergeview);
+            int result = GetTriggerGroups(jsontoken.SelectToken("TriggerGroups.TriggerGroup"), triggergroupid);
+            InitializeTree();
         }
         private TreeViewModel BuildMergeTree(TriggerGroup branch)
         {
@@ -3602,6 +3692,7 @@ namespace DAR
             treemerge.ItemsSource = mergetreeView;
             //Once we're done with the import, update the trigger view
             UpdateListView();
+            UpdateTriggerView();
             TriggerLoad("ImportTriggers");
             //Keep the merge tree up until the user clears it
             if (mergetreeView.Count > 0)
@@ -3632,6 +3723,12 @@ namespace DAR
                 tvm.RemoveChild(deletetree);
             }
         }
+        private void ButtonDoneMerge_Click(object sender, RoutedEventArgs e)
+        {
+            ClearMergeInfo();
+            treemerge.Visibility = Visibility.Hidden;
+            buttonDoneMerge.Visibility = Visibility.Hidden;
+        }
         #endregion
         #region Export Triggers
         private JObject ExportGroup(TriggerGroup group)
@@ -3658,6 +3755,7 @@ namespace DAR
             }
             JObject rval = new JObject(
                 new JProperty("Id",group.Id),
+                new JProperty("Type","triggergroup"),
                 new JProperty("TriggerGroupName",group.TriggerGroupName),
                 new JProperty("Comments",group.Comments),
                 new JProperty("DefaultEnabled",group.DefaultEnabled),
@@ -3675,11 +3773,12 @@ namespace DAR
                 LiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
                 exporttrigger = triggers.FindById(triggerid);
             }
-            if(exporttrigger.AudioSettings.SoundFileId != "")
+            if(exporttrigger.AudioSettings.SoundFileId != null)
             {
                 exportsounds.Add(exporttrigger.audioSettings.SoundFileId);
             }
             JObject rval = new JObject(
+                new JProperty("type","trigger"),
                 new JProperty("id",exporttrigger.Id),
                 new JProperty("name",exporttrigger.Name),
                 new JProperty("searchText",exporttrigger.SearchText),
@@ -3753,6 +3852,13 @@ namespace DAR
             JArray rootnodes = new JArray();
             if(startnode.Type == "triggergroup")
             {
+                JObject jobject = new JObject(
+                    new JProperty("TriggerGroupName", startnode.Name),
+                    new JProperty("Type","triggergroup"),
+                    new JProperty("Id", 0),
+                    new JProperty("children", new JArray()),
+                    new JProperty("triggers", new JArray())
+                    );
                 foreach (TreeViewModel child in startnode.Children)
                 {
                     Console.WriteLine($"Exporting {child.Name}");
@@ -3760,11 +3866,34 @@ namespace DAR
                     {
                         LiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
                         TriggerGroup exportgroup = triggergroups.FindById(child.Id);
-                        rootnodes.Add(ExportGroup(exportgroup));
+                        ((JArray)jobject["children"]).Add(ExportGroup(exportgroup));
                     }
                 }
+                rootnodes.Add(jobject);
             }
-            else
+            else if(startnode.Id == 0)
+            {
+                foreach (TreeViewModel child in startnode.Children)
+                {
+                    /*JObject jobject = new JObject(
+                        new JProperty("TriggerGroupName", child.Name),
+                        new JProperty("Type", "triggergroup"),
+                        new JProperty("Id", 0),
+                        new JProperty("children", new JArray()),
+                        new JProperty("triggers", new JArray())
+                        );*/
+                    Console.WriteLine($"Exporting {child.Name}");
+                    using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                    {
+                        LiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
+                        TriggerGroup exportgroup = triggergroups.FindById(child.Id);
+                        //((JArray)jobject["children"]).Add(ExportGroup(exportgroup));
+                        rootnodes.Add(ExportGroup(exportgroup));
+                    }
+                    //rootnodes.Add(jobject);
+                }
+            }
+            else if(startnode.Type == "trigger")
             {
                 Console.WriteLine($"Exporting single trigger {startnode.Name}");
                 rootnodes.Add(GetExportTrigger(startnode.Id));
@@ -3781,15 +3910,18 @@ namespace DAR
                     {
                         foreach (String soundid in exportsounds)
                         {
-                            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                            if(soundid != "")
                             {
-                                LiteFileInfo file = db.FileStorage.FindById($"{GlobalVariables.litedbfileprefix}{soundid}");
-                                var soundfile = archive.CreateEntry(soundid);
-                                using (var soundstream = soundfile.Open())
+                                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                                 {
+                                    LiteFileInfo file = db.FileStorage.FindById($"{GlobalVariables.litedbfileprefix}{soundid}");
+                                    var soundfile = archive.CreateEntry(soundid);
+                                    using (var soundstream = soundfile.Open())
+                                    {
                                         file.CopyTo(soundstream);
+                                    }
                                 }
-                            }                                
+                            }                            
                         }
                     }
                     var newfile = archive.CreateEntry("DataExport.json");

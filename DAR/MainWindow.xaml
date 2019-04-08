@@ -358,7 +358,7 @@
                     </Fluent:SplitButton>
                 </Fluent:RibbonGroupBox>
                 <Fluent:RibbonGroupBox Header="Share">
-                    <Fluent:SplitButton Header="Import" LargeIcon="Images/Oxygen-Icons.org-Oxygen-Actions-svn-update.ico">
+                    <Fluent:SplitButton Header="Import" LargeIcon="Images/Oxygen-Icons.org-Oxygen-Actions-svn-update.ico" Click="SplitButtonImport_Click">
                         <Fluent:Button Size="Middle" Header="From EQ Audio Triggers" Click="ImportAudioTriggers_Click"/>
                         <Fluent:Button Size="Middle" Header="From GINA" Click="ImportFromGINA_Click"/>
                     </Fluent:SplitButton>
@@ -403,7 +403,7 @@
                     <xcad:LayoutAnchorablePaneGroup DockWidth="200">
                         <xcad:LayoutAnchorablePane Name="characterpane">
                             <xcad:LayoutAnchorable x:Name="characters" Title="Characters" ContentId="charactersPane" CanHide="False">
-                                <ListView Background="LightSteelBlue" ContextMenuOpening="ListviewCharacters_ContextMenuOpening" MouseDoubleClick="ListviewCharacters_MouseDoubleClick" SelectionChanged="ListviewCharacters_SelectionChanged" x:Name="listviewCharacters" IsSynchronizedWithCurrentItem="True">
+                                <ListView Margin="0,0,0,12" Background="LightSteelBlue" ContextMenuOpening="ListviewCharacters_ContextMenuOpening" MouseDoubleClick="ListviewCharacters_MouseDoubleClick" SelectionChanged="ListviewCharacters_SelectionChanged" x:Name="listviewCharacters" IsSynchronizedWithCurrentItem="True">
                                     <ListView.ContextMenu>
                                         <ContextMenu>
                                             <MenuItem Header="Edit Character" Click="MenuItemCharEdit_Click">
@@ -469,7 +469,8 @@
                                 </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <TreeView x:Name="treeViewTriggers"
                                         AllowDrop="True" Background="LightSteelBlue"
@@ -528,10 +529,12 @@
                                             </ContextMenu>
                                     </TreeView.ContextMenu>
                                 </TreeView>
-                                <TreeView 
+                                    <Button VerticalAlignment="Top" Margin="12,12,0,0" Grid.Column="1" Height="25" Visibility="Hidden" x:Name="buttonDoneMerge" Content="Done Merging" Click="ButtonDoneMerge_Click"/>
+                                    <TreeView 
                                         x:Name="treemerge"
-                                        Margin="12,12,0,0" 
-                                        Grid.Row="0" Grid.Column="1"                                   
+                                        Margin="12,12,0,12"
+                                        Background="SteelBlue"
+                                        Grid.Row="0" Grid.Column="2"                                   
                                         HorizontalAlignment="Left" VerticalAlignment="Stretch" 
                                         ItemContainerStyle="{StaticResource MergeViewItemStyle}" 
                                         ItemTemplate="{StaticResource CheckBoxItemTemplate}" 

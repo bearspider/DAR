@@ -42,6 +42,7 @@ namespace DAR
         public static string pathRegex = @"(?<logdir>.*\\)(?<logname>eqlog_.*\.txt)";
         public static string pushbackurl = @"https://raw.githubusercontent.com/bearspider/EQ-LogParsers/master/pushback.csv";
         public static string pushupurl = @"https://raw.githubusercontent.com/bearspider/EQ-LogParsers/master/pushup.csv";
+        public static string litedbfileprefix = @"$/triggersounds/";
     }
     #region Converters
     /// <summary>
@@ -235,6 +236,7 @@ namespace DAR
         private TreeViewModel mergeview;
         private TreeViewModel droptree;
         private int mergetriggercount = 0;
+        private List<String> exportsounds = new List<String>();
 
         //Overlays
         private ObservableCollection<OverlayTextWindow> textWindows = new ObservableCollection<OverlayTextWindow>();
@@ -272,6 +274,7 @@ namespace DAR
 
         //Settings variables
         private ObservableCollection<String> trustedsenders = new ObservableCollection<String>();
+        private String logmatchlocation = "";
         private Boolean soundenabled = true;
         private Boolean textenabled = true;
         private Boolean timerenabled = true;
@@ -986,16 +989,16 @@ namespace DAR
                 Id = activetrigger.Id
             };
             //TO DO: Fix write by accessing calling thread
-            syncontext.Post(new SendOrPostCallback(o =>
+            if (logmatchestofile && logmatchlocation != "")
             {
-                if (logmatchestofile && textboxLogMatches.Text != null)
+                syncontext.Post(new SendOrPostCallback(o =>
                 {
-                    using (FileStream fs = File.OpenWrite((String)o))
+                    using (StreamWriter sw = File.AppendText((String)o))
                     {
-                        AddText(fs, $"{matchtime}-{character.ProfileName}[{activetrigger.Name}]-{matchline}");
+                        AddText(sw, $"{matchtime}-{character.ProfileName}[{activetrigger.Name}]-{matchline}");
                     }
-                }
-            }), textboxLogMatches.Text);    
+                }),logmatchlocation);
+            }
             lock (_triggerLock)
             {
                 activatedTriggers.Add(newactive);
@@ -1119,10 +1122,9 @@ namespace DAR
             }
             e.Handled = true;
         }
-        private static void AddText(FileStream fs, string value)
+        private static void AddText(TextWriter w, string value)
         {
-            byte[] info = new UTF8Encoding(true).GetBytes(value);
-            fs.Write(info, 0, info.Length);
+            w.WriteLine(value);
         }
         #endregion
         #region Triggers
@@ -1922,7 +1924,7 @@ namespace DAR
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 Stream soundfile = new System.IO.MemoryStream();
-                db.FileStorage.Download($"$/triggersounds/{soundid}", soundfile);
+                db.FileStorage.Download($"{GlobalVariables.litedbfileprefix}{soundid}", soundfile);
                 SoundPlayer test = new SoundPlayer(soundfile);
                 test.Stream.Position = 0;
                 test.Play();
@@ -3673,6 +3675,10 @@ namespace DAR
                 LiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
                 exporttrigger = triggers.FindById(triggerid);
             }
+            if(exporttrigger.AudioSettings.SoundFileId != "")
+            {
+                exportsounds.Add(exporttrigger.audioSettings.SoundFileId);
+            }
             JObject rval = new JObject(
                 new JProperty("id",exporttrigger.Id),
                 new JProperty("name",exporttrigger.Name),
@@ -3734,7 +3740,7 @@ namespace DAR
             string stop = "";
             return rval;
         }
-        private void ExportTriggers()
+        private void ExportTriggers(TreeViewModel startnode)
         {
             //Get the folder location to export to
             String exportfolder = SelectFolder(textboxDataFolder.Text);
@@ -3745,16 +3751,25 @@ namespace DAR
             sb.Append(@".zip");
             //build the json
             JArray rootnodes = new JArray();
-            foreach (TreeViewModel child in treeView[0].Children)
+            if(startnode.Type == "triggergroup")
             {
-                Console.WriteLine($"Exporting {child.Name}");
-                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                foreach (TreeViewModel child in startnode.Children)
                 {
-                    LiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
-                    TriggerGroup exportgroup = triggergroups.FindById(child.Id);
-                    rootnodes.Add(ExportGroup(exportgroup));
-                }                
+                    Console.WriteLine($"Exporting {child.Name}");
+                    using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                    {
+                        LiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
+                        TriggerGroup exportgroup = triggergroups.FindById(child.Id);
+                        rootnodes.Add(ExportGroup(exportgroup));
+                    }
+                }
             }
+            else
+            {
+                Console.WriteLine($"Exporting single trigger {startnode.Name}");
+                rootnodes.Add(GetExportTrigger(startnode.Id));
+            }
+
             JObject exportjson = new JObject(
                 new JProperty("rootnodes", rootnodes));
             string json = JsonConvert.SerializeObject(exportjson);
@@ -3762,6 +3777,21 @@ namespace DAR
             {
                 using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
                 {
+                    if (exportsounds.Count > 0)
+                    {
+                        foreach (String soundid in exportsounds)
+                        {
+                            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                            {
+                                LiteFileInfo file = db.FileStorage.FindById($"{GlobalVariables.litedbfileprefix}{soundid}");
+                                var soundfile = archive.CreateEntry(soundid);
+                                using (var soundstream = soundfile.Open())
+                                {
+                                        file.CopyTo(soundstream);
+                                }
+                            }                                
+                        }
+                    }
                     var newfile = archive.CreateEntry("DataExport.json");
 
                     using (var entryStream = newfile.Open())
@@ -3779,11 +3809,29 @@ namespace DAR
                     memoryStream.CopyTo(fileStream);
                 }
             }
+            //Reset the export sound list
+            exportsounds.Clear();
+        }
+        private void Export()
+        {
+            if ((TreeViewModel)treeViewTriggers.SelectedItem != null)
+            {
+                ExportTriggers((TreeViewModel)treeViewTriggers.SelectedItem);
+            }
+            else
+            {
+
+                ExportTriggers(treeView[0]);
+            }
+            Xceed.Wpf.Toolkit.MessageBox.Show("Export Complete", "Data Export", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         private void ButtonExport_Click(object sender, RoutedEventArgs e)
         {
-            ExportTriggers();
-            Xceed.Wpf.Toolkit.MessageBox.Show("Export Complete", "Data Export", MessageBoxButton.OK, MessageBoxImage.Information);
+            Export();
+        }
+        private void CmExportFile_Click(object sender, RoutedEventArgs e)
+        {
+            Export();
         }
         #endregion
         #region Fluent Backstage
@@ -3913,7 +3961,7 @@ namespace DAR
             checkboxMinimize.IsChecked = Convert.ToBoolean(programsettings.Single<Setting>(i => i.Name == "Minimize").Value);
             checkboxMatchLog.IsChecked = Convert.ToBoolean(programsettings.Single<Setting>(i => i.Name == "DisplayMatchLog").Value);
             checkboxLogMatches.IsChecked = logmatchestofile = Convert.ToBoolean(programsettings.Single<Setting>(i => i.Name == "LogMatchesToFile").Value);
-            textboxLogMatches.Text = programsettings.Single<Setting>(i => i.Name == "LogMatchFilename").Value;
+            textboxLogMatches.Text = logmatchlocation = programsettings.Single<Setting>(i => i.Name == "LogMatchFilename").Value;
             textboxClipboard.Text = programsettings.Single<Setting>(i => i.Name == "Clipboard").Value;
             textboxEQFolder.Text = programsettings.Single<Setting>(i => i.Name == "EQFolder").Value;
             textboxMediaFolder.Text = programsettings.Single<Setting>(i => i.Name == "ImportedMediaFolder").Value;
@@ -4043,10 +4091,6 @@ namespace DAR
                 }
             }            
         }
-        private void ButtonLogMatch_Click(object sender, RoutedEventArgs e)
-        {
-            textboxLogMatches.Text = SelectFolder(textboxLogMatches.Text);
-        }
         private void ButtonEQFolder_Click(object sender, RoutedEventArgs e)
         {
             textboxEQFolder.Text = SelectFolder(textboxEQFolder.Text);
@@ -4059,7 +4103,14 @@ namespace DAR
         {
             textboxDataFolder.Text = SelectFolder(textboxDataFolder.Text);
         }
+        private void CheckboxLogMatches_Checked(object sender, RoutedEventArgs e)
+        {
+            textboxLogMatches.Text = $"{textboxDataFolder.Text}\\triggermatches.log";
+        }
+        private void CheckboxLogMatches_Unchecked(object sender, RoutedEventArgs e)
+        {
+            textboxLogMatches.Text = "";
+        }
         #endregion
-
     }
 }

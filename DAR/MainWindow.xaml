@@ -107,11 +107,8 @@
                                     <Fluent:CheckBox Margin="5,5,0,0" Name="checkboxStopTrigger" Header="Stop Trigger Search After First Match" IsChecked="False" Grid.Row="4" Grid.Column="0"/>
                                     <Fluent:CheckBox Margin="5,5,0,0" Name="checkboxMinimize" Header="Minimize to System Tray" IsChecked="False" Grid.Row="5" Grid.Column="0"/>
                                     <Fluent:CheckBox Margin="5,5,0,0" Name="checkboxMatchLog" Header="Display Match Log" IsChecked="True" Grid.Row="6" Grid.Column="0"/>
-                                    <Fluent:CheckBox Margin="5,5,0,0" Name="checkboxLogMatches" Header="Log Matches to File: " IsChecked="False" Grid.Row="7" Grid.Column="0"/>
+                                    <Fluent:CheckBox Margin="5,5,0,0" Name="checkboxLogMatches" Header="Log Matches to File: " IsChecked="False" Grid.Row="7" Grid.Column="0" Unchecked="CheckboxLogMatches_Unchecked" Checked="CheckboxLogMatches_Checked"/>
                                     <Fluent:TextBox Name="textboxLogMatches" Grid.Row="7" Grid.Column="1" Width="400"/>
-                                    <Fluent:Button Margin="5,0,0,0" Name="buttonLogMatch" Grid.Row="7" Grid.Column="2" Height="25" BorderThickness="0" 
-                                                   Click="ButtonLogMatch_Click" IsDefinitive="False"
-                                                   Size="Middle" Icon="Images\Oxygen-Icons.org-Oxygen-Actions-document-open-folder.ico"/>
                                 </Grid>
                                 <Grid>
                                     <Grid.RowDefinitions>
@@ -477,7 +474,7 @@
                                 <TreeView x:Name="treeViewTriggers"
                                         AllowDrop="True" Background="LightSteelBlue"
                                         BorderBrush="Black" BorderThickness="1"
-                                        Grid.Row="0" Grid.Column="0" Margin="12,12,0,0"
+                                        Grid.Row="0" Grid.Column="0" Margin="12,12,0,12"
                                         ContextMenuOpening="TreeViewTriggers_ContextMenuOpening" 
                                         SelectedItemChanged="TreeViewTriggers_SelectedItemChanged" 
                                         HorizontalAlignment="Left" VerticalAlignment="Stretch"   
@@ -492,12 +489,12 @@
                                         <ContextMenu>
                                                 <MenuItem Name="cmAddTriggerGroup" Header="Add New Group" Click="CmAddTriggerGroup_Click">
                                                     <MenuItem.Icon>
-                                                        <Image Height="20" Source="Images\Oxygen-Icons.org-Oxygen-Actions-edit-copy.ico"/>
+                                                        <Image Height="20" Source="Images\Oxygen-Icons.org-Oxygen-Actions-document-new.ico"/>
                                                     </MenuItem.Icon>
                                                 </MenuItem>
                                                 <MenuItem Name="cmAddTrigger" Header="Add New Trigger" Click="CmAddTrigger_Click">
                                                     <MenuItem.Icon>
-                                                        <Image Height="20" Source="Images\Oxygen-Icons.org-Oxygen-Actions-edit-copy.ico"/>
+                                                        <Image Height="20" Source="Images\Oxygen-Icons.org-Oxygen-Actions-document-new.ico"/>
                                                     </MenuItem.Icon>
                                                 </MenuItem>
                                                 <Separator/>
@@ -522,7 +519,13 @@
                                                     <Image Height="20" Source="Images\Oxygen-Icons.org-Oxygen-Actions-edit-delete.ico"/>
                                                 </MenuItem.Icon>
                                             </MenuItem>
-                                        </ContextMenu>
+                                                <Separator/>
+                                                <MenuItem Name="cmExportFile" Header="Export To File" Click="CmExportFile_Click">
+                                                    <MenuItem.Icon>
+                                                        <Image Height="20" Source="Images\Oxygen-Icons.org-Oxygen-Apps-preferences-system-network-sharing.ico"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                            </ContextMenu>
                                     </TreeView.ContextMenu>
                                 </TreeView>
                                 <TreeView 

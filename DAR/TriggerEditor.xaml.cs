@@ -546,7 +546,7 @@ namespace DAR
                 using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                 {
                     Stream soundfile = new System.IO.MemoryStream();
-                    db.FileStorage.Download($"$/triggersounds/{textboxEndingSoundFile.Text}", soundfile);
+                    db.FileStorage.Download($"{GlobalVariables.litedbfileprefix}{textboxEndingSoundFile.Text}", soundfile);
                     SoundPlayer test = new SoundPlayer(soundfile);
                     test.Stream.Position = 0;
                     test.Play();
@@ -565,7 +565,7 @@ namespace DAR
                 using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                 {
                     Stream soundfile = new System.IO.MemoryStream();
-                    db.FileStorage.Download($"$/triggersounds/{textboxEndedSoundFile.Text}", soundfile);
+                    db.FileStorage.Download($"{GlobalVariables.litedbfileprefix}{textboxEndedSoundFile.Text}", soundfile);
                     SoundPlayer test = new SoundPlayer(soundfile);
                     test.Stream.Position = 0;
                     test.Play();
@@ -585,7 +585,7 @@ namespace DAR
                 using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                 {
                     Stream soundfile = new System.IO.MemoryStream();
-                    db.FileStorage.Download($"$/triggersounds/{textboxBasicSoundFile.Text}", soundfile);
+                    db.FileStorage.Download($"{GlobalVariables.litedbfileprefix}{textboxBasicSoundFile.Text}", soundfile);
                     SoundPlayer test = new SoundPlayer(soundfile);
                     test.Stream.Position = 0;
                     test.Play();
@@ -883,9 +883,9 @@ namespace DAR
             {
                 using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                 {
-                    db.FileStorage.Upload($"$/triggersounds/{fileDialog.SafeFileName}", fileDialog.FileName);
+                    db.FileStorage.Upload($"{GlobalVariables.litedbfileprefix}{(fileDialog.SafeFileName).Replace(" ","")}", fileDialog.FileName);
                 }
-                textboxBasicSoundFile.Text = fileDialog.SafeFileName;
+                textboxBasicSoundFile.Text = (fileDialog.SafeFileName).Replace(" ", "");
             }
         }
         private void ButtonEndingSoundFile_Click(object sender, RoutedEventArgs e)
@@ -896,7 +896,7 @@ namespace DAR
             {
                 using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                 {
-                    db.FileStorage.Upload($"$/triggersounds/{fileDialog.SafeFileName}", fileDialog.FileName);
+                    db.FileStorage.Upload($"{GlobalVariables.litedbfileprefix}{fileDialog.SafeFileName}", fileDialog.FileName);
                 }
                 textboxEndingSoundFile.Text = fileDialog.SafeFileName;
             }
@@ -909,7 +909,7 @@ namespace DAR
             {
                 using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                 {
-                    db.FileStorage.Upload($"$/triggersounds/{fileDialog.SafeFileName}", fileDialog.FileName);
+                    db.FileStorage.Upload($"{GlobalVariables.litedbfileprefix}{fileDialog.SafeFileName}", fileDialog.FileName);
                 }
                 textboxEndedSoundFile.Text = fileDialog.SafeFileName;
             }

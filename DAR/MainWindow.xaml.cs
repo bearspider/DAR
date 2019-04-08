@@ -26,6 +26,7 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Xml;
+using Xceed.Wpf.AvalonDock.Themes;
 
 namespace DAR
 {
@@ -1883,6 +1884,11 @@ namespace DAR
                 Name = "ArchiveSchedule",
                 Value = ""
             };
+            Setting darkmode = new Setting
+            {
+                Name = "DarkMode",
+                Value = "false"
+            };
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 LiteCollection<Setting> settings = db.GetCollection<Setting>("settings");
@@ -1917,6 +1923,7 @@ namespace DAR
                 settings.Insert(reference);
                 settings.Insert(enabledebug);
                 settings.Insert(archiveschedule);
+                settings.Insert(darkmode);
             }
         }
         private void PlaySound(string soundid)
@@ -4034,6 +4041,7 @@ namespace DAR
             logmaintenance.CompressArchive = programsettings.Single<Setting>(i => i.Name == "CompressArchive").Value;
             logmaintenance.ArchiveDays = Convert.ToInt32(programsettings.Single<Setting>(i => i.Name == "DeleteArchives").Value);
             logmaintenance.LastArchive = Properties.Settings.Default.LastLogMaintenance;
+            checkboxDarkmode.IsChecked = Convert.ToBoolean(programsettings.Single<Setting>(i => i.Name == "DarkMode").Value);
             checkboxDeleteArchive.IsChecked = Convert.ToBoolean(logmaintenance.AutoDelete);
             logmaintenance.AutoArchive = programsettings.Single<Setting>(i => i.Name == "AutoArchive").Value;
             checkboxAutoArchive.IsChecked = Convert.ToBoolean(logmaintenance.AutoArchive);
@@ -4220,6 +4228,9 @@ namespace DAR
                     Setting maxlogentry = settings.FindOne(Query.EQ("Name", "MaxLogEntry"));
                     maxlogentry.Value = textboxMaxEntries.Text;
                     settings.Update(maxlogentry);
+                    Setting darkmode = settings.FindOne(Query.EQ("Name", "DarkMode"));
+                    darkmode.Value = checkboxDarkmode.IsChecked.ToString();
+                    settings.Update(darkmode);
                 }
             }            
         }
@@ -4244,5 +4255,19 @@ namespace DAR
             textboxLogMatches.Text = "";
         }
         #endregion
+
+        private void CheckboxDarkmode_Checked(object sender, RoutedEventArgs e)
+        {
+            Vs2013LightTheme lighttheme = new Vs2013LightTheme();
+            dockingmanager.Theme = lighttheme;
+            Fluent.ThemeManager.ChangeTheme(this, "Light.Blue");
+        }
+
+        private void CheckboxDarkmode_Unchecked(object sender, RoutedEventArgs e)
+        {
+            Vs2013DarkTheme darktheme = new Vs2013DarkTheme();
+            dockingmanager.Theme = darktheme;
+            Fluent.ThemeManager.ChangeTheme(this, "Dark.Blue");
+        }
     }
 }

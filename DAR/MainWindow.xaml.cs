@@ -3846,123 +3846,132 @@ namespace DAR
             string stop = "";
             return rval;
         }
-        private void ExportTriggers(TreeViewModel startnode)
+        private Boolean ExportTriggers(TreeViewModel startnode)
         {
+            Boolean rval = false;
             //Get the folder location to export to
             String exportfolder = SelectFolder(textboxDataFolder.Text);
-            //build the zip file name
-            StringBuilder sb = new StringBuilder();
-            sb.Append(@"dataexport_");
-            sb.Append(DateTime.Now.ToString("MMddyyyy_HHmmss"));
-            sb.Append(@".zip");
-            //build the json
-            JArray rootnodes = new JArray();
-            if(startnode.Type == "triggergroup")
+            if (exportfolder != "false")
             {
-                JObject jobject = new JObject(
-                    new JProperty("TriggerGroupName", startnode.Name),
-                    new JProperty("Type","triggergroup"),
-                    new JProperty("Id", 0),
-                    new JProperty("children", new JArray()),
-                    new JProperty("triggers", new JArray())
-                    );
-                foreach (TreeViewModel child in startnode.Children)
+                rval = true;
+                //build the zip file name
+                StringBuilder sb = new StringBuilder();
+                sb.Append(@"dataexport_");
+                sb.Append(DateTime.Now.ToString("MMddyyyy_HHmmss"));
+                sb.Append(@".zip");
+                //build the json
+                JArray rootnodes = new JArray();
+                if (startnode.Type == "triggergroup")
                 {
-                    Console.WriteLine($"Exporting {child.Name}");
-                    using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-                    {
-                        LiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
-                        TriggerGroup exportgroup = triggergroups.FindById(child.Id);
-                        ((JArray)jobject["children"]).Add(ExportGroup(exportgroup));
-                    }
-                }
-                rootnodes.Add(jobject);
-            }
-            else if(startnode.Id == 0)
-            {
-                foreach (TreeViewModel child in startnode.Children)
-                {
-                    /*JObject jobject = new JObject(
-                        new JProperty("TriggerGroupName", child.Name),
+                    JObject jobject = new JObject(
+                        new JProperty("TriggerGroupName", startnode.Name),
                         new JProperty("Type", "triggergroup"),
                         new JProperty("Id", 0),
                         new JProperty("children", new JArray()),
                         new JProperty("triggers", new JArray())
-                        );*/
-                    Console.WriteLine($"Exporting {child.Name}");
-                    using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                        );
+                    foreach (TreeViewModel child in startnode.Children)
                     {
-                        LiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
-                        TriggerGroup exportgroup = triggergroups.FindById(child.Id);
-                        //((JArray)jobject["children"]).Add(ExportGroup(exportgroup));
-                        rootnodes.Add(ExportGroup(exportgroup));
-                    }
-                    //rootnodes.Add(jobject);
-                }
-            }
-            else if(startnode.Type == "trigger")
-            {
-                Console.WriteLine($"Exporting single trigger {startnode.Name}");
-                rootnodes.Add(GetExportTrigger(startnode.Id));
-            }
-
-            JObject exportjson = new JObject(
-                new JProperty("rootnodes", rootnodes));
-            string json = JsonConvert.SerializeObject(exportjson);
-            using (var memoryStream = new MemoryStream())
-            {
-                using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
-                {
-                    if (exportsounds.Count > 0)
-                    {
-                        foreach (String soundid in exportsounds)
+                        Console.WriteLine($"Exporting {child.Name}");
+                        using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                         {
-                            if(soundid != "")
+                            LiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
+                            TriggerGroup exportgroup = triggergroups.FindById(child.Id);
+                            ((JArray)jobject["children"]).Add(ExportGroup(exportgroup));
+                        }
+                    }
+                    rootnodes.Add(jobject);
+                }
+                else if (startnode.Id == 0)
+                {
+                    foreach (TreeViewModel child in startnode.Children)
+                    {
+                        /*JObject jobject = new JObject(
+                            new JProperty("TriggerGroupName", child.Name),
+                            new JProperty("Type", "triggergroup"),
+                            new JProperty("Id", 0),
+                            new JProperty("children", new JArray()),
+                            new JProperty("triggers", new JArray())
+                            );*/
+                        Console.WriteLine($"Exporting {child.Name}");
+                        using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                        {
+                            LiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
+                            TriggerGroup exportgroup = triggergroups.FindById(child.Id);
+                            //((JArray)jobject["children"]).Add(ExportGroup(exportgroup));
+                            rootnodes.Add(ExportGroup(exportgroup));
+                        }
+                        //rootnodes.Add(jobject);
+                    }
+                }
+                else if (startnode.Type == "trigger")
+                {
+                    Console.WriteLine($"Exporting single trigger {startnode.Name}");
+                    rootnodes.Add(GetExportTrigger(startnode.Id));
+                }
+
+                JObject exportjson = new JObject(
+                    new JProperty("rootnodes", rootnodes));
+                string json = JsonConvert.SerializeObject(exportjson);
+                using (var memoryStream = new MemoryStream())
+                {
+                    using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
+                    {
+                        if (exportsounds.Count > 0)
+                        {
+                            foreach (String soundid in exportsounds)
                             {
-                                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                                if (soundid != "")
                                 {
-                                    LiteFileInfo file = db.FileStorage.FindById($"{GlobalVariables.litedbfileprefix}{soundid}");
-                                    var soundfile = archive.CreateEntry(soundid);
-                                    using (var soundstream = soundfile.Open())
+                                    using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                                     {
-                                        file.CopyTo(soundstream);
+                                        LiteFileInfo file = db.FileStorage.FindById($"{GlobalVariables.litedbfileprefix}{soundid}");
+                                        var soundfile = archive.CreateEntry(soundid);
+                                        using (var soundstream = soundfile.Open())
+                                        {
+                                            file.CopyTo(soundstream);
+                                        }
                                     }
                                 }
-                            }                            
+                            }
                         }
-                    }
-                    var newfile = archive.CreateEntry("DataExport.json");
+                        var newfile = archive.CreateEntry("DataExport.json");
 
-                    using (var entryStream = newfile.Open())
-                    {
-                        using (var streamWriter = new StreamWriter(entryStream))
+                        using (var entryStream = newfile.Open())
                         {
-                            streamWriter.Write(json);
+                            using (var streamWriter = new StreamWriter(entryStream))
+                            {
+                                streamWriter.Write(json);
+                            }
                         }
                     }
+                    String newzip = exportfolder + @"\" + sb.ToString();
+                    using (var fileStream = new FileStream(newzip, System.IO.FileMode.Create))
+                    {
+                        memoryStream.Seek(0, SeekOrigin.Begin);
+                        memoryStream.CopyTo(fileStream);
+                    }
                 }
-                String newzip = exportfolder + @"\" + sb.ToString();
-                using (var fileStream = new FileStream(newzip, System.IO.FileMode.Create))
-                {
-                    memoryStream.Seek(0, SeekOrigin.Begin);
-                    memoryStream.CopyTo(fileStream);
-                }
+                //Reset the export sound list
+                exportsounds.Clear();
             }
-            //Reset the export sound list
-            exportsounds.Clear();
+            return rval;
         }
         private void Export()
         {
+            Boolean export = false;
             if ((TreeViewModel)treeViewTriggers.SelectedItem != null)
             {
-                ExportTriggers((TreeViewModel)treeViewTriggers.SelectedItem);
+                export = ExportTriggers((TreeViewModel)treeViewTriggers.SelectedItem);
             }
             else
             {
-
-                ExportTriggers(treeView[0]);
+                export = ExportTriggers(treeView[0]);
             }
-            Xceed.Wpf.Toolkit.MessageBox.Show("Export Complete", "Data Export", MessageBoxButton.OK, MessageBoxImage.Information);
+            if(export)
+            {
+                Xceed.Wpf.Toolkit.MessageBox.Show("Export Complete", "Data Export", MessageBoxButton.OK, MessageBoxImage.Information);
+            }            
         }
         private void ButtonExport_Click(object sender, RoutedEventArgs e)
         {
@@ -3984,11 +3993,19 @@ namespace DAR
             {
                 rval = folderDialog.SelectedPath;
             }
+            else
+            {
+                rval = "false";
+            }
             return rval;
         }
         private void ButtonLoadArchive_Click(object sender, RoutedEventArgs e)
         {
-            textboxArchiveFolder.Text = SelectFolder(textboxArchiveFolder.Text);
+            String archive = SelectFolder(textboxArchiveFolder.Text);
+            if(archive != "false")
+            {
+                textboxArchiveFolder.Text = archive;
+            }            
         }
         private void ButtonSaveArchive_Click(object sender, RoutedEventArgs e)
         {
@@ -4236,15 +4253,27 @@ namespace DAR
         }
         private void ButtonEQFolder_Click(object sender, RoutedEventArgs e)
         {
-            textboxEQFolder.Text = SelectFolder(textboxEQFolder.Text);
+            String eqfolder = SelectFolder(textboxEQFolder.Text);
+            if(eqfolder != "false")
+            {
+                textboxEQFolder.Text = eqfolder;
+            }            
         }
         private void ButtonMediaFolder_Click(object sender, RoutedEventArgs e)
         {
-            textboxMediaFolder.Text = SelectFolder(textboxMediaFolder.Text);
+            String mediafolder = SelectFolder(textboxMediaFolder.Text);
+            if(mediafolder != "false")
+            {
+                textboxMediaFolder.Text = "false";
+            }            
         }
         private void ButtonDataFolder_Click(object sender, RoutedEventArgs e)
         {
-            textboxDataFolder.Text = SelectFolder(textboxDataFolder.Text);
+            String datafolder = SelectFolder(textboxDataFolder.Text);
+            if(datafolder != "false")
+            {
+                textboxDataFolder.Text = datafolder;
+            }            
         }
         private void CheckboxLogMatches_Checked(object sender, RoutedEventArgs e)
         {
@@ -4254,20 +4283,18 @@ namespace DAR
         {
             textboxLogMatches.Text = "";
         }
-        #endregion
-
         private void CheckboxDarkmode_Checked(object sender, RoutedEventArgs e)
         {
             Vs2013LightTheme lighttheme = new Vs2013LightTheme();
             dockingmanager.Theme = lighttheme;
             Fluent.ThemeManager.ChangeTheme(this, "Light.Blue");
         }
-
         private void CheckboxDarkmode_Unchecked(object sender, RoutedEventArgs e)
         {
             Vs2013DarkTheme darktheme = new Vs2013DarkTheme();
             dockingmanager.Theme = darktheme;
             Fluent.ThemeManager.ChangeTheme(this, "Dark.Blue");
         }
+        #endregion
     }
 }

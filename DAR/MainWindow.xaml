@@ -530,6 +530,11 @@
                                                         <Image Height="20" Source="Images\Oxygen-Icons.org-Oxygen-Apps-preferences-system-network-sharing.ico"/>
                                                     </MenuItem.Icon>
                                                 </MenuItem>
+                                                <MenuItem Name="cmShare" Header="Share Triggers" Click="CmShare_Click">
+                                                    <MenuItem.Icon>
+                                                        <Image Height="20" Source="Images\Oxygen-Icons.org-Oxygen-Actions-contact-new.ico"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
                                             </ContextMenu>
                                     </TreeView.ContextMenu>
                                 </TreeView>

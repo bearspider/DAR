@@ -2,6 +2,7 @@
 using Microsoft.Win32;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using RestSharp;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -44,6 +45,7 @@ namespace DAR
         public static string pushbackurl = @"https://raw.githubusercontent.com/bearspider/EQ-LogParsers/master/pushback.csv";
         public static string pushupurl = @"https://raw.githubusercontent.com/bearspider/EQ-LogParsers/master/pushup.csv";
         public static string litedbfileprefix = @"$/triggersounds/";
+        public static string apiserver = @"localhost:52750";
     }
     #region Converters
     /// <summary>
@@ -269,6 +271,7 @@ namespace DAR
         private string clipboardtype = "";
         private static string version = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion;
         private int totallinecount = 0;
+        private String shareguid = "";
 
         //Maintenance
         private Maintenance logmaintenance = new Maintenance();
@@ -3846,11 +3849,16 @@ namespace DAR
             string stop = "";
             return rval;
         }
-        private Boolean ExportTriggers(TreeViewModel startnode)
+        private Boolean ExportTriggers(TreeViewModel startnode, Boolean share)
         {
             Boolean rval = false;
             //Get the folder location to export to
-            String exportfolder = SelectFolder(textboxDataFolder.Text);
+            String exportfolder = GlobalVariables.defaultPath;
+            if(!share)
+            {
+                exportfolder = SelectFolder(textboxDataFolder.Text);
+            }            
+            String zipname = "";
             if (exportfolder != "false")
             {
                 rval = true;
@@ -3945,7 +3953,8 @@ namespace DAR
                             }
                         }
                     }
-                    String newzip = exportfolder + @"\" + sb.ToString();
+                    zipname = sb.ToString();
+                    String newzip = exportfolder + @"\" + zipname;
                     using (var fileStream = new FileStream(newzip, System.IO.FileMode.Create))
                     {
                         memoryStream.Seek(0, SeekOrigin.Begin);
@@ -3954,19 +3963,48 @@ namespace DAR
                 }
                 //Reset the export sound list
                 exportsounds.Clear();
+                if(share)
+                {
+                    Guid guid = Guid.NewGuid();
+                    //Send Rest call to insert package
+                    var client = new RestClient($"http://{GlobalVariables.apiserver}/api/dar/package");
+                    var request = new RestRequest(Method.POST);
+                    request.AddHeader("accept", "application/json");
+                    request.AddHeader("content-type", "application/json");
+                    Package package = new Package
+                    {
+                        Guid = guid.ToString(),
+                        Payload = zipname
+                    };
+                    request.AddJsonBody(package);
+                    IRestResponse response = client.Execute(request);
+                    dynamic responsetoken = JsonConvert.DeserializeObject(response.Content);
+
+                    //Send Rest call to insert payload
+                    var payloadclient = new RestClient($"http://{GlobalVariables.apiserver}/api/dar/payload");
+                    var payloadrequest = new RestRequest(Method.POST);
+                    payloadrequest.AddFile("file",exportfolder + "\\" + zipname);
+                    IRestResponse payloadresponse = payloadclient.Execute(payloadrequest);
+                    dynamic payloadtoken = JsonConvert.DeserializeObject(response.Content);
+                    //return the guid
+                    shareguid = @"{PACKAGE: " + guid.ToString() + @"}";
+                    Console.WriteLine($"{shareguid}");
+                    //delete the zip file
+                    File.Delete(exportfolder + zipname);
+                }
             }
             return rval;
         }
-        private void Export()
+        private void Export(Boolean share)
         {
             Boolean export = false;
             if ((TreeViewModel)treeViewTriggers.SelectedItem != null)
             {
-                export = ExportTriggers((TreeViewModel)treeViewTriggers.SelectedItem);
+                export = ExportTriggers((TreeViewModel)treeViewTriggers.SelectedItem, share);
             }
             else
             {
-                export = ExportTriggers(treeView[0]);
+                export = ExportTriggers(treeView[0],share);
             }
             if(export)
             {
@@ -3975,11 +4013,11 @@ namespace DAR
         }
         private void ButtonExport_Click(object sender, RoutedEventArgs e)
         {
-            Export();
+            Export(false);
         }
         private void CmExportFile_Click(object sender, RoutedEventArgs e)
         {
-            Export();
+            Export(false);
         }
         #endregion
         #region Fluent Backstage
@@ -4296,5 +4334,10 @@ namespace DAR
             Fluent.ThemeManager.ChangeTheme(this, "Dark.Blue");
         }
         #endregion
+
+        private void CmShare_Click(object sender, RoutedEventArgs e)
+        {
+            Export(true);
+        }
     }
 }

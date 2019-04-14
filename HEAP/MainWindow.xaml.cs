@@ -3129,6 +3129,7 @@ namespace HEAP
         {
             dynamic back2json = JsonConvert.DeserializeObject(json);
             JToken token = ((JToken)back2json).SelectToken("rootnodes");
+            string stop = "";
             //Go through each object
             //if trigger group -> check if the uniqueid matches any existing groups
             //  if match -> update any group info else create new group
@@ -3929,12 +3930,20 @@ namespace HEAP
                     foreach (TreeViewModel child in startnode.Children)
                     {
                         Console.WriteLine($"Exporting {child.Name}");
-                        using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                        if(child.Type == "triggergroup")
                         {
-                            LiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
-                            TriggerGroup exportgroup = triggergroups.FindById(child.Id);
-                            ((JArray)jobject["children"]).Add(ExportGroup(exportgroup));
+                            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                            {
+                                LiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
+                                TriggerGroup exportgroup = triggergroups.FindById(child.Id);
+                                ((JArray)jobject["children"]).Add(ExportGroup(exportgroup));
+                            }
                         }
+                        else if(child.Type == "trigger")
+                        {
+                            ((JArray)jobject["triggers"]).Add(GetExportTrigger(child.Id));
+                        }
+
                     }
                     rootnodes.Add(jobject);
                 }
@@ -4031,7 +4040,7 @@ namespace HEAP
                     IRestResponse payloadresponse = payloadclient.Execute(payloadrequest);
                     dynamic payloadtoken = JsonConvert.DeserializeObject(response.Content);
                     //return the guid
-                    shareguid = @"{HEAP: " + guid.ToString() + @"}";
+                    shareguid = @"{HEAP:" + guid.ToString() + @"}";
                     Clipboard.SetText(shareguid);
                     Console.WriteLine($"{shareguid}");
                     //delete the zip file
@@ -4391,8 +4400,6 @@ namespace HEAP
             {
                 var client = new RestClient($"http://{GlobalVariables.apiserver}{GlobalVariables.restbase}/{guid}");
                 var request = new RestRequest(Method.GET);
-                request.AddHeader("accept", "application/json");
-                request.AddHeader("content-type", "application/json");
                 request.ResponseWriter = (responsestream) => responsestream.CopyTo(writer);
                 var response = client.DownloadData(request);
             }

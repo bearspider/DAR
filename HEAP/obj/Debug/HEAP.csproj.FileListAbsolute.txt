@@ -159,3 +159,4 @@ C:\bearspider\HEAP\HEAP\obj\Debug\HEAP.application
 C:\bearspider\HEAP\HEAP\obj\Debug\HEAP.csproj.CopyComplete
 C:\bearspider\HEAP\HEAP\obj\Debug\HEAP.exe
 C:\bearspider\HEAP\HEAP\obj\Debug\HEAP.pdb
+C:\bearspider\HEAP\HEAP\obj\Debug\HEAP.csprojAssemblyReference.cache

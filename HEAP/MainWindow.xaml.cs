@@ -1663,7 +1663,7 @@ namespace HEAP
                 Console.WriteLine($"Inserting Trigger Group: {toimport.TriggerGroupName}");
                 if(toimport.UniqueId == "")
                 {
-                    toimport.UniqueId = Guid.NewGuid.ToString();
+                    toimport.UniqueId = Guid.NewGuid().ToString();
                 }
                 TriggerGroup newgroup = new TriggerGroup
                 {
@@ -3754,10 +3754,12 @@ namespace HEAP
             if (mergetreeView.Count > 0)
             {
                 treemerge.Visibility = Visibility.Visible;
+                buttonDoneMerge.Visibility = Visibility.Visible;
             }
             else
             {
                 treemerge.Visibility = Visibility.Hidden;
+                buttonDoneMerge.Visibility = Visibility.Hidden;
             }
         }
         private void DeleteBranch(TreeViewModel tvm, int idtodelete)

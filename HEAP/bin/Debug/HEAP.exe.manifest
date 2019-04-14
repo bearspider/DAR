@@ -67,14 +67,14 @@
     </dependentAssembly>
   </dependency>
   <dependency>
-    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="HEAP.exe" size="10950600">
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="HEAP.exe" size="10953160">
       <assemblyIdentity name="HEAP" version="1.0.0.0" language="neutral" processorArchitecture="msil" />
       <hash>
         <dsig:Transforms>
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
         </dsig:Transforms>
         <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
-        <dsig:DigestValue>6I026nKiKBlJRl+wQfEuSZ2x5HMGWDbSlsA/zMZVLps=</dsig:DigestValue>
+        <dsig:DigestValue>gI43P1xsrbUxpqN2JwzkYBXugJCDi/bcGR4pecyaUJY=</dsig:DigestValue>
       </hash>
     </dependentAssembly>
   </dependency>
@@ -366,13 +366,13 @@
       </hash>
     </dependentAssembly>
   </dependency>
-  <file name="HEAP.exe.config" size="1508">
+  <file name="HEAP.exe.config" size="1768">
     <hash>
       <dsig:Transforms>
         <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
       </dsig:Transforms>
       <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
-      <dsig:DigestValue>9tdJwUBajTsCC6S7cXR/Ad+kwoZOTu5d8fzYi+P8U3g=</dsig:DigestValue>
+      <dsig:DigestValue>OTq6MiJqBHksL2s1TDHu9A+LVPly756fJGEN4rFsm3I=</dsig:DigestValue>
     </hash>
   </file>
   <file name="Images\Tonev-Windows-7-Windows-7-headphone.ico" size="371894">

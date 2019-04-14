@@ -5,5 +5,11 @@
     <Setting Name="LastLogMaintenance" Type="System.DateTime" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
+    <Setting Name="ApiUsername" Type="System.String" Scope="User">
+      <Value Profile="(Default)">restadmin</Value>
+    </Setting>
+    <Setting Name="ApiPassword" Type="System.String" Scope="User">
+      <Value Profile="(Default)">supersecret</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

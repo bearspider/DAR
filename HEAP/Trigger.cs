@@ -12,6 +12,7 @@ namespace HEAP
     public class Trigger
     {
         public int id;
+        public String uniqueid;
         public String name;
         public ArrayList profiles;
         public String searchText;
@@ -39,7 +40,11 @@ namespace HEAP
         public Audio timerEndedAudio;
         public Boolean resetCounter;
         public int resetCounterDuration;
-
+        public string UniqueId
+        {
+            get { return uniqueid; }
+            set { uniqueid = value; }
+        }
         public int Id
         {
             get { return id; }
@@ -50,7 +55,7 @@ namespace HEAP
             id = 0;
             name = "New Trigger";
             profiles = new ArrayList();
-
+            uniqueid = Guid.NewGuid().ToString();
             searchText = "";
             comments = "";
             regex = false;

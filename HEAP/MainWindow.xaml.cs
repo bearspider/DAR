@@ -40,12 +40,14 @@ namespace HEAP
         public static string defaultDB = $"{defaultPath}\\eqtriggers.db";
         public static string backupDB = $"{defaultPath}\\BackupDB";
         public static string eqRegex = @"\[(?<eqtime>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\](?<stringToMatch>.*)";
+        public static string shareRegex = @".*?\{HEAP:(?<GUID>.*?)\}";
         public static Regex eqspellRegex = new Regex(@"(\[(?<eqtime>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\])\s((?<character>\w+)\sbegin\s(casting|singing)\s(?<spellname>.*)\.)|(\[(?<eqtime>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\])\s(?<character>\w+)\s(begins\sto\s(cast|sing)\s.*\<(?<spellname>.*)\>)", RegexOptions.Compiled);
         public static string pathRegex = @"(?<logdir>.*\\)(?<logname>eqlog_.*\.txt)";
         public static string pushbackurl = @"https://raw.githubusercontent.com/bearspider/EQ-LogParsers/master/pushback.csv";
         public static string pushupurl = @"https://raw.githubusercontent.com/bearspider/EQ-LogParsers/master/pushup.csv";
         public static string litedbfileprefix = @"$/triggersounds/";
         public static string apiserver = @"localhost:52750";
+        public static string restbase = @"/api/heap";
     }
     #region Converters
     /// <summary>
@@ -878,65 +880,76 @@ namespace HEAP
                                 Stopwatch stopwatch = new Stopwatch();
                                 stopwatch.Start();
                                 UpdateLineCount(1);
-                                Match eqline = Regex.Match(capturedLine, GlobalVariables.eqRegex);
-                                String tomatch = eqline.Groups["stringToMatch"].Value;
-                                String eqtime = eqline.Groups["eqtime"].Value;
-                                Parallel.ForEach(listoftriggers,(KeyValuePair<Trigger, ArrayList> doc, ParallelLoopState state) =>
-                                  {
-                                    //Do regex match if enabled otherwise string.contains
-                                    Boolean foundmatch = false;
-                                      if (doc.Key.Regex)
-                                      {
-                                          foundmatch = (Regex.Match(tomatch, Regex.Escape(doc.Key.SearchText), RegexOptions.IgnoreCase)).Success;
-                                      }
-                                      else
-                                      {
-                                          String ucaselog = tomatch.ToUpper();
-                                          String ucasetrigger = doc.Key.SearchText.ToUpper();
-                                          foundmatch = ucaselog.Contains(ucasetrigger);
-                                      }
-                                      if (doc.Key.EndEarlyText.Count > 0)
-                                      {
-                                          Boolean endearly = false;
-                                          foreach (SearchText earlyend in doc.Key.EndEarlyText)
-                                          {
-                                              if (earlyend.Regex)
-                                              {
-                                                  endearly = (Regex.Match(tomatch, Regex.Escape(earlyend.Searchtext), RegexOptions.IgnoreCase)).Success;
-                                              }
-                                              else
-                                              {
-                                                  String ucaselog = tomatch.ToUpper();
-                                                  String ucasetrigger = earlyend.Searchtext.ToUpper();
-                                                  endearly = ucaselog.Contains(ucasetrigger);
-                                              }
-                                            //TO DO: Probably implement extra stuff on a early end trigger
-                                            if (endearly)
-                                              {
-                                                  Console.WriteLine($"Early end for {doc.Key.Name} => {endearly}");
-                                                  ClearTimer(doc.Key);
-                                              }
-                                          }
-                                      }
-                                      if (foundmatch && doc.Value.Contains(character.Id))
-                                      {
-                                          if(stopfirstmatch)
-                                          {
-                                              state.Break();
-                                          }                                          
-                                          Console.WriteLine($"Matched Trigger {doc.Key.Id}");
-                                          Stopwatch firetrigger = new Stopwatch();
-                                          firetrigger.Start();
-                                          FireTrigger(doc.Key, character, tomatch, eqtime);
-                                          firetrigger.Stop();
-                                          Console.WriteLine($"Fired Trigger in {firetrigger.Elapsed.Seconds}");
-                                      }
-                                  });
-                                stopwatch.Stop();
-                                //Console.WriteLine($"Trigger matched in: {stopwatch.Elapsed.ToString()}");
-                                if (pushbackToggle)
+                                if (capturedLine.Contains(@"{HEAP:"))
                                 {
-                                    PushMonitor(capturedLine, character.ProfileName);
+                                    Match sharingmatch = Regex.Match(capturedLine, GlobalVariables.shareRegex);
+                                    if(sharingmatch.Success)
+                                    {
+                                        GetShare(sharingmatch.Groups["GUID"].Value.ToString());
+                                    }
+                                }
+                                else
+                                {
+                                    Match eqline = Regex.Match(capturedLine, GlobalVariables.eqRegex);
+                                    String tomatch = eqline.Groups["stringToMatch"].Value;
+                                    String eqtime = eqline.Groups["eqtime"].Value;
+                                    Parallel.ForEach(listoftriggers, (KeyValuePair<Trigger, ArrayList> doc, ParallelLoopState state) =>
+                                       {
+                                      //Do regex match if enabled otherwise string.contains
+                                      Boolean foundmatch = false;
+                                           if (doc.Key.Regex)
+                                           {
+                                               foundmatch = (Regex.Match(tomatch, Regex.Escape(doc.Key.SearchText), RegexOptions.IgnoreCase)).Success;
+                                           }
+                                           else
+                                           {
+                                               String ucaselog = tomatch.ToUpper();
+                                               String ucasetrigger = doc.Key.SearchText.ToUpper();
+                                               foundmatch = ucaselog.Contains(ucasetrigger);
+                                           }
+                                           if (doc.Key.EndEarlyText.Count > 0)
+                                           {
+                                               Boolean endearly = false;
+                                               foreach (SearchText earlyend in doc.Key.EndEarlyText)
+                                               {
+                                                   if (earlyend.Regex)
+                                                   {
+                                                       endearly = (Regex.Match(tomatch, Regex.Escape(earlyend.Searchtext), RegexOptions.IgnoreCase)).Success;
+                                                   }
+                                                   else
+                                                   {
+                                                       String ucaselog = tomatch.ToUpper();
+                                                       String ucasetrigger = earlyend.Searchtext.ToUpper();
+                                                       endearly = ucaselog.Contains(ucasetrigger);
+                                                   }
+                                              //TO DO: Probably implement extra stuff on a early end trigger
+                                              if (endearly)
+                                                   {
+                                                       Console.WriteLine($"Early end for {doc.Key.Name} => {endearly}");
+                                                       ClearTimer(doc.Key);
+                                                   }
+                                               }
+                                           }
+                                           if (foundmatch && doc.Value.Contains(character.Id))
+                                           {
+                                               if (stopfirstmatch)
+                                               {
+                                                   state.Break();
+                                               }
+                                               Console.WriteLine($"Matched Trigger {doc.Key.Id}");
+                                               Stopwatch firetrigger = new Stopwatch();
+                                               firetrigger.Start();
+                                               FireTrigger(doc.Key, character, tomatch, eqtime);
+                                               firetrigger.Stop();
+                                               Console.WriteLine($"Fired Trigger in {firetrigger.Elapsed.Seconds}");
+                                           }
+                                       });
+                                    stopwatch.Stop();
+                                    //Console.WriteLine($"Trigger matched in: {stopwatch.Elapsed.ToString()}");
+                                    if (pushbackToggle)
+                                    {
+                                        PushMonitor(capturedLine, character.ProfileName);
+                                    }
                                 }
                             }
                             if (characterProfiles.Any(x => x.Monitor == false && x.ProfileName == character.ProfileName))
@@ -1648,6 +1661,10 @@ namespace HEAP
                 //create a new group because we need to get bson values from child triggers and group database entries
                 //Look for trigger group by name.
                 Console.WriteLine($"Inserting Trigger Group: {toimport.TriggerGroupName}");
+                if(toimport.UniqueId == "")
+                {
+                    toimport.UniqueId = Guid.NewGuid.ToString();
+                }
                 TriggerGroup newgroup = new TriggerGroup
                 {
                     TriggerGroupName = toimport.TriggerGroupName,
@@ -1690,6 +1707,10 @@ namespace HEAP
             {
                 var colTriggers = db.GetCollection<Trigger>("triggers");
                 toimport.TriggerCategory = defaultcategory.Id;
+                if(toimport.uniqueid == "")
+                {
+                    toimport.UniqueId = Guid.NewGuid().ToString();
+                }
                 bsonid = colTriggers.Insert(toimport);
                 //Activate trigger for all profiles
                 //AllProfileEnableTrigger(bsonid);
@@ -3104,30 +3125,54 @@ namespace HEAP
         }
         #endregion
         #region Import Triggers
+        public void ImportFromShare(string json)
+        {
+            dynamic back2json = JsonConvert.DeserializeObject(json);
+            JToken token = ((JToken)back2json).SelectToken("rootnodes");
+            //Go through each object
+            //if trigger group -> check if the uniqueid matches any existing groups
+            //  if match -> update any group info else create new group
+            //if trigger -> check if the uniqueid matches any existing triggers
+            //  if match -> update any trigger info else create new trigger
+        }
+        public void ImportZip(string filename, Boolean share)
+        {
+            using (ZipArchive archive = ZipFile.OpenRead(filename))
+            {
+                //Load the json
+                if (archive.Entries.Count > 0)
+                {
+                    foreach (ZipArchiveEntry entry in archive.Entries)
+                    {
+                        if (entry.Name == "DataExport.json")
+                        {
+                            using (StreamReader streamtriggers = new StreamReader(entry.Open()))
+                            {
+                                if (share)
+                                {
+                                    ImportFromShare(streamtriggers.ReadToEnd());
+                                }
+                                else
+                                {
+                                    ImportFromExternal(streamtriggers.ReadToEnd());
+                                }
+                            }
+                        }
+                        else if (entry.Name.Contains(@".wav"))
+                        {
+                            entry.ExtractToFile($"{GlobalVariables.defaultPath}\\ImportedSounds\\{entry.Name}");
+                        }
+                    }
+                }
+            }
+        }
         private void ImportClick()
         {
             OpenFileDialog fileDialog = new OpenFileDialog();
             fileDialog.Filter = "EQ Audio Trigger Package|*.zip";
             if (fileDialog.ShowDialog() == true)
             {
-                using (ZipArchive archive = ZipFile.OpenRead(fileDialog.FileName))
-                {
-                    //Load the json
-                    if (archive.Entries.Count > 0)
-                    {
-                        foreach (ZipArchiveEntry entry in archive.Entries)
-                        {
-                            if (entry.Name == "DataExport.json")
-                            {
-                                ZipArchiveEntry triggersjson = entry;
-                                using (StreamReader streamtriggers = new StreamReader(triggersjson.Open()))
-                                {
-                                    ImportFromExternal(streamtriggers.ReadToEnd());
-                                }
-                            }
-                        }
-                    }
-                }
+                ImportZip(fileDialog.FileName,false);
             }
         }
         private void SplitButtonImport_Click(object sender, RoutedEventArgs e)
@@ -3895,22 +3940,13 @@ namespace HEAP
                 {
                     foreach (TreeViewModel child in startnode.Children)
                     {
-                        /*JObject jobject = new JObject(
-                            new JProperty("TriggerGroupName", child.Name),
-                            new JProperty("Type", "triggergroup"),
-                            new JProperty("Id", 0),
-                            new JProperty("children", new JArray()),
-                            new JProperty("triggers", new JArray())
-                            );*/
                         Console.WriteLine($"Exporting {child.Name}");
                         using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                         {
                             LiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
                             TriggerGroup exportgroup = triggergroups.FindById(child.Id);
-                            //((JArray)jobject["children"]).Add(ExportGroup(exportgroup));
                             rootnodes.Add(ExportGroup(exportgroup));
                         }
-                        //rootnodes.Add(jobject);
                     }
                 }
                 else if (startnode.Type == "trigger")
@@ -3967,11 +4003,15 @@ namespace HEAP
                 if(share)
                 {
                     Guid guid = Guid.NewGuid();
+                    String token = Convert.ToBase64String(
+            System.Text.ASCIIEncoding.ASCII.GetBytes(
+                string.Format("{0}:{1}", Properties.Settings.Default.ApiUsername, Properties.Settings.Default.ApiPassword)));
                     //Send Rest call to insert package
-                    var client = new RestClient($"http://{GlobalVariables.apiserver}/api/dar/package");
+                    var client = new RestClient($"http://{GlobalVariables.apiserver}{GlobalVariables.restbase}/package");
                     var request = new RestRequest(Method.POST);
                     request.AddHeader("accept", "application/json");
                     request.AddHeader("content-type", "application/json");
+                    request.AddHeader("Authorization", $"Basic {token}");
                     Package package = new Package
                     {
                         Guid = guid.ToString(),
@@ -3982,13 +4022,15 @@ namespace HEAP
                     dynamic responsetoken = JsonConvert.DeserializeObject(response.Content);
 
                     //Send Rest call to insert payload
-                    var payloadclient = new RestClient($"http://{GlobalVariables.apiserver}/api/dar/payload");
+                    var payloadclient = new RestClient($"http://{GlobalVariables.apiserver}{GlobalVariables.restbase}/payload");
                     var payloadrequest = new RestRequest(Method.POST);
                     payloadrequest.AddFile("file",exportfolder + "\\" + zipname);
+                    payloadrequest.AddHeader("Authorization", $"Basic {token}");
                     IRestResponse payloadresponse = payloadclient.Execute(payloadrequest);
                     dynamic payloadtoken = JsonConvert.DeserializeObject(response.Content);
                     //return the guid
-                    shareguid = @"{PACKAGE: " + guid.ToString() + @"}";
+                    shareguid = @"{HEAP: " + guid.ToString() + @"}";
+                    Clipboard.SetText(shareguid);
                     Console.WriteLine($"{shareguid}");
                     //delete the zip file
                     File.Delete(exportfolder + zipname);
@@ -4335,10 +4377,27 @@ namespace HEAP
             Fluent.ThemeManager.ChangeTheme(this, "Dark.Blue");
         }
         #endregion
-
+        #region Sharing
         private void CmShare_Click(object sender, RoutedEventArgs e)
         {
             Export(true);
         }
+        private void GetShare(string guid)
+        {
+            string tempfile = $"{GlobalVariables.defaultPath}\\sharedownload.zip";
+            using (var writer = new FileStream(tempfile, System.IO.FileMode.Create))
+            {
+                var client = new RestClient($"http://{GlobalVariables.apiserver}{GlobalVariables.restbase}/{guid}");
+                var request = new RestRequest(Method.GET);
+                request.AddHeader("accept", "application/json");
+                request.AddHeader("content-type", "application/json");
+                request.ResponseWriter = (responsestream) => responsestream.CopyTo(writer);
+                var response = client.DownloadData(request);
+            }
+            ImportZip(tempfile,true);
+            File.Delete(tempfile);
+        }
+        #endregion
+
     }
 }

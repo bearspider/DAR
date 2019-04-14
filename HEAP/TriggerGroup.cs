@@ -11,6 +11,7 @@ namespace HEAP
     public class TriggerGroup
     {
         public int id;
+        public String uniqueid;
         public String triggerGroupName;
         public String comments;
         public Boolean defaultEnabled;
@@ -26,6 +27,12 @@ namespace HEAP
             defaultEnabled = true;
             children = new ArrayList();
             triggers = new ArrayList();
+            uniqueid = Guid.NewGuid().ToString();
+        }
+        public String UniqueId
+        {
+            get { return uniqueid; }
+            set { uniqueid = value; }
         }
         public Boolean DefaultEnabled
         {

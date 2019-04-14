@@ -33,5 +33,29 @@ namespace HEAP.Properties {
                 this["LastLogMaintenance"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("restadmin")]
+        public string ApiUsername {
+            get {
+                return ((string)(this["ApiUsername"]));
+            }
+            set {
+                this["ApiUsername"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("supersecret")]
+        public string ApiPassword {
+            get {
+                return ((string)(this["ApiPassword"]));
+            }
+            set {
+                this["ApiPassword"] = value;
+            }
+        }
     }
 }

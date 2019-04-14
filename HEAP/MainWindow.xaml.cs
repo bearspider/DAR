@@ -3790,25 +3790,29 @@ namespace HEAP
         }
         #endregion
         #region Export Triggers
-        private JObject ExportGroup(TriggerGroup group)
+        private JObject ExportGroup(int groupid)
         {
+            TriggerGroup group = new TriggerGroup();
             JArray triggers = new JArray();
-            if(group.Triggers.Count > 0)
-            {
-                foreach(int triggerid in group.Triggers)
-                {
-                    triggers.Add(GetExportTrigger(triggerid));
-                }
-            }
             JArray subgroups = new JArray();
-            if(group.Children.Count > 0)
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                LiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
+                group = triggergroups.FindById(groupid);
+                
+                if (group.Triggers.Count > 0)
                 {
-                    LiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
-                    foreach (int groupid in group.Children)
+                    foreach (int triggerid in group.Triggers)
                     {
-                        subgroups.Add(ExportGroup(triggergroups.FindById(groupid)));
+                        triggers.Add(GetExportTrigger(triggerid));
+                    }
+                }
+                
+                if (group.Children.Count > 0)
+                {
+                    foreach (int subgroupid in group.Children)
+                    {
+                        subgroups.Add(ExportGroup(subgroupid));
                     }
                 }
             }
@@ -3932,12 +3936,7 @@ namespace HEAP
                         Console.WriteLine($"Exporting {child.Name}");
                         if(child.Type == "triggergroup")
                         {
-                            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-                            {
-                                LiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
-                                TriggerGroup exportgroup = triggergroups.FindById(child.Id);
-                                ((JArray)jobject["children"]).Add(ExportGroup(exportgroup));
-                            }
+                            ((JArray)jobject["children"]).Add(ExportGroup(child.Id));
                         }
                         else if(child.Type == "trigger")
                         {
@@ -3952,12 +3951,7 @@ namespace HEAP
                     foreach (TreeViewModel child in startnode.Children)
                     {
                         Console.WriteLine($"Exporting {child.Name}");
-                        using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-                        {
-                            LiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
-                            TriggerGroup exportgroup = triggergroups.FindById(child.Id);
-                            rootnodes.Add(ExportGroup(exportgroup));
-                        }
+                        rootnodes.Add(ExportGroup(child.Id));
                     }
                 }
                 else if (startnode.Type == "trigger")

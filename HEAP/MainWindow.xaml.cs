@@ -39,14 +39,14 @@ namespace HEAP
         public static string defaultPath = @"C:\EQAudioTriggers";
         public static string defaultDB = $"{defaultPath}\\eqtriggers.db";
         public static string backupDB = $"{defaultPath}\\BackupDB";
-        public static string eqRegex = @"\[(?<eqtime>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\](?<stringToMatch>.*)";
-        public static string shareRegex = @".*?\{HEAP:(?<GUID>.*?)\}";
+        public static Regex eqRegex = new Regex(@"\[(?<eqtime>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\](?<stringToMatch>.*)",RegexOptions.Compiled);
+        public static Regex shareRegex = new Regex(@".*?\{HEAP:(?<GUID>.*?)\}",RegexOptions.Compiled);
         public static Regex eqspellRegex = new Regex(@"(\[(?<eqtime>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\])\s((?<character>\w+)\sbegin\s(casting|singing)\s(?<spellname>.*)\.)|(\[(?<eqtime>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\])\s(?<character>\w+)\s(begins\sto\s(cast|sing)\s.*\<(?<spellname>.*)\>)", RegexOptions.Compiled);
-        public static string pathRegex = @"(?<logdir>.*\\)(?<logname>eqlog_.*\.txt)";
+        //public static string pathRegex = @"(?<logdir>.*\\)(?<logname>eqlog_.*\.txt)";
         public static string pushbackurl = @"https://raw.githubusercontent.com/bearspider/EQ-LogParsers/master/pushback.csv";
         public static string pushupurl = @"https://raw.githubusercontent.com/bearspider/EQ-LogParsers/master/pushup.csv";
         public static string litedbfileprefix = @"$/triggersounds/";
-        public static string apiserver = @"localhost:52750";
+        public static string apiserver = @"heapapi.azurewebsites.net";
         public static string restbase = @"/api/heap";
     }
     #region Converters
@@ -877,12 +877,13 @@ namespace HEAP
                             String capturedLine = streamReader.ReadLine();
                             if (capturedLine != null)
                             {
+                                Console.WriteLine($"Matching line {capturedLine}");
                                 Stopwatch stopwatch = new Stopwatch();
                                 stopwatch.Start();
                                 UpdateLineCount(1);
                                 if (capturedLine.Contains(@"{HEAP:"))
                                 {
-                                    Match sharingmatch = Regex.Match(capturedLine, GlobalVariables.shareRegex);
+                                    Match sharingmatch = GlobalVariables.shareRegex.Match(capturedLine);
                                     if(sharingmatch.Success)
                                     {
                                         GetShare(sharingmatch.Groups["GUID"].Value.ToString());
@@ -890,7 +891,7 @@ namespace HEAP
                                 }
                                 else
                                 {
-                                    Match eqline = Regex.Match(capturedLine, GlobalVariables.eqRegex);
+                                    Match eqline = GlobalVariables.eqRegex.Match(capturedLine);
                                     String tomatch = eqline.Groups["stringToMatch"].Value;
                                     String eqtime = eqline.Groups["eqtime"].Value;
                                     Parallel.ForEach(listoftriggers, (KeyValuePair<Trigger, ArrayList> doc, ParallelLoopState state) =>
@@ -4054,10 +4055,14 @@ namespace HEAP
             {
                 export = ExportTriggers(treeView[0],share);
             }
-            if(export)
+            if(export && !share)
             {
                 Xceed.Wpf.Toolkit.MessageBox.Show("Export Complete", "Data Export", MessageBoxButton.OK, MessageBoxImage.Information);
-            }            
+            }
+            else if(export && share)
+            {
+                Xceed.Wpf.Toolkit.MessageBox.Show($"{shareguid}", "Share Upload", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
         }
         private void ButtonExport_Click(object sender, RoutedEventArgs e)
         {

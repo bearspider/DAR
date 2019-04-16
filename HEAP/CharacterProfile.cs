@@ -5,10 +5,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Speech.Synthesis;
+using System.ComponentModel;
 
 namespace HEAP
 {
-    public class CharacterProfile
+    public class CharacterProfile : INotifyPropertyChanged
     {
         public int id;
         public string characterName;
@@ -25,6 +26,9 @@ namespace HEAP
         public string voice;
         public ArrayList triggers;
         private SpeechSynthesizer synth;
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
         //Constructor
         public CharacterProfile()
         {

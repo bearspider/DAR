@@ -21,6 +21,7 @@ namespace HEAP
         public double ProgressValue { get; set; }
         public string Barcolor { get; set; }
         public string Textcolor { get; set; }
+        public string TriggerId { get; set; }
         public int Id { get; set; }
         private DateTime TriggeredTime;
 
@@ -39,6 +40,7 @@ namespace HEAP
             Character = "";
             Barcolor = "";
             Textcolor = "";
+            TriggerId = "";
             Id = 0;
             Progress = new ProgressBar()
             {

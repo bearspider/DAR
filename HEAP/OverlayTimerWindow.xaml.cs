@@ -77,6 +77,7 @@ namespace HEAP
         public void AddTimer(Trigger firedtrigger, Boolean type, String character, Category triggeredcategory)
         {
             TriggerTimer newTimer = new TriggerTimer();
+            newTimer.TriggerId = firedtrigger.UniqueId;
             newTimer.Id = firedtrigger.Id;
             newTimer.Character = character;
             newTimer.SetProgress(0, firedtrigger.TimerDuration);
@@ -86,6 +87,27 @@ namespace HEAP
             newTimer.Barcolor = triggeredcategory.TimerBarColor;
             newTimer.Textcolor = triggeredcategory.TimerFontColor;
             TimerBars.Add(newTimer);
+        }
+        public void ContainsTimer(Trigger firedtrigger, Boolean remove)
+        {
+            List<TriggerTimer> toremove = new List<TriggerTimer>();
+            foreach(TriggerTimer timer in TimerBars)
+            {
+                if(firedtrigger.UniqueId == timer.TriggerId)
+                {
+                    if(remove)
+                    {
+                        toremove.Add(timer);
+                    }
+                }
+            }
+            if(remove && toremove.Count > 0)
+            {
+                foreach(TriggerTimer timer in toremove)
+                {
+                    TimerBars.Remove(timer);
+                }
+            }
         }
         public void RemoveTimer(String character)
         {

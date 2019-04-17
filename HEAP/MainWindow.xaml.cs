@@ -574,24 +574,23 @@ namespace HEAP
         private void RibbonButtonEdit_Click(object sender, RoutedEventArgs e)
         {
             CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                var col = db.GetCollection<CharacterProfile>("profiles");
-                CharacterProfile result = col.FindOne(Query.EQ("ProfileName", selectedCharacter.ProfileName));
-                ProfileEditor editCharacter = new ProfileEditor(result);
-                editCharacter.Show();
-            }
+            ProfileEditor editCharacter = new ProfileEditor(selectedCharacter);
+            editCharacter.Show();
             UpdateView();
         }
         private void RibbonButtonRemove_Click(object sender, RoutedEventArgs e)
+        {
+            DeleteCharacter((CharacterProfile)listviewCharacters.SelectedItem);
+        }
+        private void DeleteCharacter(CharacterProfile character)
         {
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 var col = db.GetCollection<CharacterProfile>("profiles");
                 var triggers = db.GetCollection<Trigger>("triggers");
                 var categories = db.GetCollection<Category>("categories");
-                String selectedCharacter = ((CharacterProfile)listviewCharacters.SelectedItem).ProfileName;
-                int profileid = ((CharacterProfile)listviewCharacters.SelectedItem).Id;
+                String selectedCharacter = (character).ProfileName;
+                int profileid = (character).Id;
                 MessageBoxResult result = MessageBox.Show($"Are you sure you want to Delete {selectedCharacter}", "Confirmation", MessageBoxButton.YesNo);
                 if (result == MessageBoxResult.Yes)
                 {
@@ -614,9 +613,9 @@ namespace HEAP
                     }
                     //Remove Character from stop alerts menu items.
                     PopResetRibbon(((CharacterProfile)listviewCharacters.SelectedItem).Name);
-                    UpdateView();
                 }
             }
+            UpdateView();
         }
         private void RibbonButtonAdd_Click(object sender, RoutedEventArgs e)
         {
@@ -641,64 +640,30 @@ namespace HEAP
         private void ListviewCharacters_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             CharacterProfile selected = ((ListView)sender).SelectedItem as CharacterProfile;
+            selected.Monitor = !selected.Monitor;
+            if (selected.Monitor)
+            {
+                MonitorCharacter(selected, logmaintenance);
+            }
+            //update the monitor variable in the database in case we have to refresh the character list, then we know the current state of it's monitor.
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                var colProfiles = db.GetCollection<CharacterProfile>("profiles");
-                CharacterProfile currentProfile = colProfiles.FindById(selected.Id);
-                currentProfile.Monitor = !currentProfile.Monitor;
-                colProfiles.Update(currentProfile);
-                if (currentProfile.Monitor)
-                {
-                    MonitorCharacter(currentProfile, logmaintenance);
-                }
+                LiteCollection<CharacterProfile> profiles = db.GetCollection<CharacterProfile>("profiles");
+                CharacterProfile tochange = profiles.FindOne(Query.EQ("Name", selected.Name));
+                tochange.Monitor = selected.Monitor;
+                profiles.Update(tochange);
             }
-
-            UpdateListView();
         }
         private void MenuItemCharEdit_Click(object sender, RoutedEventArgs e)
         {
             CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                var col = db.GetCollection<CharacterProfile>("profiles");
-                CharacterProfile result = col.FindOne(Query.EQ("ProfileName", selectedCharacter.ProfileName));
-                ProfileEditor editCharacter = new ProfileEditor(result);
-                editCharacter.Show();
-            }
+            ProfileEditor editCharacter = new ProfileEditor(selectedCharacter);
+            editCharacter.Show();
             UpdateView();
         }
         private void MenuItemCharDelete_Click(object sender, RoutedEventArgs e)
         {
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                var col = db.GetCollection<CharacterProfile>("profiles");
-                var triggers = db.GetCollection<Trigger>("triggers");
-                var categories = db.GetCollection<Category>("categories");
-                String selectedCharacter = ((CharacterProfile)listviewCharacters.SelectedItem).ProfileName;
-                int profileid = ((CharacterProfile)listviewCharacters.SelectedItem).Id;
-                MessageBoxResult result = MessageBox.Show($"Are you sure you want to Delete {selectedCharacter}", "Confirmation", MessageBoxButton.YesNo);
-                if (result == MessageBoxResult.Yes)
-                {
-                    var dbdelete = col.Delete(Query.EQ("ProfileName", selectedCharacter));
-                    currentSelection = null;
-                    foreach (var trigger in triggers.FindAll())
-                    {
-                        if (trigger.Profiles.Contains(profileid))
-                        {
-                            trigger.Profiles.Remove(profileid);
-                            triggers.Update(trigger);
-                        }
-                    }
-                    foreach (var category in categories.FindAll())
-                    {
-                        var profile = from p in category.CharacterOverrides where p.ProfileName == selectedCharacter select p;
-                        var collection = new ObservableCollection<CharacterOverride>(profile);
-                        category.CharacterOverrides.Remove(collection[0]);
-                        categories.Update(category);
-                    }
-                    UpdateView();
-                }
-            }
+            DeleteCharacter((CharacterProfile)listviewCharacters.SelectedItem);
         }
         private void MenuItemStartMonitor_Click(object sender, RoutedEventArgs e)
         {
@@ -877,7 +842,7 @@ namespace HEAP
                             String capturedLine = streamReader.ReadLine();
                             if (capturedLine != null)
                             {
-                                Console.WriteLine($"Matching line {capturedLine}");
+                                //Console.WriteLine($"Matching line {capturedLine}");
                                 Stopwatch stopwatch = new Stopwatch();
                                 stopwatch.Start();
                                 UpdateLineCount(1);
@@ -891,60 +856,69 @@ namespace HEAP
                                 }
                                 else
                                 {
-                                    Match eqline = GlobalVariables.eqRegex.Match(capturedLine);
-                                    String tomatch = eqline.Groups["stringToMatch"].Value;
-                                    String eqtime = eqline.Groups["eqtime"].Value;
                                     Parallel.ForEach(listoftriggers, (KeyValuePair<Trigger, ArrayList> doc, ParallelLoopState state) =>
-                                       {
-                                      //Do regex match if enabled otherwise string.contains
-                                      Boolean foundmatch = false;
-                                           if (doc.Key.Regex)
-                                           {
-                                               foundmatch = (Regex.Match(tomatch, Regex.Escape(doc.Key.SearchText), RegexOptions.IgnoreCase)).Success;
-                                           }
-                                           else
-                                           {
-                                               String ucaselog = tomatch.ToUpper();
-                                               String ucasetrigger = doc.Key.SearchText.ToUpper();
-                                               foundmatch = ucaselog.Contains(ucasetrigger);
-                                           }
-                                           if (doc.Key.EndEarlyText.Count > 0)
-                                           {
-                                               Boolean endearly = false;
-                                               foreach (SearchText earlyend in doc.Key.EndEarlyText)
-                                               {
-                                                   if (earlyend.Regex)
-                                                   {
-                                                       endearly = (Regex.Match(tomatch, Regex.Escape(earlyend.Searchtext), RegexOptions.IgnoreCase)).Success;
-                                                   }
-                                                   else
-                                                   {
-                                                       String ucaselog = tomatch.ToUpper();
-                                                       String ucasetrigger = earlyend.Searchtext.ToUpper();
-                                                       endearly = ucaselog.Contains(ucasetrigger);
-                                                   }
-                                              //TO DO: Probably implement extra stuff on a early end trigger
-                                              if (endearly)
-                                                   {
-                                                       Console.WriteLine($"Early end for {doc.Key.Name} => {endearly}");
-                                                       ClearTimer(doc.Key);
-                                                   }
-                                               }
-                                           }
-                                           if (foundmatch && doc.Value.Contains(character.Id))
-                                           {
-                                               if (stopfirstmatch)
-                                               {
-                                                   state.Break();
-                                               }
-                                               Console.WriteLine($"Matched Trigger {doc.Key.Id}");
-                                               Stopwatch firetrigger = new Stopwatch();
-                                               firetrigger.Start();
-                                               FireTrigger(doc.Key, character, tomatch, eqtime);
-                                               firetrigger.Stop();
-                                               Console.WriteLine($"Fired Trigger in {firetrigger.Elapsed.Seconds}");
-                                           }
-                                       });
+                                    {
+                                        //Do regex match if enabled otherwise string.contains
+                                        Boolean foundmatch = false;
+                                        if (doc.Key.Regex)
+                                        {
+                                            Boolean checkregex = true;
+                                            if(doc.Key.Fastcheck)
+                                            {
+                                                if(!capturedLine.Contains(doc.Key.Digest))
+                                                {
+                                                    checkregex = false;
+                                                }
+                                            }
+                                            if(checkregex)
+                                            {
+                                                foundmatch = (Regex.Match(capturedLine, doc.Key.SearchText, RegexOptions.IgnoreCase)).Success;
+                                            }                                            
+                                        }
+                                        else
+                                        {
+                                            String ucaselog = capturedLine.ToUpper();
+                                            String ucasetrigger = doc.Key.SearchText.ToUpper();
+                                            foundmatch = ucaselog.Contains(ucasetrigger);
+                                        }
+                                        if (doc.Key.EndEarlyText.Count > 0)
+                                        {
+                                            Boolean endearly = false;
+                                            foreach (SearchText earlyend in doc.Key.EndEarlyText)
+                                            {
+                                                if (earlyend.Regex)
+                                                {
+                                                    endearly = (Regex.Match(capturedLine, Regex.Escape(earlyend.Searchtext), RegexOptions.IgnoreCase)).Success;
+                                                }
+                                                else
+                                                {
+                                                    String ucaselog = capturedLine.ToUpper();
+                                                    String ucasetrigger = earlyend.Searchtext.ToUpper();
+                                                    endearly = ucaselog.Contains(ucasetrigger);
+                                                }
+                                            //TO DO: Probably implement extra stuff on a early end trigger
+                                            if (endearly)
+                                                {
+                                                    Console.WriteLine($"Early end for {doc.Key.Name} => {endearly}");
+                                                    ClearTimer(doc.Key);
+                                                }
+                                            }
+                                        }
+                                        if (foundmatch && doc.Value.Contains(character.Id))
+                                        {
+                                            if (stopfirstmatch)
+                                            {
+                                                state.Break();
+                                            }
+                                            Match eqline = GlobalVariables.eqRegex.Match(capturedLine);
+                                            Console.WriteLine($"Matched Trigger {doc.Key.Id}");
+                                            Stopwatch firetrigger = new Stopwatch();
+                                            firetrigger.Start();
+                                            FireTrigger(doc.Key, character, capturedLine);
+                                            firetrigger.Stop();
+                                            Console.WriteLine($"Fired Trigger in {firetrigger.Elapsed.Seconds}");
+                                        }
+                                    });
                                     stopwatch.Stop();
                                     //Console.WriteLine($"Trigger matched in: {stopwatch.Elapsed.ToString()}");
                                     if (pushbackToggle)
@@ -993,7 +967,7 @@ namespace HEAP
                 }
             }
         }
-        private void FireTrigger(Trigger activetrigger, CharacterProfile character, String matchline, String matchtime)
+        private void FireTrigger(Trigger activetrigger, CharacterProfile character, String matchline)
         {
             //Add stopwatch info for trigger
             Stopwatch stopwatch = new Stopwatch();
@@ -1003,7 +977,6 @@ namespace HEAP
                 Name = activetrigger.Name,
                 FromLog = character.ProfileName,
                 MatchText = matchline,
-                TriggerTime = matchtime,
                 Id = activetrigger.Id
             };
             //TO DO: Fix write by accessing calling thread
@@ -1013,7 +986,7 @@ namespace HEAP
                 {
                     using (StreamWriter sw = File.AppendText((String)o))
                     {
-                        AddText(sw, $"{matchtime}-{character.ProfileName}[{activetrigger.Name}]-{matchline}");
+                        AddText(sw, $"{character.ProfileName}[{activetrigger.Name}]-{matchline}");
                     }
                 }),logmatchlocation);
             }
@@ -1039,19 +1012,30 @@ namespace HEAP
             Console.WriteLine($"Text: {texttimer.Elapsed.ToString()}");
             Stopwatch countertimer = new Stopwatch();
             countertimer.Start();
-            if(timerenabled)
+            /*TriggeredAgain
+             * 0 - Start a new timer
+             * 1 - Do Nothing
+             */
+            if(timerenabled && activetrigger.TriggeredAgain != 1)
             {
                 lock (_timersLock)
                 {
+                    foreach (OverlayTimerWindow timerwindow in timerWindows)
+                    {
+                        syncontext.Post(new SendOrPostCallback(o =>
+                        {
+                            timerwindow.ContainsTimer((Trigger)o, true);
+                        }), activetrigger);
+                    }
                     switch (activetrigger.TimerType)
                     {
                         case "Timer(Count Down)":
                             OverlayTimerWindow timerwindowdown = timerWindows.Single<OverlayTimerWindow>(i => i.windowproperties.Name == triggeredcategory.TimerOverlay);
-                            UpdateTimer(timerwindowdown, activetrigger, false, character.characterName, triggeredcategory);
+                            UpdateTimer(timerwindowdown, activetrigger, false, character.Name, triggeredcategory);
                             break;
                         case "Stopwatch(Count Up)":
                             OverlayTimerWindow timerwindowup = timerWindows.Single<OverlayTimerWindow>(i => i.windowproperties.Name == triggeredcategory.TimerOverlay);
-                            UpdateTimer(timerwindowup, activetrigger, true, character.characterName, triggeredcategory);
+                            UpdateTimer(timerwindowup, activetrigger, true, character.Name, triggeredcategory);
                             break;
                         case "Repeating Timer":
                             break;
@@ -3557,11 +3541,14 @@ namespace HEAP
             //Set Timer Behavior
             switch ((String)jsontoken["TimerStartBehavior"])
             {
+                case "DoNothing":
+                    newtrigger.TriggeredAgain = 1;
+                    break;
                 case "StartNewTimer":
                     newtrigger.TriggeredAgain = 0;
                     break;
                 case "RestartTimer":
-                    newtrigger.TriggeredAgain = 1;
+                    newtrigger.TriggeredAgain = 0;
                     break;
                 default:
                     break;

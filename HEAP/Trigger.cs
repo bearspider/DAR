@@ -19,6 +19,7 @@ namespace HEAP
         public String comments;
         public Boolean regex;
         public Boolean fastcheck;
+        private String _digest;
         public int parent;
         public int triggerCategory;
         public String displaytext;
@@ -60,6 +61,7 @@ namespace HEAP
             comments = "";
             regex = false;
             fastcheck = false;
+            _digest = "";
             parent = 0;
             triggerCategory = 0;
             displaytext = "";
@@ -111,7 +113,10 @@ namespace HEAP
         public Boolean Fastcheck
         {
             get { return fastcheck; }
-            set { fastcheck = value; }
+            set
+            {
+                fastcheck = value;
+            }
         }
         public String Displaytext
         {

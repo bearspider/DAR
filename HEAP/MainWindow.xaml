@@ -555,18 +555,18 @@
                             </ScrollViewer>
                         </xcad:LayoutDocument>
                         <xcad:LayoutDocument x:Name="firedtriggerspane" Title="Activated Triggers" ContentId="activatedPane">
-                            <DataGrid Grid.Row="0" Grid.Column="0" Name="datagrid_activated" AutoGenerateColumns="False" CanUserAddRows="False" Visibility="{Binding ElementName=checkboxMatchLog, Path=IsChecked, Converter={StaticResource viewconverter}}">
+                            <DataGrid Margin="10,10,10,10" Grid.Row="0" Grid.Column="0" Name="datagrid_activated" AutoGenerateColumns="False" CanUserAddRows="False" Visibility="{Binding ElementName=checkboxMatchLog, Path=IsChecked, Converter={StaticResource viewconverter}}">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Trigger Name" Binding="{Binding Name}"  IsReadOnly="True"/>
                                     <DataGridTextColumn Header="From Log" Binding="{Binding FromLog}" IsReadOnly="True"/>
-                                    <DataGridTextColumn Header="Triggred At" Binding="{Binding TriggerTime}" IsReadOnly="True"/>
                                     <DataGridTextColumn Header="Triggered Matched" Binding="{Binding TriggerFired}" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="Matched Text" Binding="{Binding MatchText}" IsReadOnly="True"/>
                                     <DataGridTextColumn Header="Trigger ID" Binding="{Binding Id}" IsReadOnly="True"/>
                                 </DataGrid.Columns>
                             </DataGrid>
                         </xcad:LayoutDocument>
                         <xcad:LayoutDocument x:Name="pushbackpane" Title="Pushback Monitor" ContentId="pushbackPane">
-                            <DataGrid Name="datagrid_pushback" AutoGenerateColumns="False" CanUserAddRows="False">
+                            <DataGrid Margin="10,10,10,10" Name="datagrid_pushback" AutoGenerateColumns="False" CanUserAddRows="False">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Character" Binding="{Binding Character}"  IsReadOnly="True"/>
                                     <DataGridTextColumn Header="Spell" Binding="{Binding Spell}" IsReadOnly="True"/>

@@ -16,7 +16,7 @@
         </CollectionViewSource>
     </Window.Resources>
     <Grid>
-        <Button x:Name="buttonSave" Content="Save" HorizontalAlignment="Left" Margin="628,10,0,0" VerticalAlignment="Top" Width="75" Click="ButtonSave_Click"/>
+        <Button x:Name="buttonSave" Content="Save Timer Overlay" HorizontalAlignment="Left" Margin="600,10,0,0" VerticalAlignment="Top" Height="40" Width="110" Click="ButtonSave_Click"/>
         <StackPanel HorizontalAlignment="Left" Height="255" Margin="10,284,0,0" VerticalAlignment="Top" Width="294" RenderTransformOrigin="1.248,0.505">
             <Grid>
                 <Label HorizontalAlignment="Left" x:Name="labelFont" Content="Font:"/>
@@ -75,6 +75,5 @@
             </Grid>
         </StackPanel>
         <TextBox x:Name="textDemo" FontSize="{Binding ElementName=sliderSize, Path=Value}" FontFamily="{Binding ElementName=comboFont, Path=SelectedItem}" HorizontalAlignment="Left" Margin="305,198,0,0" TextWrapping="Wrap" Text="Default" VerticalAlignment="Top" />
-
     </Grid>
 </Window>

@@ -211,7 +211,7 @@ namespace HEAP
                 _synth.Speak(output);
             });            
         }
-        public void AddTrigger(int triggerId)
+        public void AddTrigger(string triggerId)
         {
             _triggers.Add(triggerId);
             this.NotifyPropertyChanged("AddTrigger");

@@ -307,7 +307,8 @@ namespace HEAP
             {
                 Directory.CreateDirectory(GlobalVariables.defaultPath);
             }
-            //Check if database exists, if it does, make a backup
+            //Check if database exists, if it does, make a backup.
+            //Else, this is a new instance.  Set the log maintenance start as today.
             if(File.Exists(GlobalVariables.defaultDB))
             {
                 if (!Directory.Exists(GlobalVariables.backupDB))
@@ -315,6 +316,11 @@ namespace HEAP
                     Directory.CreateDirectory(GlobalVariables.backupDB);
                 }
                 File.Copy(GlobalVariables.defaultDB, (GlobalVariables.backupDB + @"\eqtriggers.db"),true);
+            }
+            else
+            {
+                Properties.Settings.Default.LastLogMaintenance = DateTime.Now;
+                Properties.Settings.Default.Save();
             }
             //Load settings
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
@@ -339,6 +345,7 @@ namespace HEAP
             Stream iconStream = Application.GetResourceStream(new Uri("pack://application:,,,/HEAP;component/Images/Tonev-Windows-7-Windows-7-headphone.ico")).Stream;
             MyNotifyIcon.Icon = new System.Drawing.Icon(iconStream);
             MyNotifyIcon.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(MyNotifyIcon_MouseDoubleClick);
+
             //Initialize pushback monitor
             image_pushbackindicator.DataContext = pushbackToggle;
             datagrid_pushback.ItemsSource = pushbackList;
@@ -365,45 +372,42 @@ namespace HEAP
             BindingOperations.EnableCollectionSynchronization(categorycollection, _categoryLock);
             BindingOperations.EnableCollectionSynchronization(activatedTriggers, _triggerLock);
 
-            //Load Triggers
-            TriggerLoad("Main Program");
-
-            //Prep Views
-            UpdateListView();
-            UpdateTriggerView();
-            OverlayText_Refresh();
-            OverlayTimer_Refresh();
-
-
             //Deploy Overlays
+            //Check if no overlays exist.  If none exist, prompt the editors to create the first entries.
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 LiteCollection<CharacterProfile> dbcharacterProfiles = db.GetCollection<CharacterProfile>("profiles");
-                LiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");
-                LiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
                 LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
 
-                //Load all groups and triggers into List so we don't have to go back and forth to the database.
-                GenerateMasterList("Main Program");
-                //Check if no overlays or character profiles exist.  If none exist, prompt the editors to create the first entries.
-                if (availoverlaytexts.Count<OverlayText>() == 0)
-                {
-                    OverlayTextEditor newOverlayEditor = new OverlayTextEditor();
-                    newOverlayEditor.Topmost = true;
-                    newOverlayEditor.Show();
-                }
-                if (availoverlaytimers.Count<OverlayTimer>() == 0)
-                {
-                    OverlayTimerEditor newOverlayEditor = new OverlayTimerEditor();
-                    newOverlayEditor.Topmost = true;
-                    newOverlayEditor.Show();
-                }
-                if (characterProfiles.Count<CharacterProfile>() == 0)
+                //Load saved characters, populates characterProfiles.  If no characters then prompt to create one.
+                IEnumerable<CharacterProfile> profilecollection = dbcharacterProfiles.FindAll();
+                if (profilecollection.Count() == 0)
                 {
                     ProfileEditor newProfile = new ProfileEditor();
                     newProfile.Topmost = true;
-                    newProfile.Show();
-                    UpdateView();
+                    while ((bool)newProfile.ShowDialog()) { };
+                }
+                UpdateListView();
+
+                //Find all text overlays, if none create one, then deploy.
+                OverlayText_Refresh();
+                foreach (OverlayText overlay in availoverlaytexts)
+                {
+                    OverlayTextWindow newWindow = new OverlayTextWindow();
+                    newWindow.SetProperties(overlay);
+                    newWindow.ShowInTaskbar = false;
+                    textWindows.Add(newWindow);
+                    newWindow.Show();
+                }
+                //Find all timer overlays, if none create one, then deploy.
+                OverlayTimer_Refresh();
+                foreach (OverlayTimer overlay in availoverlaytimers)
+                {
+                    OverlayTimerWindow newWindow = new OverlayTimerWindow();
+                    newWindow.SetProperties(overlay);
+                    newWindow.ShowInTaskbar = false;
+                    timerWindows.Add(newWindow);
+                    newWindow.Show();
                 }
                 //If no categories exist(Blank Database), create a default category. DEFAULT category is immutable.
                 defaultcategory = categoriescol.FindOne(Query.EQ("Name", "Default"));
@@ -421,26 +425,12 @@ namespace HEAP
                     defaultcategory.AvailableTextOverlays = availoverlaytexts;
                     categoriescol.Insert(defaultcategory);
                 }
-                //Deploy all text overlays
-                foreach (var overlay in overlaytexts.FindAll())
-                {
-                    OverlayTextWindow newWindow = new OverlayTextWindow();
-                    newWindow.SetProperties(overlay);
-                    newWindow.ShowInTaskbar = false;
-                    textWindows.Add(newWindow);
-                    newWindow.Show();
-                }
-                //Deply all timer overlays
-                foreach (var overlay in overlaytimers.FindAll())
-                {
-                    OverlayTimerWindow newWindow = new OverlayTimerWindow();
-                    newWindow.SetProperties(overlay);
-                    newWindow.ShowInTaskbar = false;
-                    timerWindows.Add(newWindow);
-                    newWindow.Show();
-                }
             }
-            
+
+            //Load Triggers
+            UpdateTriggerView();
+
+            //Start Monitoring
             StartMonitoring();
         }
         #endregion
@@ -577,7 +567,6 @@ namespace HEAP
             CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
             ProfileEditor editCharacter = new ProfileEditor(selectedCharacter);
             editCharacter.Show();
-            UpdateView();
         }
         private void RibbonButtonRemove_Click(object sender, RoutedEventArgs e)
         {
@@ -616,26 +605,54 @@ namespace HEAP
                     PopResetRibbon(((CharacterProfile)listviewCharacters.SelectedItem).Name);
                 }
             }
-            UpdateView();
         }
         private void RibbonButtonAdd_Click(object sender, RoutedEventArgs e)
         {
             ProfileEditor newProfile = new ProfileEditor();
             newProfile.Show();
-            UpdateView();
         }
         private void ListviewCharacters_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             ribbonCharEdit.IsEnabled = true;
             ribbonCharRemove.IsEnabled = true;
             //Update TriggerView with selected triggers from profile
-            if (listviewCharacters.Items.Count > 0)
+            if (listviewCharacters.Items.Count > 0 && treeView != null)
             {
                 CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
                 currentprofile = selectedCharacter;
                 currentSelection = selectedCharacter.ProfileName;
-                UpdateTriggerView();
+                MarkTreeItems(treeView[0]);                
                 Refresh_Categories();
+            }
+        }
+        private void MarkTreeItems(TreeViewModel tvm)
+        {
+            Console.Write($"Marking group {tvm.Name}");
+            CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                LiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
+                LiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
+                if(tvm.Type == "trigger")
+                {
+                    Trigger trigger = triggers.FindOne(x => x.UniqueId == tvm.Id);
+                    if(trigger.Profiles.Contains(selectedCharacter.Id))
+                    {
+                        tvm.Enable();
+                    }
+                    else
+                    {
+                        tvm.Disable();
+                    }
+                }
+                else if(tvm.Children.Count > 0)
+                {
+                    foreach(TreeViewModel child in tvm.Children)
+                    {
+                        MarkTreeItems(child);
+                    }
+                }
+
             }
         }
         private void ListviewCharacters_MouseDoubleClick(object sender, MouseButtonEventArgs e)
@@ -660,7 +677,6 @@ namespace HEAP
             CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
             ProfileEditor editCharacter = new ProfileEditor(selectedCharacter);
             editCharacter.Show();
-            UpdateView();
         }
         private void MenuItemCharDelete_Click(object sender, RoutedEventArgs e)
         {
@@ -720,17 +736,12 @@ namespace HEAP
         private void StartMonitoring()
         {
             //Start Monitoring Enabled Profiles
-
             foreach (CharacterProfile character in characterProfiles)
             {
                 AddResetRibbon();
                 if (File.Exists(character.LogFile) && character.Monitor)
                 {
                     MonitorCharacter(character, logmaintenance);
-                }
-                else
-                {
-                    //Don't monitor character
                 }
             }
         }
@@ -1209,7 +1220,6 @@ namespace HEAP
             if (result == MessageBoxResult.Yes)
             {
                 DeleteTrigger(root.Id);
-                UpdateView();
                 TriggerLoad("TriggerRemove_Click");
             }
         }
@@ -1272,6 +1282,7 @@ namespace HEAP
                 triggergroup.Update(getGroup);
                 col.Delete(deadtrigger.Id);
             }
+            treeView[0].RemoveBranch(triggerid);
             TriggerLoad("DeleteTrigger by id");
         }
         private void CopyTrigger(string triggerid, string newgroupid)
@@ -1293,15 +1304,14 @@ namespace HEAP
         }
         #endregion
         #region Trigger Groups
-        private TriggerGroup FindTriggerGroup(string bsonid)
+        private TriggerGroup FindTriggerGroup(string uniqueid)
         {
-            return dballgroups.Find(x => x.UniqueId == bsonid);
+            return dballgroups.Find(x => x.UniqueId == uniqueid);
         }
         private void TriggerGroupsAdd_Click(object sender, RoutedEventArgs e)
         {
             TriggerGroupEdit triggerDialog = new TriggerGroupEdit();
             triggerDialog.ShowDialog();
-            UpdateView();
             e.Handled = true;
         }
         private void TriggerGroupsRemove_Click(object sender, RoutedEventArgs e)
@@ -1310,8 +1320,7 @@ namespace HEAP
             MessageBoxResult result = MessageBox.Show($"Are you sure you want to Delete {root.Name}", "Confirmation", MessageBoxButton.YesNo);
             if (result == MessageBoxResult.Yes)
             {
-                DeleteTriggerGroup(root.Name);
-                UpdateView();
+                DeleteTriggerGroupById(root.Id);
             }
             e.Handled = true;
         }
@@ -1320,7 +1329,6 @@ namespace HEAP
             TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
             TriggerGroupEdit triggerDialog = new TriggerGroupEdit(root);
             triggerDialog.Show();
-            UpdateView();
             e.Handled = true;
         }
         private void TriggerGroupsEdit_Click(object sender, RoutedEventArgs e)
@@ -1330,48 +1338,17 @@ namespace HEAP
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 var col = db.GetCollection<TriggerGroup>("triggergroups");
-                TriggerGroup result = col.FindOne(Query.And(Query.EQ("TriggerGroupName", root.Name), Query.EQ("_id", root.Id)));
+                TriggerGroup result = col.FindOne(x => x.UniqueId == root.Id);
                 TriggerGroupEdit triggerDialog = new TriggerGroupEdit(result);
                 triggerDialog.Show();
             }
-            UpdateView();
         }
         private void TriggerGroupsAddTopLevel_Click(object sender, RoutedEventArgs e)
         {
             TriggerGroupEdit triggerDialog = new TriggerGroupEdit();
             triggerDialog.ShowDialog();
-            UpdateView();
             e.Handled = true;
 
-        }
-        private void DeleteTriggerGroup(String groupname)
-        {
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                var col = db.GetCollection<TriggerGroup>("triggergroups");
-                TriggerGroup deadgroup = col.FindOne(x => x.UniqueId == groupname);
-                var dbid = deadgroup.Id;
-                var childContains = col.FindAll().Where(x => x.Children.Contains(dbid));
-                //Delete all triggers associated with the group
-                var triggers = deadgroup.Triggers;
-                foreach (string triggerid in triggers)
-                {
-                    DeleteTriggerById(triggerid);
-                }
-                //If child group, remove child from parent
-                foreach (var child in childContains)
-                {
-                    child.Children.Remove(dbid);
-                    col.Update(child);
-                }
-                //if parent group, remove children
-                foreach (string childgroup in deadgroup.Children)
-                {
-                    DeleteTriggerGroup(childgroup);
-                }
-                col.Delete(dbid);
-            }
-            GenerateMasterList("Delete TriggerGroup by name");
         }
         private void DeleteTriggerGroupById(string groupid)
         {
@@ -1399,6 +1376,7 @@ namespace HEAP
                 }
                 col.Delete(deadgroup.Id);
             }
+            treeView[0].RemoveBranch(groupid);
             GenerateMasterList("Delete TriggerGroup by id");
         }
         private void CopyTriggerGroup(string copyfrom, string parent)
@@ -1445,6 +1423,7 @@ namespace HEAP
                 Type = "triggergroup",
                 Id = branch.UniqueId
             };
+            rTree.BranchChanged += BranchChanged_TreeViewModel;
             if (branch.Triggers.Count > 0)
             {
                 foreach (string item in branch.Triggers)
@@ -1467,7 +1446,7 @@ namespace HEAP
                     newChildBranch.IsChecked = isChecked;
                     newChildBranch.TriggerAdded += TriggerAdded_TreeViewModel;
                     newChildBranch.TriggerRemoved += TriggerRemoved_TreeViewModel;
-                    rTree.Children.Add(newChildBranch);
+                    rTree.AddChild(newChildBranch);
                 }
             }
             if (branch.Children.Count > 0)
@@ -1475,11 +1454,28 @@ namespace HEAP
                 foreach (string leaf in branch.Children)
                 {
                     TriggerGroup leafGroup = GetTriggerGroup(leaf);
-                    rTree.Children.Add(BuildTree(leafGroup));
+                    rTree.AddChild(BuildTree(leafGroup));
                 }
             }
             rTree.VerifyCheckedState();
             return rTree;
+        }
+        private void BranchChanged_TreeViewModel(object sender, PropertyChangedEventArgs e)
+        {
+            switch(e.PropertyName)
+            {
+                case "AddChild":
+                    treeViewTriggers.ItemsSource = treeView;
+                    //GenerateMasterList("UpdateTriggerView");
+                    break;
+                case "RemoveChild":
+                    treeViewTriggers.ItemsSource = treeView;
+                    //GenerateMasterList("UpdateTriggerView");
+                    break;
+                default:
+                    break;
+            }
+
         }
         private TriggerGroup GetTriggerGroup(string id)
         {
@@ -1955,14 +1951,9 @@ namespace HEAP
                 test.Play();
             }
         }
-        private void UpdateView()
-        {
-            //UpdateListView();
-            //UpdateTriggerView();
-            //Refresh_Categories();
-        }
         public void UpdateTriggerView()
         {
+            GenerateMasterList("UpdateTriggerView");
             //root of the Trigger Tree
             //treeView = new List<TreeViewModel>();
             treeView = new ObservableCollection<TreeViewModel>();
@@ -1981,10 +1972,10 @@ namespace HEAP
                     };
                     if (doc.Triggers.Count > 0)
                     {
-                        foreach (Int32 item in doc.Triggers)
+                        foreach (string item in doc.Triggers)
                         {
                             Boolean isChecked = false;
-                            Trigger getTrigger = dballtriggers.Find(x => x.Id == item);
+                            Trigger getTrigger = dballtriggers.Find(x => x.UniqueId == item);
                             if (currentSelection != null)
                             {
                                 CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
@@ -2001,17 +1992,17 @@ namespace HEAP
                             newChildBranch.Id = getTrigger.UniqueId;
                             newChildBranch.TriggerAdded += TriggerAdded_TreeViewModel;
                             newChildBranch.TriggerRemoved += TriggerRemoved_TreeViewModel;
-                            rTree.Children.Add(newChildBranch);
+                            rTree.AddChild(newChildBranch);
                             rTree.VerifyCheckedState();
                         }
                     }
                     if (doc.Children.Count > 0)
                     {
-                        tv.Children.Add(BuildTree(doc));
+                        tv.AddChild(BuildTree(doc));
                     }
                     else
                     {
-                        tv.Children.Add(rTree);
+                        tv.AddChild(rTree);
                     }
                 }
             }
@@ -2019,7 +2010,6 @@ namespace HEAP
             tv.Initialize();
             tv.VerifyCheckedState();
             treeViewTriggers.ItemsSource = treeView;
-            TriggerLoad("UpdateTriggerView");
         }
         public void UpdateListView()
         {
@@ -2060,6 +2050,11 @@ namespace HEAP
                         --count;
                     }
                 }
+            }
+            else
+            {
+                currentprofile = (CharacterProfile)listviewCharacters.SelectedItem;
+                currentSelection = currentprofile.ProfileName;                
             }
         }
         #endregion
@@ -2143,31 +2138,40 @@ namespace HEAP
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 LiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");
-                foreach (var overlay in overlaytimers.FindAll())
+                IEnumerable<OverlayTimer> overlaytimercollection = overlaytimers.FindAll();
+                if (overlaytimercollection.Count() == 0)
                 {
-                    availoverlaytimers.Add(overlay);
-                    Fluent.SplitButton overlaytimer = new Fluent.SplitButton();
-                    overlaytimer.Header = overlay.Name;
-                    overlaytimer.LargeIcon = "Images/Google-Noto-Emoji-Travel-Places-42608-stopwatch.ico";
-                    overlaytimer.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("Gray"));
-                    Fluent.Button timerProperties = new Fluent.Button();
-                    timerProperties.Name = overlay.Name;
-                    timerProperties.Header = "Properties";
-                    timerProperties.AddHandler(Button.ClickEvent, new RoutedEventHandler(TimerOverlayProperties_Click));
-                    timerProperties.Size = Fluent.RibbonControlSize.Middle;
-                    timerProperties.HorizontalAlignment = HorizontalAlignment.Right;
-                    Fluent.Button timerDelete = new Fluent.Button();
-                    timerDelete.Header = "Delete";
-                    timerDelete.Name = overlay.Name;
-                    timerDelete.Size = Fluent.RibbonControlSize.Middle;
-                    timerDelete.HorizontalAlignment = HorizontalAlignment.Right;
-                    timerDelete.AddHandler(Button.ClickEvent, new RoutedEventHandler(TimerOverlayDelete_Click));
-                    overlaytimer.Items.Add(timerProperties);
-                    overlaytimer.Items.Add(timerDelete);
-                    ribbongroupTimerOverlays.Items.Add(overlaytimer);
+                    OverlayTimerEditor newOverlayEditor = new OverlayTimerEditor();
+                    newOverlayEditor.Topmost = true;
+                    while ((bool)newOverlayEditor.ShowDialog()) { };
+                }
+                else
+                {
+                    foreach (var overlay in overlaytimercollection)
+                    {
+                        availoverlaytimers.Add(overlay);
+                        Fluent.SplitButton overlaytimer = new Fluent.SplitButton();
+                        overlaytimer.Header = overlay.Name;
+                        overlaytimer.LargeIcon = "Images/Google-Noto-Emoji-Travel-Places-42608-stopwatch.ico";
+                        overlaytimer.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("Gray"));
+                        Fluent.Button timerProperties = new Fluent.Button();
+                        timerProperties.Name = overlay.Name;
+                        timerProperties.Header = "Properties";
+                        timerProperties.AddHandler(Button.ClickEvent, new RoutedEventHandler(TimerOverlayProperties_Click));
+                        timerProperties.Size = Fluent.RibbonControlSize.Middle;
+                        timerProperties.HorizontalAlignment = HorizontalAlignment.Right;
+                        Fluent.Button timerDelete = new Fluent.Button();
+                        timerDelete.Header = "Delete";
+                        timerDelete.Name = overlay.Name;
+                        timerDelete.Size = Fluent.RibbonControlSize.Middle;
+                        timerDelete.HorizontalAlignment = HorizontalAlignment.Right;
+                        timerDelete.AddHandler(Button.ClickEvent, new RoutedEventHandler(TimerOverlayDelete_Click));
+                        overlaytimer.Items.Add(timerProperties);
+                        overlaytimer.Items.Add(timerDelete);
+                        ribbongroupTimerOverlays.Items.Add(overlaytimer);
+                    }
                 }
             }
-            Refresh_Categories();
         }
         public void OverlayText_Refresh()
         {
@@ -2179,31 +2183,40 @@ namespace HEAP
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 LiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
-                foreach (var overlay in overlaytexts.FindAll())
+                IEnumerable<OverlayText> overlaytextcollection = overlaytexts.FindAll();
+                if (overlaytextcollection.Count() == 0)
                 {
-                    availoverlaytexts.Add(overlay);
-                    Fluent.SplitButton overlaytext = new Fluent.SplitButton();
-                    overlaytext.Header = overlay.Name;
-                    overlaytext.LargeIcon = "Images/Oxygen-Icons.org-Oxygen-Actions-document-new.ico";
-                    overlaytext.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("Gray"));
-                    Fluent.Button textProperties = new Fluent.Button();
-                    textProperties.Name = overlay.Name;
-                    textProperties.Header = "Properties";
-                    textProperties.Size = Fluent.RibbonControlSize.Middle;
-                    textProperties.HorizontalAlignment = HorizontalAlignment.Right;
-                    textProperties.AddHandler(Button.ClickEvent, new RoutedEventHandler(TextOverlayProperties_Click));
-                    Fluent.Button textDelete = new Fluent.Button();
-                    textDelete.Header = "Delete";
-                    textDelete.Name = overlay.Name;
-                    textDelete.Size = Fluent.RibbonControlSize.Middle;
-                    textDelete.HorizontalAlignment = HorizontalAlignment.Right;
-                    textDelete.AddHandler(Button.ClickEvent, new RoutedEventHandler(TextOverlayDelete_Click));
-                    overlaytext.Items.Add(textProperties);
-                    overlaytext.Items.Add(textDelete);
-                    ribbongroupTextOverlays.Items.Add(overlaytext);
+                    OverlayTextEditor newOverlayEditor = new OverlayTextEditor();
+                    newOverlayEditor.Topmost = true;
+                    while ((bool)newOverlayEditor.ShowDialog()) { }
+                }
+                else
+                {
+                    foreach (OverlayText overlay in overlaytextcollection)
+                    {
+                        availoverlaytexts.Add(overlay);
+                        Fluent.SplitButton overlaytext = new Fluent.SplitButton();
+                        overlaytext.Header = overlay.Name;
+                        overlaytext.LargeIcon = "Images/Oxygen-Icons.org-Oxygen-Actions-document-new.ico";
+                        overlaytext.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("Gray"));
+                        Fluent.Button textProperties = new Fluent.Button();
+                        textProperties.Name = overlay.Name;
+                        textProperties.Header = "Properties";
+                        textProperties.Size = Fluent.RibbonControlSize.Middle;
+                        textProperties.HorizontalAlignment = HorizontalAlignment.Right;
+                        textProperties.AddHandler(Button.ClickEvent, new RoutedEventHandler(TextOverlayProperties_Click));
+                        Fluent.Button textDelete = new Fluent.Button();
+                        textDelete.Header = "Delete";
+                        textDelete.Name = overlay.Name;
+                        textDelete.Size = Fluent.RibbonControlSize.Middle;
+                        textDelete.HorizontalAlignment = HorizontalAlignment.Right;
+                        textDelete.AddHandler(Button.ClickEvent, new RoutedEventHandler(TextOverlayDelete_Click));
+                        overlaytext.Items.Add(textProperties);
+                        overlaytext.Items.Add(textDelete);
+                        ribbongroupTextOverlays.Items.Add(overlaytext);
+                    }
                 }
             }
-            Refresh_Categories();
         }
         #endregion
         #region Categories
@@ -2865,8 +2878,7 @@ namespace HEAP
                 MessageBoxResult result = MessageBox.Show($"Are you sure you want to Delete {root.Name}", "Confirmation", MessageBoxButton.YesNo);
                 if (result == MessageBoxResult.Yes)
                 {
-                    DeleteTriggerGroup(root.Id);
-                    UpdateView();
+                    DeleteTriggerGroupById(root.Id);
                 }
             }
             if (root.Type == "trigger")
@@ -2875,7 +2887,6 @@ namespace HEAP
                 if (result == MessageBoxResult.Yes)
                 {
                     DeleteTriggerById(root.Id);
-                    UpdateView();
                 }
             }
         }
@@ -2893,7 +2904,6 @@ namespace HEAP
                 TriggerGroup editgroup = dballgroups.Find(x => x.UniqueId == root.Id);
                 TriggerGroupEdit triggerDialog = new TriggerGroupEdit(editgroup);
                 triggerDialog.Show();
-                UpdateView();
             }
         }
         private void MenuItemTriggerPaste_Click(object sender, RoutedEventArgs e)
@@ -2935,7 +2945,6 @@ namespace HEAP
                     TriggerGroupEdit triggerDialog = new TriggerGroupEdit(result);
                     triggerDialog.Show();
                 }
-                UpdateView();
             }
         }
         private void TreeViewTriggers_ContextMenuOpening(object sender, ContextMenuEventArgs e)
@@ -3003,7 +3012,6 @@ namespace HEAP
             TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
             TriggerGroupEdit triggerDialog = new TriggerGroupEdit(root);
             triggerDialog.ShowDialog();
-            UpdateView();
             e.Handled = true;
         }
         private void CmAddTrigger_Click(object sender, RoutedEventArgs e)
@@ -3066,10 +3074,10 @@ namespace HEAP
                 if (matchfile.Success)
                 {
                     newpath = logmaintenance.ArchiveFolder + @"\" + matchfile.Groups["filename"].Value.ToString() + "_" + filepostfix + ".txt";
-                    //File.Move(logfile, newpath);
+                    File.Move(logfile, newpath);
                     //create new file
-                    //FileStream created = File.Create(logfile);
-                    //created.Close();
+                    FileStream created = File.Create(logfile);
+                    created.Close();
                 }
             }
             if (logmaintenance.CompressArchive == "true")
@@ -3140,7 +3148,6 @@ namespace HEAP
                         break;
                 }
             }
-            UpdateView();
         }
         public void ImportGroupFromShare(JToken token, string parentid)
         {
@@ -3434,16 +3441,16 @@ namespace HEAP
                             {
                                 Type = "trigger"
                             };
-                            rTree.Children.Add(newChildBranch);
+                            rTree.AddChild(newChildBranch);
                         }
                     }
                     if (tg.Children.Count > 0)
                     {
-                        mergeview.Children.Add(BuildMergeTree(tg));
+                        mergeview.AddChild(BuildMergeTree(tg));
                     }
                     else
                     {
-                        mergeview.Children.Add(rTree);
+                        mergeview.AddChild(rTree);
                     }
                 }
             }
@@ -3479,7 +3486,7 @@ namespace HEAP
                     {
                         Type = "trigger"
                     };
-                    rTree.Children.Add(newChildBranch);
+                    rTree.AddChild(newChildBranch);
                 }
             }
             if (branch.Children.Count > 0)
@@ -3487,7 +3494,7 @@ namespace HEAP
                 foreach (int leaf in branch.Children)
                 {
                     TriggerGroup leafGroup = GetMergeTriggerGroup(leaf);
-                    rTree.Children.Add(BuildMergeTree(leafGroup));
+                    rTree.AddChild(BuildMergeTree(leafGroup));
                 }
             }
             rTree.VerifyCheckedState();
@@ -3713,7 +3720,7 @@ namespace HEAP
                 };
                 if (droptree.Name != "All Triggers")
                 {
-                    dropTriggerGroup = colTriggerGroups.FindById(droptree.Id);
+                    dropTriggerGroup = colTriggerGroups.FindOne(x => x.UniqueId == droptree.Id);
                 }
                 //If we're importing a trigger group, walk through the tree
                 if (importtree.Type == "triggergroup")
@@ -3766,7 +3773,7 @@ namespace HEAP
                             Trigger trigger = colTriggers.FindById(bsonid);
                             trigger.Profiles.Add(profile.Id);
                             colTriggers.Update(trigger);
-                            profile.AddTrigger(bsonid);
+                            profile.AddTrigger(trigger.UniqueId);
                         }
                         //update the profile when all the triggers are done.
                         colProfiles.Update(profile);
@@ -4458,6 +4465,5 @@ namespace HEAP
             File.Delete(tempfile);
         }
         #endregion
-
     }
 }

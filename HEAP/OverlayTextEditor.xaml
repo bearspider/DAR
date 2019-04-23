@@ -57,7 +57,6 @@
             </Grid>
         </StackPanel>
         <TextBox x:Name="textDemo" FontSize="{Binding ElementName=sliderSize, Path=Value}" FontFamily="{Binding ElementName=comboFont, Path=SelectedItem}" HorizontalAlignment="Left"  Margin="313,126,0,0" TextWrapping="Wrap" Text="Default" VerticalAlignment="Top"/>
-        <Button Content="Save" Name="buttonSave" HorizontalAlignment="Left" Height="40" Margin="702,10,0,0" VerticalAlignment="Top" Width="80" Click="ButtonSave_Click"/>
-
+        <Button Content="Save Text Overlay" Name="buttonSave" HorizontalAlignment="Left" Height="40" Margin="690,10,0,0" VerticalAlignment="Top" Width="100" Click="ButtonSave_Click"/>
     </Grid>
 </Window>

@@ -518,15 +518,14 @@ namespace HEAP
                     {
                         foreach (CharacterProfile character in characters)
                         {
-                            character.AddTrigger(newTriggerId.AsInt32);
+                            character.AddTrigger(newTrigger.UniqueId);
                             var trigger = triggers.FindById(newTriggerId);
-                            if (!(trigger.Profiles.Contains(newTriggerId.AsInt32)))
+                            if (!(trigger.Profiles.Contains(character.Id)))
                             {
                                 trigger.Profiles.Add(character.Id);
                                 triggers.Update(trigger);
                             }
                             profiles.Update(character);
-
                         }
                     }
                 }

@@ -23,7 +23,7 @@ namespace HEAP
         public ObservableCollection<TreeViewModel> Children { get; private set; }
         public bool IsInitiallySelected { get; private set; }
         public string Type { get; set; }
-        public int Id { get; set; }
+        public String Id { get; set; }
         bool? _isChecked = false;
         TreeViewModel _parent;
         #endregion
@@ -41,11 +41,11 @@ namespace HEAP
             }
             if(_isChecked == false)
             {
-                NotifyTriggerAdded(Id.ToString());
+                NotifyTriggerAdded(Id);
             }
             else
             {
-                NotifyTriggerRemoved(Id.ToString());
+                NotifyTriggerRemoved(Id);
             }
             _isChecked = value;
 

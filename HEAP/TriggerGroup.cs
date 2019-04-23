@@ -10,76 +10,76 @@ namespace HEAP
 {
     public class TriggerGroup
     {
-        public int id;
-        public String uniqueid;
-        public String triggerGroupName;
-        public String comments;
-        public Boolean defaultEnabled;
-        public ArrayList children;
-        public ArrayList triggers;
-        public int parent;
+        private int _id;
+        private String _uniqueid;
+        private String _triggerGroupName;
+        private String _comments;
+        private Boolean _defaultEnabled;
+        private ArrayList _children;
+        private ArrayList _triggers;
+        private String _parent;
 
         public TriggerGroup()
         {
-            parent = 0;
-            triggerGroupName = "New Group";
-            comments = "";
-            defaultEnabled = true;
-            children = new ArrayList();
-            triggers = new ArrayList();
-            uniqueid = Guid.NewGuid().ToString();
+            _parent = "0";
+            _triggerGroupName = "New Group";
+            _comments = "";
+            _defaultEnabled = true;
+            _children = new ArrayList();
+            _triggers = new ArrayList();
+            _uniqueid = Guid.NewGuid().ToString();
         }
         public String UniqueId
         {
-            get { return uniqueid; }
-            set { uniqueid = value; }
+            get { return _uniqueid; }
+            set { _uniqueid = value; }
         }
         public Boolean DefaultEnabled
         {
-            get { return defaultEnabled; }
-            set { defaultEnabled = value; }
+            get { return _defaultEnabled; }
+            set { _defaultEnabled = value; }
         }
         public String Comments
         {
-            get { return comments; }
-            set { comments = value; }
+            get { return _comments; }
+            set { _comments = value; }
         }
         public String TriggerGroupName
         {
-            get { return triggerGroupName; }
-            set { triggerGroupName = value; }
+            get { return _triggerGroupName; }
+            set { _triggerGroupName = value; }
         }
         public ArrayList Children
         {
-            get { return children; }
-            set { children = value; }
+            get { return _children; }
+            set { _children = value; }
         }
         public ArrayList Triggers
         {
-            get { return triggers; }
-            set { triggers = value; }
+            get { return _triggers; }
+            set { _triggers = value; }
         }
-        public int Parent
+        public string Parent
         {
-            get { return parent; }
-            set { parent = value; }
+            get { return _parent; }
+            set { _parent = value; }
         }
-        public void AddChild(int Id)
+        public void AddChild(string UniqueId)
         {
-            children.Add(Id);
+            _children.Add(UniqueId);
         }
-        public void AddTriggers(Int32 newTrigger)
+        public void AddTriggers(string newTrigger)
         {
-            triggers.Add(newTrigger);
+            _triggers.Add(newTrigger);
         }
-        public void RemoveTrigger(Int32 removeTrigger)
+        public void RemoveTrigger(string removeTrigger)
         {
-            triggers.Remove(removeTrigger);
+            _triggers.Remove(removeTrigger);
         }
         public int Id
         {
-            get { return id; }
-            set { id = value; }
+            get { return _id; }
+            set { _id = value; }
         }
         public void RemoveChild(int todelete)
         {
@@ -93,12 +93,12 @@ namespace HEAP
             }
             if(dodelete)
             {
-                Children.Remove(todelete);
+                _children.Remove(todelete);
             }           
         }
         public void RemoveChild( String delGroup )
         {
-            children.Remove(delGroup);
+            _children.Remove(delGroup);
             //Delete trigger group from database
         }
     }

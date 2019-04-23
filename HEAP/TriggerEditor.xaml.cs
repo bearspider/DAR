@@ -29,7 +29,7 @@ namespace HEAP
     {
         private CharacterProfile selectedCharacter;
         private String selectedCategory;
-        private int selectedGroupId;
+        private string selectedGroupId;
         private BindingList<SearchText> endEarlyCases = new BindingList<SearchText>();
         private DataTable dt = new DataTable();
         private Audio basicAudioSettings = new Audio();
@@ -58,9 +58,8 @@ namespace HEAP
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 LiteCollection<TriggerGroup> groupsCol = db.GetCollection<TriggerGroup>("triggergroups");
-                var getTriggerGroup = groupsCol.FindById(selectedGroup.Id);
-                //var getTriggerGroup = groupsCol.FindOne(Query.And(Query.EQ("TriggerGroupName", selectedGroup.Name), Query.EQ("_id", selectedGroup.Id)));
-                selectedGroupId = getTriggerGroup.Id;
+                var getTriggerGroup = groupsCol.FindOne(x => x.UniqueId == selectedGroup.Id);
+                selectedGroupId = getTriggerGroup.UniqueId;
             }
             LoadCharacters();
         }
@@ -167,7 +166,7 @@ namespace HEAP
                         break;
                     case "tts":
                         radioEndedTTS.IsChecked = true;
-                        textboxEndedTTS.Text = trigger.timerEndedAudio.TTS;
+                        textboxEndedTTS.Text = trigger.TimerEndedAudio.TTS;
                         checkboxEndedInterrupt.IsChecked = trigger.TimerEndedAudio.Interrupt;
                         break;
                     case "file":
@@ -486,6 +485,7 @@ namespace HEAP
                         Comments = textboxComments.Text,
                         Regex = (Boolean)checkboxRegex.IsChecked,
                         Fastcheck = (Boolean)checkboxFast.IsChecked,
+                        UniqueId = Guid.NewGuid().ToString(),
                         Parent = selectedGroupId,
                         TriggerCategory = categoryid,
                         Displaytext = textboxBasicDisplay.Text,
@@ -510,8 +510,8 @@ namespace HEAP
                     };
 
                     newTriggerId = triggers.Insert(newTrigger);
-                    var getTriggerGroup = triggergroups.FindById(selectedGroupId);
-                    getTriggerGroup.AddTriggers(newTriggerId.AsInt32);
+                    var getTriggerGroup = triggergroups.FindOne(x => x.UniqueId == selectedGroupId);
+                    getTriggerGroup.AddTriggers(newTrigger.UniqueId);
                     triggergroups.Update(getTriggerGroup);
                     //If group is marked as default, enable it on each character
                     if (getTriggerGroup.DefaultEnabled)

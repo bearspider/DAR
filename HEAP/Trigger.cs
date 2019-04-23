@@ -11,162 +11,167 @@ namespace HEAP
 {
     public class Trigger
     {
-        public int id;
-        public String uniqueid;
-        public String name;
-        public ArrayList profiles;
-        public String searchText;
-        public String comments;
-        public Boolean regex;
-        public Boolean fastcheck;
+        private int _id;
+        private String _uniqueid;
+        private String _name;
+        private ArrayList _profiles;
+        private String _searchText;
+        private String _comments;
+        private Boolean _regex;
+        private Boolean _fastcheck;
         private String _digest;
-        public int parent;
-        public int triggerCategory;
-        public String displaytext;
-        public String clipboardtext;
-        public Audio audioSettings;
-        public String timerType;
-        public String timerName;
-        public int timerDuration;
-        public int triggeredAgain;
-        public BindingList<SearchText> endEarlyText;
-        public int timerEndingDuration;
-        public String timerEndingDisplayText;
-        public String timerEndingClipboardText;
-        public Audio timerEndingAudio;
-        public Boolean timerEnding;
-        public String timerEndedDisplayText;
-        public String timerEndedClipboardText;
-        public Boolean timerEnded;
-        public Audio timerEndedAudio;
-        public Boolean resetCounter;
-        public int resetCounterDuration;
+        private string _parent;
+        private int _triggerCategory;
+        private String _displaytext;
+        private String _clipboardtext;
+        private Audio _audioSettings;
+        private String _timerType;
+        private String _timerName;
+        private int _timerDuration;
+        private int _triggeredAgain;
+        private BindingList<SearchText> _endEarlyText;
+        private int _timerEndingDuration;
+        private String _timerEndingDisplayText;
+        private String _timerEndingClipboardText;
+        private Audio _timerEndingAudio;
+        private Boolean _timerEnding;
+        private String _timerEndedDisplayText;
+        private String _timerEndedClipboardText;
+        private Boolean _timerEnded;
+        private Audio _timerEndedAudio;
+        private Boolean _resetCounter;
+        private int _resetCounterDuration;
         public string UniqueId
         {
-            get { return uniqueid; }
-            set { uniqueid = value; }
+            get { return _uniqueid; }
+            set { _uniqueid = value; }
         }
         public int Id
         {
-            get { return id; }
-            set { id = value; }
+            get { return _id; }
+            set { _id = value; }
         }
         public Trigger()
         {
-            id = 0;
-            name = "New Trigger";
-            profiles = new ArrayList();
-            uniqueid = Guid.NewGuid().ToString();
-            searchText = "";
-            comments = "";
-            regex = false;
-            fastcheck = false;
+            _id = 0;
+            _name = "New Trigger";
+            _profiles = new ArrayList();
+            _uniqueid = Guid.NewGuid().ToString();
+            _searchText = "";
+            _comments = "";
+            _regex = false;
+            _fastcheck = false;
             _digest = "";
-            parent = 0;
-            triggerCategory = 0;
-            displaytext = "";
-            clipboardtext = "";
-            audioSettings = new Audio();
-            timerType = "";
-            timerName = "";
-            timerDuration = 0;
-            triggeredAgain = 2;
-            endEarlyText = new BindingList<SearchText>();
+            _parent = "0";
+            _triggerCategory = 0;
+            _displaytext = "";
+            _clipboardtext = "";
+            _audioSettings = new Audio();
+            _timerType = "";
+            _timerName = "";
+            _timerDuration = 0;
+            _triggeredAgain = 2;
+            _endEarlyText = new BindingList<SearchText>();
             //endEarlyText = "";
-            timerEndingDuration = 0;
-            timerEndingDisplayText = "";
-            timerEndingClipboardText = "";
-            timerEndingAudio = new Audio();
-            timerEnding = false;
-            timerEndedClipboardText = "";
-            timerEndedDisplayText = "";
-            timerEnded = false;
-            timerEndedAudio = new Audio();
-            resetCounter = false;
-            resetCounterDuration = 0;
+            _timerEndingDuration = 0;
+            _timerEndingDisplayText = "";
+            _timerEndingClipboardText = "";
+            _timerEndingAudio = new Audio();
+            _timerEnding = false;
+            _timerEndedClipboardText = "";
+            _timerEndedDisplayText = "";
+            _timerEnded = false;
+            _timerEndedAudio = new Audio();
+            _resetCounter = false;
+            _resetCounterDuration = 0;
+        }
+        public String Digest
+        {
+            get { return _digest; }
+            set { _digest = value; }
         }
         public String Name
         {
-            get { return name; }
-            set { name = value; }
+            get { return _name; }
+            set { _name = value; }
         }
         public ArrayList Profiles
         {
-            get { return profiles; }
-            set { profiles = value; }
+            get { return _profiles; }
+            set { _profiles = value; }
         }
         public String Comments
         {
-            get { return comments; }
-            set { comments = value; }
+            get { return _comments; }
+            set { _comments = value; }
         }
         public String SearchText
         {
-            get { return searchText; }
-            set { searchText = value; }
+            get { return _searchText; }
+            set { _searchText = value; }
         }
         public Boolean Regex
         {
-            get { return regex; }
-            set { regex = value; }
+            get { return _regex; }
+            set { _regex = value; }
         }
         public Boolean Fastcheck
         {
-            get { return fastcheck; }
+            get { return _fastcheck; }
             set
             {
-                fastcheck = value;
+                _fastcheck = value;
             }
         }
         public String Displaytext
         {
-            get { return displaytext; }
-            set { displaytext = value; }
+            get { return _displaytext; }
+            set { _displaytext = value; }
         }
         public String Clipboardtext
         {
-            get { return clipboardtext; }
-            set { clipboardtext = value; }
+            get { return _clipboardtext; }
+            set { _clipboardtext = value; }
         }
-        public int Parent
+        public string Parent
         {
-            get { return parent; }
-            set { parent = value; }
+            get { return _parent; }
+            set { _parent = value; }
         }
         public int TriggerCategory
         {
-            get { return triggerCategory; }
-            set { triggerCategory = value; }
+            get { return _triggerCategory; }
+            set { _triggerCategory = value; }
         }
         public Audio AudioSettings
         {
-            get { return audioSettings; }
-            set { audioSettings = value; }
+            get { return _audioSettings; }
+            set { _audioSettings = value; }
         }
         public String TimerType
         {
-            get { return timerType; }
-            set { timerType = value; }
+            get { return _timerType; }
+            set { _timerType = value; }
         }
         public String TimerName
         {
-            get { return timerName; }
-            set { timerName = value; }
+            get { return _timerName; }
+            set { _timerName = value; }
         }
         public int TimerDuration
         {
-            get { return timerDuration; }
-            set { timerDuration = value; }
+            get { return _timerDuration; }
+            set { _timerDuration = value; }
         }
         public int TriggeredAgain
         {
-            get { return triggeredAgain; }
-            set { triggeredAgain = value; }
+            get { return _triggeredAgain; }
+            set { _triggeredAgain = value; }
         }
         public BindingList<SearchText> EndEarlyText
         {
-            get { return endEarlyText; }
-            set { endEarlyText = value; }
+            get { return _endEarlyText; }
+            set { _endEarlyText = value; }
         }
         /*public String EndEarlyText
         {
@@ -175,63 +180,63 @@ namespace HEAP
         }*/
         public int TimerEndingDuration
         {
-            get { return timerEndingDuration; }
-            set { timerEndingDuration = value; }
+            get { return _timerEndingDuration; }
+            set { _timerEndingDuration = value; }
 
         }
         public String TimerEndingDisplayText
         {
-            get { return timerEndingDisplayText; }
-            set { timerEndingDisplayText = value; }
+            get { return _timerEndingDisplayText; }
+            set { _timerEndingDisplayText = value; }
         }
         public String TimerEndingClipboardText
         {
-            get { return timerEndingClipboardText; }
-            set { timerEndingClipboardText = value; }
+            get { return _timerEndingClipboardText; }
+            set { _timerEndingClipboardText = value; }
         }
         public Audio TimerEndingAudio
         {
-            get { return timerEndingAudio; }
-            set { timerEndingAudio = value; }
+            get { return _timerEndingAudio; }
+            set { _timerEndingAudio = value; }
         }
         public Boolean TimerEnding
         {
-            get { return timerEnding; }
-            set { timerEnding = value; }
+            get { return _timerEnding; }
+            set { _timerEnding = value; }
         }
         public String TimerEndedDisplayText
         {
-            get { return timerEndedDisplayText; }
-            set { timerEndedDisplayText = value; }
+            get { return _timerEndedDisplayText; }
+            set { _timerEndedDisplayText = value; }
         }
         public String TimerEndedClipboardText
         {
-            get { return timerEndedClipboardText; }
-            set { timerEndedClipboardText = value; }
+            get { return _timerEndedClipboardText; }
+            set { _timerEndedClipboardText = value; }
         }
         public Boolean TimerEnded
         {
-            get { return timerEnded; }
-            set { timerEnded = value; }
+            get { return _timerEnded; }
+            set { _timerEnded = value; }
         }
         public Audio TimerEndedAudio
         {
-            get { return timerEndedAudio; }
-            set { timerEndedAudio = value; }
+            get { return _timerEndedAudio; }
+            set { _timerEndedAudio = value; }
         }
         public Boolean ResetCounter
         {
-            get { return resetCounter; }
-            set { resetCounter = value; }
+            get { return _resetCounter; }
+            set { _resetCounter = value; }
         }
         public int ResetCounterDuration
         {
-            get { return resetCounterDuration; }
-            set { resetCounterDuration = value; }
+            get { return _resetCounterDuration; }
+            set { _resetCounterDuration = value; }
         }
         public void AddProfile(int profileId)
         {
-            profiles.Add(profileId);
+            _profiles.Add(profileId);
         }
     }
 }

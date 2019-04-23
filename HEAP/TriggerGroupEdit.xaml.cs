@@ -71,7 +71,7 @@ namespace HEAP
                         enumerator.MoveNext();
                         var editTrigger = (enumerator.Current);
                         //Update Record instead
-                        if (editTrigger.Parent == record.Id)
+                        if (editTrigger.Parent == record.UniqueId)
                         {
                             editTrigger.TriggerGroupName = textboxName.Text;
                             editTrigger.Comments = textboxComments.Text;
@@ -88,15 +88,18 @@ namespace HEAP
                         TriggerGroupName = textboxName.Text,
                         Comments = textboxComments.Text,
                         DefaultEnabled = (Boolean)checkboxEnable.IsChecked,
-                        Parent = record.Id,
+                        Parent = parentObject.Id,
                         Children = new ArrayList()
                     };
                     newChild = col.Insert(triggerGroup);
                 }
                 //Add new trigger group to it's parent list
                 var newrecord = col.FindById(newChild.AsDecimal);
-                record.Children.Add(newrecord.Id);
-                col.Update(record);
+                if(record != null)
+                {
+                    record.Children.Add(newrecord.UniqueId);
+                    col.Update(record);
+                }
             }
         }
         private void AddTriggerGroup()

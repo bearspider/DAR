@@ -212,7 +212,8 @@ namespace HEAP
         #region Properties
         //Main Tree
         private TreeViewModel tv;
-        private List<TreeViewModel> treeView;
+        //private List<TreeViewModel> treeView;
+        private ObservableCollection<TreeViewModel> treeView;
 
         //Variables
         private int triggergroupid = 0;
@@ -268,8 +269,8 @@ namespace HEAP
 
 
         //Trigger Clipboard
-        private int triggerclipboard = 0;
-        private int triggergroupclipboard = 0;
+        private string triggerclipboard = "0";
+        private string triggergroupclipboard = "0";
         private string clipboardtype = "";
         private static string version = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion;
         private int totallinecount = 0;
@@ -830,7 +831,7 @@ namespace HEAP
                 ScheduledMaintenance(character.LogFile, logmaintenance);
             }
             #region threading
-            await Task.Run(async () =>
+            await Task.Run(() =>
             {
                 using (FileStream filestream = File.Open(character.LogFile, System.IO.FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
@@ -1130,9 +1131,9 @@ namespace HEAP
         }
         #endregion
         #region Triggers
-        private Trigger FindTrigger(int bsonid)
+        private Trigger FindTrigger(string bsonid)
         {
-            return dballtriggers.Find(x => x.Id == bsonid);
+            return dballtriggers.Find(x => x.UniqueId == bsonid);
         }
         private void TriggerLoad(String callingfunction)
         {
@@ -1142,7 +1143,7 @@ namespace HEAP
             listoftriggers.Clear();
             foreach (Trigger trigger in dballtriggers)
             {
-                listoftriggers.Add(trigger, trigger.profiles);
+                listoftriggers.Add(trigger, trigger.Profiles);
             }
             loadwatch.Stop();
             Console.WriteLine($"Loaded Triggers in {loadwatch.Elapsed}");
@@ -1172,11 +1173,11 @@ namespace HEAP
             {
                 var colProfiles = db.GetCollection<CharacterProfile>("profiles");
                 var colTriggers = db.GetCollection<Trigger>("triggers");
-                var currentTrigger = colTriggers.FindById(Convert.ToInt32(triggerName));
+                var currentTrigger = colTriggers.FindOne(x => x.UniqueId == triggerName);
                 if ((currentTrigger.Profiles.Contains(selectedCharacter.Id)))
                 {
-                    currentprofile.Triggers.Remove(currentTrigger.id);
-                    currentTrigger.profiles.Remove(selectedCharacter.Id);
+                    currentprofile.Triggers.Remove(currentTrigger.UniqueId);
+                    currentTrigger.Profiles.Remove(selectedCharacter.Id);
                 }
                 colTriggers.Update(currentTrigger);
                 colProfiles.Update(currentprofile);
@@ -1190,11 +1191,11 @@ namespace HEAP
             {
                 var colProfiles = db.GetCollection<CharacterProfile>("profiles");
                 var colTriggers = db.GetCollection<Trigger>("triggers");
-                var currentTrigger = colTriggers.FindById(Convert.ToInt32(triggerName));
+                var currentTrigger = colTriggers.FindOne(x => x.UniqueId == triggerName);
                 if (!(currentTrigger.Profiles.Contains(selectedCharacter.Id)))
                 {
-                    currentprofile.Triggers.Add(currentTrigger.id);
-                    currentTrigger.profiles.Add(selectedCharacter.Id);
+                    currentprofile.Triggers.Add(currentTrigger.UniqueId);
+                    currentTrigger.Profiles.Add(selectedCharacter.Id);
                 }
                 colTriggers.Update(currentTrigger);
                 colProfiles.Update(currentprofile);
@@ -1246,20 +1247,20 @@ namespace HEAP
                     profile.Triggers.Remove(deadtrigger.Id);
                     colProfiles.Update(profile);
                 }
-                getGroup.RemoveTrigger(deadtrigger.Id);
+                getGroup.RemoveTrigger(deadtrigger.UniqueId);
                 triggergroup.Update(getGroup);
                 col.Delete(deadtrigger.Id);
             }
             TriggerLoad("DeleteTrigger by name");
         }
-        private void DeleteTrigger(int triggerid)
+        private void DeleteTriggerById(string triggerid)
         {
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 var col = db.GetCollection<Trigger>("triggers");
-                Trigger deadtrigger = col.FindById(triggerid);
+                Trigger deadtrigger = col.FindOne(x => x.UniqueId == triggerid);
                 var triggergroup = db.GetCollection<TriggerGroup>("triggergroups");
-                var getGroup = triggergroup.FindById(deadtrigger.Parent);
+                var getGroup = triggergroup.FindOne(x => x.UniqueId == deadtrigger.Parent);
                 var colProfiles = db.GetCollection<CharacterProfile>("profiles");
                 var profiles = colProfiles.FindAll();
                 foreach (CharacterProfile profile in profiles)
@@ -1269,18 +1270,18 @@ namespace HEAP
                 }
                 getGroup.RemoveTrigger(triggerid);
                 triggergroup.Update(getGroup);
-                col.Delete(triggerid);
+                col.Delete(deadtrigger.Id);
             }
             TriggerLoad("DeleteTrigger by id");
         }
-        private void CopyTrigger(int triggerid, int newgroupid)
+        private void CopyTrigger(string triggerid, string newgroupid)
         {
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 var triggerCollection = db.GetCollection<Trigger>("triggers");
                 var triggergroupCollection = db.GetCollection<TriggerGroup>("triggergroups");
-                Trigger basetrigger = triggerCollection.FindById(triggerid);
-                TriggerGroup basegroup = triggergroupCollection.FindById(newgroupid);
+                Trigger basetrigger = triggerCollection.FindOne(x => x.UniqueId == triggerid);
+                TriggerGroup basegroup = triggergroupCollection.FindOne(x => x.UniqueId == newgroupid);
                 basetrigger.Id = 0;
                 basetrigger.Name = basetrigger.Name + "-Copy";
                 basetrigger.Parent = newgroupid;
@@ -1292,14 +1293,15 @@ namespace HEAP
         }
         #endregion
         #region Trigger Groups
-        private TriggerGroup FindTriggerGroup(int bsonid)
+        private TriggerGroup FindTriggerGroup(string bsonid)
         {
-            return dballgroups.Find(x => x.Id == bsonid);
+            return dballgroups.Find(x => x.UniqueId == bsonid);
         }
         private void TriggerGroupsAdd_Click(object sender, RoutedEventArgs e)
         {
             TriggerGroupEdit triggerDialog = new TriggerGroupEdit();
-            triggerDialog.Show();
+            triggerDialog.ShowDialog();
+            UpdateView();
             e.Handled = true;
         }
         private void TriggerGroupsRemove_Click(object sender, RoutedEventArgs e)
@@ -1318,6 +1320,7 @@ namespace HEAP
             TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
             TriggerGroupEdit triggerDialog = new TriggerGroupEdit(root);
             triggerDialog.Show();
+            UpdateView();
             e.Handled = true;
         }
         private void TriggerGroupsEdit_Click(object sender, RoutedEventArgs e)
@@ -1336,23 +1339,24 @@ namespace HEAP
         private void TriggerGroupsAddTopLevel_Click(object sender, RoutedEventArgs e)
         {
             TriggerGroupEdit triggerDialog = new TriggerGroupEdit();
-            triggerDialog.Show();
-            e.Handled = true;
+            triggerDialog.ShowDialog();
             UpdateView();
+            e.Handled = true;
+
         }
         private void DeleteTriggerGroup(String groupname)
         {
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 var col = db.GetCollection<TriggerGroup>("triggergroups");
-                TriggerGroup deadgroup = col.FindOne(Query.EQ("TriggerGroupName", groupname));
+                TriggerGroup deadgroup = col.FindOne(x => x.UniqueId == groupname);
                 var dbid = deadgroup.Id;
-                var childContains = col.FindAll().Where(x => x.children.Contains(dbid));
+                var childContains = col.FindAll().Where(x => x.Children.Contains(dbid));
                 //Delete all triggers associated with the group
                 var triggers = deadgroup.Triggers;
-                foreach (int triggerid in triggers)
+                foreach (string triggerid in triggers)
                 {
-                    DeleteTrigger(triggerid);
+                    DeleteTriggerById(triggerid);
                 }
                 //If child group, remove child from parent
                 foreach (var child in childContains)
@@ -1361,7 +1365,7 @@ namespace HEAP
                     col.Update(child);
                 }
                 //if parent group, remove children
-                foreach (int childgroup in deadgroup.Children)
+                foreach (string childgroup in deadgroup.Children)
                 {
                     DeleteTriggerGroup(childgroup);
                 }
@@ -1369,18 +1373,18 @@ namespace HEAP
             }
             GenerateMasterList("Delete TriggerGroup by name");
         }
-        private void DeleteTriggerGroup(int groupid)
+        private void DeleteTriggerGroupById(string groupid)
         {
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 var col = db.GetCollection<TriggerGroup>("triggergroups");
-                TriggerGroup deadgroup = col.FindById(groupid);
-                var childContains = col.FindAll().Where(x => x.children.Contains(groupid));
+                TriggerGroup deadgroup = col.FindOne(x => x.UniqueId == groupid);
+                var childContains = col.FindAll().Where(x => x.Children.Contains(groupid));
                 //Delete all triggers associated with the group
                 var triggers = deadgroup.Triggers;
-                foreach (int triggerid in triggers)
+                foreach (string triggerid in triggers)
                 {
-                    DeleteTrigger(triggerid);
+                    DeleteTriggerById(triggerid);
                 }
                 //If child group, remove child from parent
                 foreach (var child in childContains)
@@ -1389,20 +1393,20 @@ namespace HEAP
                     col.Update(child);
                 }
                 //If Parent group, remove children
-                foreach (int childgroup in deadgroup.Children)
+                foreach (String childgroup in deadgroup.Children)
                 {
-                    DeleteTriggerGroup(childgroup);
+                    DeleteTriggerGroupById(childgroup);
                 }
-                col.Delete(groupid);
+                col.Delete(deadgroup.Id);
             }
             GenerateMasterList("Delete TriggerGroup by id");
         }
-        private void CopyTriggerGroup(int copyfrom, int parent)
+        private void CopyTriggerGroup(string copyfrom, string parent)
         {
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 var triggergroupCollection = db.GetCollection<TriggerGroup>("triggergroups");
-                TriggerGroup basegroup = triggergroupCollection.FindById(copyfrom);
+                TriggerGroup basegroup = triggergroupCollection.FindOne(x => x.UniqueId == copyfrom);
                 TriggerGroup newgroup = new TriggerGroup();
                 newgroup.DefaultEnabled = basegroup.DefaultEnabled;
                 newgroup.TriggerGroupName = basegroup.TriggerGroupName + "-Copy";
@@ -1411,19 +1415,19 @@ namespace HEAP
                 BsonValue newgid = triggergroupCollection.Insert(newgroup);
                 if (basegroup.Triggers.Count > 0)
                 {
-                    foreach (int triggerid in basegroup.Triggers)
+                    foreach (string triggerid in basegroup.Triggers)
                     {
                         CopyTrigger(triggerid, newgid);
                     }
                 }
                 if (basegroup.Children.Count > 0)
                 {
-                    foreach (int child in basegroup.Children)
+                    foreach (string child in basegroup.Children)
                     {
                         CopyTriggerGroup(child, newgid);
                     }
                 }
-                if (parent != 0)
+                if (parent != "0")
                 {
                     TriggerGroup parentgroup = triggergroupCollection.FindById(parent);
                     parentgroup.AddChild(newgid);
@@ -1439,14 +1443,14 @@ namespace HEAP
             TreeViewModel rTree = new TreeViewModel(branch.TriggerGroupName)
             {
                 Type = "triggergroup",
-                Id = branch.Id
+                Id = branch.UniqueId
             };
-            if (branch.triggers.Count > 0)
+            if (branch.Triggers.Count > 0)
             {
-                foreach (Int32 item in branch.triggers)
+                foreach (string item in branch.Triggers)
                 {
                     Boolean isChecked = false;
-                    Trigger getTrigger = dballtriggers.Find(x => x.Id == item);
+                    Trigger getTrigger = dballtriggers.Find(x => x.UniqueId == item);
                     if (currentSelection != null)
                     {
                         CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
@@ -1458,7 +1462,7 @@ namespace HEAP
                     TreeViewModel newChildBranch = new TreeViewModel(getTrigger.Name)
                     {
                         Type = "trigger",
-                        Id = getTrigger.Id
+                        Id = getTrigger.UniqueId
                     };
                     newChildBranch.IsChecked = isChecked;
                     newChildBranch.TriggerAdded += TriggerAdded_TreeViewModel;
@@ -1468,7 +1472,7 @@ namespace HEAP
             }
             if (branch.Children.Count > 0)
             {
-                foreach (int leaf in branch.Children)
+                foreach (string leaf in branch.Children)
                 {
                     TriggerGroup leafGroup = GetTriggerGroup(leaf);
                     rTree.Children.Add(BuildTree(leafGroup));
@@ -1477,9 +1481,9 @@ namespace HEAP
             rTree.VerifyCheckedState();
             return rTree;
         }
-        private TriggerGroup GetTriggerGroup(int id)
+        private TriggerGroup GetTriggerGroup(string id)
         {
-            return dballgroups.Find(x => x.Id == id);
+            return dballgroups.Find(x => x.UniqueId == id);
         }
         private void TreeViewTriggers_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
@@ -1564,7 +1568,7 @@ namespace HEAP
             if (e.Data.GetDataPresent("MainTree"))
             {
                 TreeViewModel selectedbranch = e.Data.GetData("MainTree") as TreeViewModel;
-                if (selectedbranch.Type == "trigger" && droptree.Id != 0 && selectedbranch.Name != droptree.Name)
+                if (selectedbranch.Type == "trigger" && droptree.Id != "0" && selectedbranch.Name != droptree.Name)
                 {
                     using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                     {
@@ -1591,7 +1595,7 @@ namespace HEAP
                     {
                         var colTriggerGroups = db.GetCollection<TriggerGroup>("triggergroups");
                         TriggerGroup currentgroup = colTriggerGroups.FindById(selectedbranch.Id);
-                        if (currentgroup.Parent != 0)
+                        if (currentgroup.Parent != "0")
                         {
                             //Find the old parent group and remove it as a child
                             TriggerGroup oldgroup = colTriggerGroups.FindOne(x => x.Children.Contains(selectedbranch.Id));
@@ -1601,7 +1605,7 @@ namespace HEAP
                         //update the parent with the new dropbranch id
                         currentgroup.Parent = droptree.Id;
                         colTriggerGroups.Update(currentgroup);
-                        if (droptree.Id != 0)
+                        if (droptree.Id != "0")
                         {
                             //Add the triggergroup as child to droptree
                             TriggerGroup newgroup = colTriggerGroups.FindById(droptree.Id);
@@ -1636,8 +1640,9 @@ namespace HEAP
                 }
             }
         }
-        private int ImportTriggerGroup(TriggerGroup toimport, int importparent)
+        private string ImportTriggerGroup(TriggerGroup toimport, string importparent)
         {
+            string newguid = "";
             int bsonid = 0;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -1653,9 +1658,11 @@ namespace HEAP
                 TriggerGroup newgroup = new TriggerGroup
                 {
                     TriggerGroupName = toimport.TriggerGroupName,
+                    UniqueId = toimport.UniqueId,
                     Parent = importparent,
                     Comments = toimport.Comments,
                 };
+                newguid = newgroup.UniqueId;
                 bsonid = colTriggerGroups.Insert(newgroup);
                 //If child groups, recursive call
                 if (toimport.Children.Count > 0)
@@ -1663,7 +1670,7 @@ namespace HEAP
                     foreach (int child in toimport.Children)
                     {
                         TriggerGroup childgroup = mergegroups.Find(x => x.Id == child);
-                        int gid = ImportTriggerGroup(childgroup, bsonid);
+                        string gid = ImportTriggerGroup(childgroup, newgroup.UniqueId);
                         newgroup.AddChild(gid);
                     }
                 }
@@ -1672,19 +1679,20 @@ namespace HEAP
                     foreach (int child in toimport.Triggers)
                     {
                         Trigger childtrigger = mergetriggers[child];
-                        childtrigger.Parent = bsonid;
+                        childtrigger.Parent = newguid;
                         childtrigger.Id = 0;
-                        int tid = ImportTrigger(childtrigger);
+                        string tid = ImportTrigger(childtrigger);
                         newgroup.AddTriggers(tid);
                     }
                 }
                 //Update the database after we've entered in all the children triggers and groups
                 colTriggerGroups.Update(newgroup);
             }
-            return bsonid;
+            return newguid;
         }
-        private int ImportTrigger(Trigger toimport)
+        private string ImportTrigger(Trigger toimport)
         {
+            string newguid = "";
             int bsonid = 0;
             toimport.Id = 0;
             //Console.WriteLine($"Inserting Trigger: {toimport.Name}");
@@ -1692,16 +1700,17 @@ namespace HEAP
             {
                 var colTriggers = db.GetCollection<Trigger>("triggers");
                 toimport.TriggerCategory = defaultcategory.Id;
-                if(toimport.uniqueid == "")
+                if(toimport.UniqueId == "")
                 {
                     toimport.UniqueId = Guid.NewGuid().ToString();
                 }
+                newguid = toimport.UniqueId;
                 bsonid = colTriggers.Insert(toimport);
                 //Activate trigger for all profiles
                 //AllProfileEnableTrigger(bsonid);
             }
             addedtriggers.Add(bsonid);
-            return bsonid;
+            return newguid;
         }
         private T FindAncestor<T>(DependencyObject current) where T : DependencyObject
         {
@@ -1948,30 +1957,31 @@ namespace HEAP
         }
         private void UpdateView()
         {
-            UpdateListView();
-            UpdateTriggerView();
-            Refresh_Categories();
+            //UpdateListView();
+            //UpdateTriggerView();
+            //Refresh_Categories();
         }
         public void UpdateTriggerView()
         {
             //root of the Trigger Tree
-            treeView = new List<TreeViewModel>();
+            //treeView = new List<TreeViewModel>();
+            treeView = new ObservableCollection<TreeViewModel>();
             tv = new TreeViewModel("All Triggers");
             treeView.Add(tv);
 
             //Get Activated Triggers
             foreach (var doc in dballgroups)
             {
-                if (doc.Parent == 0)
+                if (doc.Parent == "0")
                 {
                     TreeViewModel rTree = new TreeViewModel(doc.TriggerGroupName)
                     {
                         Type = "triggergroup",
-                        Id = doc.Id
+                        Id = doc.UniqueId
                     };
-                    if (doc.triggers.Count > 0)
+                    if (doc.Triggers.Count > 0)
                     {
-                        foreach (Int32 item in doc.triggers)
+                        foreach (Int32 item in doc.Triggers)
                         {
                             Boolean isChecked = false;
                             Trigger getTrigger = dballtriggers.Find(x => x.Id == item);
@@ -1988,7 +1998,7 @@ namespace HEAP
                                 Type = "trigger"
                             };
                             newChildBranch.IsChecked = isChecked;
-                            newChildBranch.Id = getTrigger.Id;
+                            newChildBranch.Id = getTrigger.UniqueId;
                             newChildBranch.TriggerAdded += TriggerAdded_TreeViewModel;
                             newChildBranch.TriggerRemoved += TriggerRemoved_TreeViewModel;
                             rTree.Children.Add(newChildBranch);
@@ -2836,14 +2846,14 @@ namespace HEAP
             TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
             if (root.Type == "triggergroup")
             {
-                triggerclipboard = 0;
+                triggerclipboard = "0";
                 triggergroupclipboard = root.Id;
                 clipboardtype = "triggergroup";
             }
             if (root.Type == "trigger")
             {
                 clipboardtype = "trigger";
-                triggergroupclipboard = 0;
+                triggergroupclipboard = "0";
                 triggerclipboard = root.Id;
             }
         }
@@ -2864,7 +2874,7 @@ namespace HEAP
                 MessageBoxResult result = MessageBox.Show($"Are you sure you want to Delete {root.Name}", "Confirmation", MessageBoxButton.YesNo);
                 if (result == MessageBoxResult.Yes)
                 {
-                    DeleteTrigger(root.Id);
+                    DeleteTriggerById(root.Id);
                     UpdateView();
                 }
             }
@@ -2874,13 +2884,13 @@ namespace HEAP
             TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
             if (root.Type == "trigger")
             {
-                int bsonid = (dballtriggers.Find(x => x.Id == root.Id)).Id;
+                int bsonid = (dballtriggers.Find(x => x.UniqueId == root.Id)).Id;
                 TriggerEditor triggerDialog = new TriggerEditor(bsonid);
                 triggerDialog.Show();
             }
             if (root.Type == "triggergroup")
             {
-                TriggerGroup editgroup = dballgroups.Find(x => x.Id == root.Id);
+                TriggerGroup editgroup = dballgroups.Find(x => x.UniqueId == root.Id);
                 TriggerGroupEdit triggerDialog = new TriggerGroupEdit(editgroup);
                 triggerDialog.Show();
                 UpdateView();
@@ -2899,7 +2909,7 @@ namespace HEAP
             {
                 if (root.Name == "All Triggers")
                 {
-                    CopyTriggerGroup(triggergroupclipboard, 0);
+                    CopyTriggerGroup(triggergroupclipboard, "0");
                 }
                 else
                 {
@@ -2941,7 +2951,7 @@ namespace HEAP
                     cmTreeEdit.IsEnabled = false;
                     cmAddTriggerGroup.IsEnabled = true;
                     cmAddTrigger.IsEnabled = false;
-                    if (triggergroupclipboard != 0)
+                    if (triggergroupclipboard != "0")
                     {
                         cmTreePaste.IsEnabled = true;
                     }
@@ -2955,7 +2965,7 @@ namespace HEAP
                         cmAddTriggerGroup.IsEnabled = true;
                         cmAddTrigger.IsEnabled = true;
                         cmTreeEdit.IsEnabled = true;
-                        if (triggergroupclipboard != 0 || triggerclipboard != 0)
+                        if (triggergroupclipboard != "0" || triggerclipboard != "0")
                         {
                             cmTreePaste.IsEnabled = true;
                         }
@@ -2969,7 +2979,7 @@ namespace HEAP
                         cmTreeEdit.IsEnabled = true;
                         cmAddTrigger.IsEnabled = false;
                         cmAddTriggerGroup.IsEnabled = false;
-                        if (triggerclipboard != 0)
+                        if (triggerclipboard != "0")
                         {
                             cmTreePaste.IsEnabled = true;
                         }
@@ -2992,7 +3002,9 @@ namespace HEAP
         {
             TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
             TriggerGroupEdit triggerDialog = new TriggerGroupEdit(root);
-            triggerDialog.Show();
+            triggerDialog.ShowDialog();
+            UpdateView();
+            e.Handled = true;
         }
         private void CmAddTrigger_Click(object sender, RoutedEventArgs e)
         {
@@ -3054,10 +3066,10 @@ namespace HEAP
                 if (matchfile.Success)
                 {
                     newpath = logmaintenance.ArchiveFolder + @"\" + matchfile.Groups["filename"].Value.ToString() + "_" + filepostfix + ".txt";
-                    File.Move(logfile, newpath);
+                    //File.Move(logfile, newpath);
                     //create new file
-                    FileStream created = File.Create(logfile);
-                    created.Close();
+                    //FileStream created = File.Create(logfile);
+                    //created.Close();
                 }
             }
             if (logmaintenance.CompressArchive == "true")
@@ -3113,13 +3125,54 @@ namespace HEAP
         public void ImportFromShare(string json)
         {
             dynamic back2json = JsonConvert.DeserializeObject(json);
-            JToken token = ((JToken)back2json).SelectToken("rootnodes");
-            string stop = "";
-            //Go through each object
-            //if trigger group -> check if the uniqueid matches any existing groups
-            //  if match -> update any group info else create new group
-            //if trigger -> check if the uniqueid matches any existing triggers
-            //  if match -> update any trigger info else create new trigger
+            JToken tokens = ((JToken)back2json).SelectToken("rootnodes");
+            foreach (JToken token in tokens.Children())
+            {
+                switch ((string)token.SelectToken("Type"))
+                {
+                    case "triggergroup":
+                        ImportGroupFromShare(token, "0");
+                        break;
+                    case "triggers":
+                        ImportTriggerFromShare(token);
+                        break;
+                    default:
+                        break;
+                }
+            }
+            UpdateView();
+        }
+        public void ImportGroupFromShare(JToken token, string parentid)
+        {
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                LiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
+                TriggerGroup newgroup = new TriggerGroup
+                {
+                    TriggerGroupName = (string)token.SelectToken("TriggerGroupName")
+                };
+                //if this was at the rootnode just put it a zero.
+                if (parentid == "0")
+                {
+                    newgroup.Parent = "0";
+                }
+                else
+                {
+                    TriggerGroup parentgroup = triggergroups.FindOne(x => x.UniqueId == parentid);
+                    if(parentgroup != null)
+                    {
+                        newgroup.Parent = parentgroup.UniqueId;
+                    }
+                    else
+                    {
+                        newgroup.Parent = "0";
+                    }
+                }
+            }
+        }
+        public void ImportTriggerFromShare(JToken token)
+        {
+
         }
         public void ImportZip(string filename, Boolean share)
         {
@@ -3146,7 +3199,7 @@ namespace HEAP
                         }
                         else if (entry.Name.Contains(@".wav"))
                         {
-                            entry.ExtractToFile($"{GlobalVariables.defaultPath}\\ImportedSounds\\{entry.Name}");
+                            entry.ExtractToFile($"{GlobalVariables.defaultPath}\\ImportedSounds\\{entry.Name}",true);
                         }
                     }
                 }
@@ -3200,7 +3253,7 @@ namespace HEAP
                     {
                         TriggerGroupName = (string)group.SelectToken("TriggerGroupName"),
                         Id = triggergroupid,
-                        Parent = parentid
+                        Parent = parentid.ToString()
                     };
                     JToken comments = group.SelectToken("Comments");
                     if (comments != null)
@@ -3228,7 +3281,7 @@ namespace HEAP
                 {
                     TriggerGroupName = (string)json.SelectToken("TriggerGroupName"),
                     Id = triggergroupid,
-                    Parent = parentid
+                    Parent = parentid.ToString()
                 };
                 JToken comments = json.SelectToken("Comments");
                 if (comments != null)
@@ -3257,39 +3310,39 @@ namespace HEAP
             int rval = triggerid;
             Trigger newtrigger = new Trigger
             {
-                id = triggerid,
-                name = jsontoken["name"].ToString(),
-                profiles = new ArrayList(),
-                searchText = (String)jsontoken["searchText"],
-                comments = (String)jsontoken["comments"],
-                regex = (bool)jsontoken["regex"],
-                fastcheck = (bool)jsontoken["fastcheck"],
-                parent = parentid,
-                triggerCategory = 0,
-                displaytext = (String)jsontoken["displaytext"],
-                clipboardtext = (String)jsontoken["clipboardtext"],
-                audioSettings = new Audio(),
-                timerType = (String)jsontoken["timerType"],
-                timerName = (String)jsontoken["timerName"],
-                timerDuration = (int)jsontoken["timerDuration"],
-                triggeredAgain = (int)jsontoken["triggeredAgain"],
-                endEarlyText = new BindingList<SearchText>(),
-                timerEndingDuration = (int)jsontoken["timerEndingDuration"],
-                timerEndingDisplayText = (String)jsontoken["timerEndingDisplayText"],
-                timerEndingClipboardText = (String)jsontoken["timerEndingClipboardText"],
-                timerEndingAudio = new Audio(),
-                timerEnding = (bool)jsontoken["timerEnding"],
-                timerEndedClipboardText = (String)jsontoken["timerEndedClipboardText"],
-                timerEndedDisplayText = (String)jsontoken["timerEndedDisplayText"],
-                timerEnded = (bool)jsontoken["timerEnded"],
-                timerEndedAudio = new Audio(),
-                resetCounter = (bool)jsontoken["resetCounter"],
-                resetCounterDuration = (int)jsontoken["resetCounterDuration"],
+                Id = triggerid,
+                Name = jsontoken["name"].ToString(),
+                Profiles = new ArrayList(),
+                SearchText = (String)jsontoken["searchText"],
+                Comments = (String)jsontoken["comments"],
+                Regex = (bool)jsontoken["regex"],
+                Fastcheck = (bool)jsontoken["fastcheck"],
+                Parent = parentid.ToString(),
+                TriggerCategory = 0,
+                Displaytext = (String)jsontoken["displaytext"],
+                Clipboardtext = (String)jsontoken["clipboardtext"],
+                AudioSettings = new Audio(),
+                TimerType = (String)jsontoken["timerType"],
+                TimerName = (String)jsontoken["timerName"],
+                TimerDuration = (int)jsontoken["timerDuration"],
+                TriggeredAgain = (int)jsontoken["triggeredAgain"],
+                EndEarlyText = new BindingList<SearchText>(),
+                TimerEndingDuration = (int)jsontoken["timerEndingDuration"],
+                TimerEndingDisplayText = (String)jsontoken["timerEndingDisplayText"],
+                TimerEndingClipboardText = (String)jsontoken["timerEndingClipboardText"],
+                TimerEndingAudio = new Audio(),
+                TimerEnding = (bool)jsontoken["timerEnding"],
+                TimerEndedClipboardText = (String)jsontoken["timerEndedClipboardText"],
+                TimerEndedDisplayText = (String)jsontoken["timerEndedDisplayText"],
+                TimerEnded = (bool)jsontoken["timerEnded"],
+                TimerEndedAudio = new Audio(),
+                ResetCounter = (bool)jsontoken["resetCounter"],
+                ResetCounterDuration = (int)jsontoken["resetCounterDuration"],
             };
-            newtrigger.audioSettings.AudioType = (String)jsontoken["audioSettings"]["audioType"];
-            newtrigger.audioSettings.TTS = (String)jsontoken["audioSettings"]["tts"];
-            newtrigger.audioSettings.Interrupt = (bool)jsontoken["audioSettings"]["interrupt"];
-            newtrigger.audioSettings.SoundFileId = (String)jsontoken["audioSettings"]["soundfile"];
+            newtrigger.AudioSettings.AudioType = (String)jsontoken["audioSettings"]["audioType"];
+            newtrigger.AudioSettings.TTS = (String)jsontoken["audioSettings"]["tts"];
+            newtrigger.AudioSettings.Interrupt = (bool)jsontoken["audioSettings"]["interrupt"];
+            newtrigger.AudioSettings.SoundFileId = (String)jsontoken["audioSettings"]["soundfile"];
             newtrigger.TimerEndingAudio.AudioType = (String)jsontoken["timerEndingAudio"]["audioType"];
             newtrigger.TimerEndingAudio.TTS = (String)jsontoken["timerEndingAudio"]["tts"];
             newtrigger.TimerEndingAudio.Interrupt = (bool)jsontoken["timerEndingAudio"]["interrupt"];
@@ -3364,19 +3417,19 @@ namespace HEAP
             //build tree
             foreach (TriggerGroup tg in mergegroups)
             {
-                if (tg.Parent == 0)
+                if (tg.Parent == "0")
                 {
                     TreeViewModel rTree = new TreeViewModel(tg.TriggerGroupName)
                     {
                         Type = "triggergroup",
-                        Id = tg.Id
+                        Id = tg.UniqueId
                     };
                     if (tg.Triggers.Count > 0)
                     {
-                        foreach (int item in tg.Triggers)
+                        foreach (string item in tg.Triggers)
                         {
                             mergetriggercount++;
-                            Trigger findtrigger = mergetriggers.Find(x => x.id == item);
+                            Trigger findtrigger = mergetriggers.Find(x => x.UniqueId == item);
                             TreeViewModel newChildBranch = new TreeViewModel(findtrigger.Name)
                             {
                                 Type = "trigger"
@@ -3414,14 +3467,14 @@ namespace HEAP
             TreeViewModel rTree = new TreeViewModel(branch.TriggerGroupName)
             {
                 Type = "triggergroup",
-                Id = branch.Id
+                Id = branch.UniqueId
             };
-            if (branch.triggers.Count > 0)
+            if (branch.Triggers.Count > 0)
             {
-                foreach (Int32 item in branch.triggers)
+                foreach (int item in branch.Triggers)
                 {
                     mergetriggercount++;
-                    Trigger findtrigger = mergetriggers.Find(x => x.id == item);
+                    Trigger findtrigger = mergetriggers.Find(x => x.Id == item);
                     TreeViewModel newChildBranch = new TreeViewModel(findtrigger.Name)
                     {
                         Type = "trigger"
@@ -3442,7 +3495,7 @@ namespace HEAP
         }
         private TriggerGroup GetMergeTriggerGroup(int id)
         {
-            return mergegroups.Find(x => x.id == id);
+            return mergegroups.Find(x => x.Id == id);
         }
         private int GetTriggerGroups(JToken jsontoken, int parentid)
         {
@@ -3452,7 +3505,7 @@ namespace HEAP
                 TriggerGroupName = jsontoken["Name"].ToString(),
                 Comments = jsontoken["Comments"].ToString(),
                 Id = triggergroupid,
-                Parent = parentid
+                Parent = parentid.ToString()
             };
             mergegroups.Add(newgroup);
             foreach (JToken token in jsontoken.Children())
@@ -3482,14 +3535,14 @@ namespace HEAP
                         {
                             foreach (JToken newtoken in ((JArray)(jsontoken["Triggers"]["Trigger"])).Children())
                             {
-                                newgroup.Triggers.Add(GetTrigger(newtoken, triggergroupid));
+                                newgroup.Triggers.Add(GetTrigger(newtoken, triggergroupid.ToString()));
                             }
                         }
                         else
                         {
                             if ((jsontoken["Triggers"]["Trigger"]).GetType().ToString() == "Newtonsoft.Json.Linq.JObject")
                             {
-                                newgroup.Triggers.Add(GetTrigger(jsontoken["Triggers"]["Trigger"], triggergroupid));
+                                newgroup.Triggers.Add(GetTrigger(jsontoken["Triggers"]["Trigger"], triggergroupid.ToString()));
                             }
                         }
                         break;
@@ -3499,7 +3552,7 @@ namespace HEAP
             }
             return rval;
         }
-        private int GetTrigger(JToken jsontoken, int parentid)
+        private int GetTrigger(JToken jsontoken, string parentid)
         {
             int rval = triggerid;
             Dictionary<String, String> timerconversion = new Dictionary<string, string>();
@@ -3509,34 +3562,34 @@ namespace HEAP
             timerconversion.Add("RepeatingTimer", "Repeating Timer");
             Trigger newtrigger = new Trigger
             {
-                id = triggerid,
-                name = jsontoken["Name"].ToString(),
-                profiles = new ArrayList(),
-                searchText = (String)jsontoken["TriggerText"],
-                comments = (String)jsontoken["Comments"],
-                regex = (bool)jsontoken["EnableRegex"],
-                fastcheck = (bool)jsontoken["UseFastCheck"],
-                parent = parentid,
-                triggerCategory = 0,
-                displaytext = (String)jsontoken["DisplayText"],
-                clipboardtext = (String)jsontoken["ClipboardText"],
-                audioSettings = new Audio(),
-                timerType = timerconversion[(String)jsontoken["TimerType"]],
-                timerName = (String)jsontoken["TimerName"],
-                timerDuration = (int)jsontoken["TimerDuration"],
-                triggeredAgain = 2,
-                endEarlyText = new BindingList<SearchText>(),
-                timerEndingDuration = 0,
-                timerEndingDisplayText = "",
-                timerEndingClipboardText = "",
-                timerEndingAudio = new Audio(),
-                timerEnding = (bool)jsontoken["UseTimerEnding"],
-                timerEndedClipboardText = "",
-                timerEndedDisplayText = "",
-                timerEnded = (bool)jsontoken["UseTimerEnded"],
-                timerEndedAudio = new Audio(),
-                resetCounter = (bool)jsontoken["UseCounterResetTimer"],
-                resetCounterDuration = (int)jsontoken["CounterResetDuration"],
+                Id = triggerid,
+                Name = jsontoken["Name"].ToString(),
+                Profiles = new ArrayList(),
+                SearchText = (String)jsontoken["TriggerText"],
+                Comments = (String)jsontoken["Comments"],
+                Regex = (bool)jsontoken["EnableRegex"],
+                Fastcheck = (bool)jsontoken["UseFastCheck"],
+                Parent = parentid,
+                TriggerCategory = 0,
+                Displaytext = (String)jsontoken["DisplayText"],
+                Clipboardtext = (String)jsontoken["ClipboardText"],
+                AudioSettings = new Audio(),
+                TimerType = timerconversion[(String)jsontoken["TimerType"]],
+                TimerName = (String)jsontoken["TimerName"],
+                TimerDuration = (int)jsontoken["TimerDuration"],
+                TriggeredAgain = 2,
+                EndEarlyText = new BindingList<SearchText>(),
+                TimerEndingDuration = 0,
+                TimerEndingDisplayText = "",
+                TimerEndingClipboardText = "",
+                TimerEndingAudio = new Audio(),
+                TimerEnding = (bool)jsontoken["UseTimerEnding"],
+                TimerEndedClipboardText = "",
+                TimerEndedDisplayText = "",
+                TimerEnded = (bool)jsontoken["UseTimerEnded"],
+                TimerEndedAudio = new Audio(),
+                ResetCounter = (bool)jsontoken["UseCounterResetTimer"],
+                ResetCounterDuration = (int)jsontoken["CounterResetDuration"],
             };
             //Set Timer Behavior
             switch ((String)jsontoken["TimerStartBehavior"])
@@ -3666,10 +3719,10 @@ namespace HEAP
                 if (importtree.Type == "triggergroup")
                 {
                     //Find our object in mergegroups, add self and children to the database.
-                    TriggerGroup rootgroup = mergegroups.Find(x => x.Id == importtree.Id);
+                    TriggerGroup rootgroup = mergegroups.Find(x => x.UniqueId == importtree.Id);
                     //Insert trigger group into database get bsonid return value.                    
                     //add triggergroup id to dropnode children and update in the database.
-                    int gid = ImportTriggerGroup(rootgroup, droptree.Id);
+                    string gid = ImportTriggerGroup(rootgroup, droptree.Id);
                     dropTriggerGroup.AddChild(gid);
                     colTriggerGroups.Update(dropTriggerGroup);
                     //Delete the rootgroup out of the mergegroup
@@ -3684,11 +3737,11 @@ namespace HEAP
                 if (importtree.Type == "trigger" && droptree.Name != "All Triggers")
                 {
                     //find the id in our mergetriggers and add it.
-                    Trigger roottrigger = mergetriggers.Find(x => x.Name == importtree.Name);
+                    Trigger roottrigger = mergetriggers.Find(x => x.UniqueId == importtree.Id);
                     roottrigger.Parent = droptree.Id;
-                    int bsonid = ImportTrigger(roottrigger);
+                    string guid = ImportTrigger(roottrigger);
                     //add the trigger to the drop group
-                    dropTriggerGroup.AddTriggers(bsonid);
+                    dropTriggerGroup.AddTriggers(guid);
                     colTriggerGroups.Update(dropTriggerGroup);
                     //Delete the trigger out of mergetriggers
                     mergetriggers.Remove(roottrigger);
@@ -3751,7 +3804,7 @@ namespace HEAP
                 buttonDoneMerge.Visibility = Visibility.Hidden;
             }
         }
-        private void DeleteBranch(TreeViewModel tvm, int idtodelete)
+        private void DeleteBranch(TreeViewModel tvm, string idtodelete)
         {
             TreeViewModel deletetree = new TreeViewModel("deltree");
             foreach (TreeViewModel child in tvm.Children)
@@ -3778,7 +3831,7 @@ namespace HEAP
         }
         #endregion
         #region Export Triggers
-        private JObject ExportGroup(int groupid)
+        private JObject ExportGroup(string groupid)
         {
             TriggerGroup group = new TriggerGroup();
             JArray triggers = new JArray();
@@ -3786,11 +3839,11 @@ namespace HEAP
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 LiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
-                group = triggergroups.FindById(groupid);
+                group = triggergroups.FindOne(x => x.UniqueId == groupid);
                 
                 if (group.Triggers.Count > 0)
                 {
-                    foreach (int triggerid in group.Triggers)
+                    foreach (string triggerid in group.Triggers)
                     {
                         triggers.Add(GetExportTrigger(triggerid));
                     }
@@ -3798,7 +3851,7 @@ namespace HEAP
                 
                 if (group.Children.Count > 0)
                 {
-                    foreach (int subgroupid in group.Children)
+                    foreach (string subgroupid in group.Children)
                     {
                         subgroups.Add(ExportGroup(subgroupid));
                     }
@@ -3806,6 +3859,7 @@ namespace HEAP
             }
             JObject rval = new JObject(
                 new JProperty("Id",group.Id),
+                new JProperty("UniqueId",group.UniqueId),
                 new JProperty("Type","triggergroup"),
                 new JProperty("TriggerGroupName",group.TriggerGroupName),
                 new JProperty("Comments",group.Comments),
@@ -3816,21 +3870,22 @@ namespace HEAP
                 );
             return rval;
         }
-        private JObject GetExportTrigger(int triggerid)
+        private JObject GetExportTrigger(string triggerid)
         {
             Trigger exporttrigger = new Trigger();
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 LiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
-                exporttrigger = triggers.FindById(triggerid);
+                exporttrigger = triggers.FindOne(x => x.UniqueId == triggerid);
             }
             if(exporttrigger.AudioSettings.SoundFileId != null)
             {
-                exportsounds.Add(exporttrigger.audioSettings.SoundFileId);
+                exportsounds.Add(exporttrigger.AudioSettings.SoundFileId);
             }
             JObject rval = new JObject(
                 new JProperty("type","trigger"),
                 new JProperty("id",exporttrigger.Id),
+                new JProperty("uniqueid",exporttrigger.UniqueId),
                 new JProperty("name",exporttrigger.Name),
                 new JProperty("searchText",exporttrigger.SearchText),
                 new JProperty("comments",exporttrigger.Comments),
@@ -3884,10 +3939,19 @@ namespace HEAP
                         new JProperty("soundfile", exporttrigger.TimerEndedAudio.SoundFileId)
                         )
                     ),
-                new JProperty("resetCounter",exporttrigger.resetCounter),
+                new JProperty("resetCounter",exporttrigger.ResetCounter),
                 new JProperty("resetCounterDuration",exporttrigger.ResetCounterDuration)
                 );
-            string stop = "";
+            return rval;
+        }
+        private string GetGroupParentId(int groupid)
+        {
+            string rval = "";
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                LiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
+                rval = (triggergroups.FindById(groupid)).Parent;
+            }
             return rval;
         }
         private Boolean ExportTriggers(TreeViewModel startnode, Boolean share)
@@ -3915,6 +3979,7 @@ namespace HEAP
                     JObject jobject = new JObject(
                         new JProperty("TriggerGroupName", startnode.Name),
                         new JProperty("Type", "triggergroup"),
+                        new JProperty("UniqueId", startnode.Id),
                         new JProperty("Id", 0),
                         new JProperty("children", new JArray()),
                         new JProperty("triggers", new JArray())
@@ -3934,7 +3999,7 @@ namespace HEAP
                     }
                     rootnodes.Add(jobject);
                 }
-                else if (startnode.Id == 0)
+                else if (startnode.Id == "0")
                 {
                     foreach (TreeViewModel child in startnode.Children)
                     {

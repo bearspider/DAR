@@ -363,7 +363,7 @@
                 </Fluent:RibbonGroupBox>
                 <Fluent:RibbonGroupBox Header="Share">
                     <Fluent:SplitButton Header="Import" LargeIcon="Images/Oxygen-Icons.org-Oxygen-Actions-svn-update.ico" Click="SplitButtonImport_Click">
-                        <Fluent:Button Size="Middle" Header="From EQ Audio Triggers" Click="ImportAudioTriggers_Click"/>
+                        <Fluent:Button Size="Middle" Header="From HEAP" Click="ImportAudioTriggers_Click"/>
                         <Fluent:Button Size="Middle" Header="From GINA" Click="ImportFromGINA_Click"/>
                     </Fluent:SplitButton>
                     <Fluent:Button Header="Export" LargeIcon="Images/Oxygen-Icons.org-Oxygen-Actions-svn-commit.ico" Click="ButtonExport_Click"/>
@@ -382,6 +382,7 @@
                     <Fluent:Button Click="CategoryAdd_Click" Header="Add" LargeIcon="Images/Oxygen-Icons.org-Oxygen-Actions-document-new.ico"/>
                     <Fluent:Button Click="CategoryRemove_Click" Header="Remove" LargeIcon="Images/Oxygen-Icons.org-Oxygen-Actions-document-close.ico"/>
                     <Fluent:Button Name="button_CategorySetDefault" Click="CategoryDefault_Click" Header="Set As Default" LargeIcon="Images/Oxygen-Icons.org-Oxygen-Actions-dialog-ok-apply.ico"/>
+                    <Fluent:Button Name="button_SaveCategory" Header="Save Changes" Click="Button_SaveCategory_Click" IsEnabled="False" LargeIcon="Images/Oxygen-Icons.org-Oxygen-Actions-document-save.ico"/>
                 </Fluent:RibbonGroupBox>
             </Fluent:RibbonTabItem>
             <Fluent:RibbonTabItem Name="tabfiltering" Header="Filtering">

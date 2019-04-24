@@ -224,6 +224,7 @@ namespace HEAP
         private String selectedcategory;
         private int categoryindex = 0;
         private Boolean pushbackToggle = false;
+        ParallelOptions po = new ParallelOptions();
 
         //Locks for threads
         private object _itemsLock = new object();
@@ -231,6 +232,7 @@ namespace HEAP
         private object _textsLock = new object();
         private object _categoryLock = new object();
         private object _triggerLock = new object();
+        private object _triggerlistLock = new object();
         private readonly SynchronizationContext syncontext;
 
         //Drag and Drop Merge Triggers
@@ -299,6 +301,7 @@ namespace HEAP
         {
             InitializeComponent();
             syncontext = SynchronizationContext.Current;
+            po.MaxDegreeOfParallelism = System.Environment.ProcessorCount;
             textblockVersion.Text = version;
             statusbarStatus.DataContext = totallinecount;
             //Check if EQAudioTriggers folder exists, if not create.
@@ -371,6 +374,7 @@ namespace HEAP
             BindingOperations.EnableCollectionSynchronization(textWindows, _textsLock);
             BindingOperations.EnableCollectionSynchronization(categorycollection, _categoryLock);
             BindingOperations.EnableCollectionSynchronization(activatedTriggers, _triggerLock);
+            BindingOperations.EnableCollectionSynchronization(listoftriggers, _triggerlistLock);
 
             //Deploy Overlays
             //Check if no overlays exist.  If none exist, prompt the editors to create the first entries.
@@ -425,6 +429,7 @@ namespace HEAP
                     defaultcategory.AvailableTextOverlays = availoverlaytexts;
                     categoriescol.Insert(defaultcategory);
                 }
+                Refresh_Categories();
             }
 
             //Load Triggers
@@ -629,30 +634,24 @@ namespace HEAP
         {
             Console.Write($"Marking group {tvm.Name}");
             CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            if(tvm.Type == "trigger")
             {
-                LiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
-                LiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
-                if(tvm.Type == "trigger")
+                Trigger trigger = dballtriggers.Find(x => x.UniqueId == tvm.Id);
+                if(trigger.Profiles.Contains(selectedCharacter.Id))
                 {
-                    Trigger trigger = triggers.FindOne(x => x.UniqueId == tvm.Id);
-                    if(trigger.Profiles.Contains(selectedCharacter.Id))
-                    {
-                        tvm.Enable();
-                    }
-                    else
-                    {
-                        tvm.Disable();
-                    }
+                    tvm.Enable();
                 }
-                else if(tvm.Children.Count > 0)
+                else
                 {
-                    foreach(TreeViewModel child in tvm.Children)
-                    {
-                        MarkTreeItems(child);
-                    }
+                    tvm.Disable();
                 }
-
+            }
+            else if(tvm.Children.Count > 0)
+            {
+                foreach(TreeViewModel child in tvm.Children)
+                {
+                    MarkTreeItems(child);
+                }
             }
         }
         private void ListviewCharacters_MouseDoubleClick(object sender, MouseButtonEventArgs e)
@@ -854,85 +853,86 @@ namespace HEAP
                             String capturedLine = streamReader.ReadLine();
                             if (capturedLine != null)
                             {
-                                //Console.WriteLine($"Matching line {capturedLine}");
                                 Stopwatch stopwatch = new Stopwatch();
                                 stopwatch.Start();
                                 UpdateLineCount(1);
                                 if (capturedLine.Contains(@"{HEAP:"))
                                 {
                                     Match sharingmatch = GlobalVariables.shareRegex.Match(capturedLine);
-                                    if(sharingmatch.Success)
+                                    if (sharingmatch.Success)
                                     {
                                         GetShare(sharingmatch.Groups["GUID"].Value.ToString());
                                     }
                                 }
                                 else
                                 {
-                                    Parallel.ForEach(listoftriggers, (KeyValuePair<Trigger, ArrayList> doc, ParallelLoopState state) =>
+                                    lock (_triggerlistLock)
                                     {
+                                        Parallel.ForEach(listoftriggers, po, (KeyValuePair<Trigger, ArrayList> doc, ParallelLoopState state) =>
+                                        {
+                                            po.CancellationToken.ThrowIfCancellationRequested();
                                         //Do regex match if enabled otherwise string.contains
                                         Boolean foundmatch = false;
-                                        if (doc.Key.Regex)
-                                        {
-                                            Boolean checkregex = true;
-                                            if(doc.Key.Fastcheck)
+                                            if (doc.Key.Regex)
                                             {
-                                                if(!capturedLine.Contains(doc.Key.Digest))
+                                                Boolean checkregex = true;
+                                                if (doc.Key.Fastcheck)
                                                 {
-                                                    checkregex = false;
+                                                    if (!capturedLine.Contains(doc.Key.Digest))
+                                                    {
+                                                        checkregex = false;
+                                                    }
+                                                }
+                                                if (checkregex)
+                                                {
+                                                    foundmatch = (Regex.Match(capturedLine, doc.Key.SearchText, RegexOptions.IgnoreCase)).Success;
                                                 }
                                             }
-                                            if(checkregex)
+                                            else
                                             {
-                                                foundmatch = (Regex.Match(capturedLine, doc.Key.SearchText, RegexOptions.IgnoreCase)).Success;
-                                            }                                            
-                                        }
-                                        else
-                                        {
-                                            String ucaselog = capturedLine.ToUpper();
-                                            String ucasetrigger = doc.Key.SearchText.ToUpper();
-                                            foundmatch = ucaselog.Contains(ucasetrigger);
-                                        }
-                                        if (doc.Key.EndEarlyText.Count > 0)
-                                        {
-                                            Boolean endearly = false;
-                                            foreach (SearchText earlyend in doc.Key.EndEarlyText)
+                                                String ucaselog = capturedLine.ToUpper();
+                                                String ucasetrigger = doc.Key.SearchText.ToUpper();
+                                                foundmatch = ucaselog.Contains(ucasetrigger);
+                                            }
+                                            if (doc.Key.EndEarlyText.Count > 0)
                                             {
-                                                if (earlyend.Regex)
+                                                Boolean endearly = false;
+                                                foreach (SearchText earlyend in doc.Key.EndEarlyText)
                                                 {
-                                                    endearly = (Regex.Match(capturedLine, Regex.Escape(earlyend.Searchtext), RegexOptions.IgnoreCase)).Success;
-                                                }
-                                                else
-                                                {
-                                                    String ucaselog = capturedLine.ToUpper();
-                                                    String ucasetrigger = earlyend.Searchtext.ToUpper();
-                                                    endearly = ucaselog.Contains(ucasetrigger);
-                                                }
-                                            //TO DO: Probably implement extra stuff on a early end trigger
-                                            if (endearly)
-                                                {
-                                                    Console.WriteLine($"Early end for {doc.Key.Name} => {endearly}");
-                                                    ClearTimer(doc.Key);
+                                                    if (earlyend.Regex)
+                                                    {
+                                                        endearly = (Regex.Match(capturedLine, Regex.Escape(earlyend.Searchtext), RegexOptions.IgnoreCase)).Success;
+                                                    }
+                                                    else
+                                                    {
+                                                        String ucaselog = capturedLine.ToUpper();
+                                                        String ucasetrigger = earlyend.Searchtext.ToUpper();
+                                                        endearly = ucaselog.Contains(ucasetrigger);
+                                                    }
+                                                    if (endearly)
+                                                    {
+                                                        Console.WriteLine($"Early end for {doc.Key.Name} => {endearly}");
+                                                        ClearTimer(doc.Key);
+                                                    }
                                                 }
                                             }
-                                        }
-                                        if (foundmatch && doc.Value.Contains(character.Id))
-                                        {
-                                            if (stopfirstmatch)
+                                            if (foundmatch && doc.Value.Contains(character.Id))
                                             {
-                                                state.Break();
+                                                if (stopfirstmatch)
+                                                {
+                                                    state.Break();
+                                                }
+                                                Match eqline = GlobalVariables.eqRegex.Match(capturedLine);
+                                                Console.WriteLine($"Matched Trigger {doc.Key.Id}");
+                                                Stopwatch firetrigger = new Stopwatch();
+                                                firetrigger.Start();
+                                                FireTrigger(doc.Key, character, capturedLine);
+                                                firetrigger.Stop();
+                                                Console.WriteLine($"Fired Trigger in {firetrigger.Elapsed.Seconds}");
                                             }
-                                            Match eqline = GlobalVariables.eqRegex.Match(capturedLine);
-                                            Console.WriteLine($"Matched Trigger {doc.Key.Id}");
-                                            Stopwatch firetrigger = new Stopwatch();
-                                            firetrigger.Start();
-                                            FireTrigger(doc.Key, character, capturedLine);
-                                            firetrigger.Stop();
-                                            Console.WriteLine($"Fired Trigger in {firetrigger.Elapsed.Seconds}");
-                                        }
-                                    });
+                                        });
+                                    }
                                     stopwatch.Stop();
-                                    //Console.WriteLine($"Trigger matched in: {stopwatch.Elapsed.ToString()}");
                                     if (pushbackToggle)
                                     {
                                         PushMonitor(capturedLine, character.ProfileName);
@@ -1146,20 +1146,16 @@ namespace HEAP
         {
             return dballtriggers.Find(x => x.UniqueId == bsonid);
         }
-        private void TriggerLoad(String callingfunction)
+        private void TriggerLoad()
         {
-            Console.WriteLine($"Calling TriggerLoad from {callingfunction}");
-            Stopwatch loadwatch = new Stopwatch();
-            loadwatch.Start();
-            listoftriggers.Clear();
-            foreach (Trigger trigger in dballtriggers)
+            lock (_triggerlistLock)
             {
-                listoftriggers.Add(trigger, trigger.Profiles);
+                listoftriggers.Clear();
+                foreach (Trigger trigger in dballtriggers)
+                {
+                    listoftriggers.Add(trigger, trigger.Profiles);
+                }
             }
-            loadwatch.Stop();
-            Console.WriteLine($"Loaded Triggers in {loadwatch.Elapsed}");
-            //Update the masterlist of groups and triggers from database
-            GenerateMasterList("TriggerLoad");
         }
         private void TriggerAdd_Click(object sender, RoutedEventArgs e)
         {
@@ -1167,7 +1163,7 @@ namespace HEAP
             TreeViewModel selectedGroup = (TreeViewModel)treeViewTriggers.SelectedItem;
             TriggerEditor newTrigger = new TriggerEditor(selectedGroup);
             newTrigger.Show();
-            TriggerLoad("TriggerAdd_Click");
+            TriggerLoad();
         }
         private void TriggerRemoved_TreeViewModel(object sender, PropertyChangedEventArgs e)
         {
@@ -1177,6 +1173,24 @@ namespace HEAP
         {
             AddTrigger(e.PropertyName);
         }
+        private void PauseMonitoring()
+        {
+            List<CharacterProfile> tostart = new List<CharacterProfile>();
+            foreach (CharacterProfile profile in characterProfiles)
+            {
+                if (profile.Monitor)
+                {
+                    tostart.Add(profile);
+                }
+            }
+            StopMonitoring();
+            Thread.Sleep(10);
+            foreach (CharacterProfile profile in tostart)
+            {
+                profile.Monitor = true;
+                MonitorCharacter(profile, logmaintenance);
+            }
+        }
         public void RemoveTrigger(String triggerName)
         {
             CharacterProfile selectedCharacter = (CharacterProfile)listviewCharacters.SelectedItem;
@@ -1184,16 +1198,18 @@ namespace HEAP
             {
                 var colProfiles = db.GetCollection<CharacterProfile>("profiles");
                 var colTriggers = db.GetCollection<Trigger>("triggers");
-                var currentTrigger = colTriggers.FindOne(x => x.UniqueId == triggerName);
+                Trigger currentTrigger = dballtriggers.Find(x => x.UniqueId == triggerName);
                 if ((currentTrigger.Profiles.Contains(selectedCharacter.Id)))
                 {
                     currentprofile.Triggers.Remove(currentTrigger.UniqueId);
                     currentTrigger.Profiles.Remove(selectedCharacter.Id);
+                    colTriggers.Update(currentTrigger);
+                    colProfiles.Update(currentprofile);
                 }
-                colTriggers.Update(currentTrigger);
-                colProfiles.Update(currentprofile);
+
             }
-            TriggerLoad("RemoveTrigger");
+            TriggerLoad();
+
         }
         public void AddTrigger(String triggerName)
         {
@@ -1202,16 +1218,16 @@ namespace HEAP
             {
                 var colProfiles = db.GetCollection<CharacterProfile>("profiles");
                 var colTriggers = db.GetCollection<Trigger>("triggers");
-                var currentTrigger = colTriggers.FindOne(x => x.UniqueId == triggerName);
+                Trigger currentTrigger = dballtriggers.Find(x => x.UniqueId == triggerName);
                 if (!(currentTrigger.Profiles.Contains(selectedCharacter.Id)))
                 {
                     currentprofile.Triggers.Add(currentTrigger.UniqueId);
                     currentTrigger.Profiles.Add(selectedCharacter.Id);
+                    colTriggers.Update(currentTrigger);
+                    colProfiles.Update(currentprofile);
                 }
-                colTriggers.Update(currentTrigger);
-                colProfiles.Update(currentprofile);
             }
-            TriggerLoad("AddTrigger");
+            TriggerLoad();
         }
         private void TriggerRemove_Click(object sender, RoutedEventArgs e)
         {
@@ -1220,7 +1236,7 @@ namespace HEAP
             if (result == MessageBoxResult.Yes)
             {
                 DeleteTrigger(root.Id);
-                TriggerLoad("TriggerRemove_Click");
+                TriggerLoad();
             }
         }
         private void TriggerEdit_Click(object sender, RoutedEventArgs e)
@@ -1261,7 +1277,7 @@ namespace HEAP
                 triggergroup.Update(getGroup);
                 col.Delete(deadtrigger.Id);
             }
-            TriggerLoad("DeleteTrigger by name");
+            TriggerLoad();
         }
         private void DeleteTriggerById(string triggerid)
         {
@@ -1283,7 +1299,7 @@ namespace HEAP
                 col.Delete(deadtrigger.Id);
             }
             treeView[0].RemoveBranch(triggerid);
-            TriggerLoad("DeleteTrigger by id");
+            TriggerLoad();
         }
         private void CopyTrigger(string triggerid, string newgroupid)
         {
@@ -1300,7 +1316,7 @@ namespace HEAP
                 basegroup.Triggers.Add(newid);
                 triggergroupCollection.Update(basegroup);
             }
-            TriggerLoad("CopyTrigger");
+            TriggerLoad();
         }
         #endregion
         #region Trigger Groups
@@ -1672,9 +1688,9 @@ namespace HEAP
                 }
                 if (toimport.Triggers.Count > 0)
                 {
-                    foreach (int child in toimport.Triggers)
+                    foreach (string child in toimport.Triggers)
                     {
-                        Trigger childtrigger = mergetriggers[child];
+                        Trigger childtrigger = mergetriggers.Find(x => x.UniqueId == child);
                         childtrigger.Parent = newguid;
                         childtrigger.Id = 0;
                         string tid = ImportTrigger(childtrigger);
@@ -2278,11 +2294,13 @@ namespace HEAP
                 categoryindex = currenttab.SelectedIndex;
                 selectedcategory = currentcategory.CategoryItem.Name;
             }
+            button_SaveCategory.IsEnabled = false;
         }
         private void CategoryName_TextChanged(object sender, TextChangedEventArgs e)
         {
             string newname = (sender as TextBox).Text;
-            if (newname != "" && selectedcategory != "Default")
+            button_SaveCategory.IsEnabled = true;
+            /*if (newname != "" && selectedcategory != "Default")
             {
                 using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                 {
@@ -2292,7 +2310,7 @@ namespace HEAP
                     categoriescol.Update(category);
                     selectedcategory = newname;
                 }
-            }
+            }*/
         }
         private void CategoryAdd_Click(object sender, RoutedEventArgs e)
         {
@@ -2345,13 +2363,14 @@ namespace HEAP
         }
         private void CategoryName_LostFocus(object sender, RoutedEventArgs e)
         {
-            int tabindex = categoryindex;
-            Refresh_Categories();
-            tabcontrolCategory.SelectedIndex = tabindex;
+            //int tabindex = categoryindex;
+            //Refresh_Categories();
+            //tabcontrolCategory.SelectedIndex = tabindex;
         }
         private void CategoryTextOverlay_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            OverlayText selection = (OverlayText)(sender as ComboBox).SelectedItem;
+            button_SaveCategory.IsEnabled = true;
+            /*OverlayText selection = (OverlayText)(sender as ComboBox).SelectedItem;
             if (selection != null)
             {
                 using (var db = new LiteDatabase(GlobalVariables.defaultDB))
@@ -2361,11 +2380,12 @@ namespace HEAP
                     category.TextOverlay = selection.Name;
                     categoriescol.Update(category);
                 }
-            }
+            }*/
 
         }
         private void ClrpckrText_SelectedColorChanged(object sender, RoutedPropertyChangedEventArgs<Color?> e)
         {
+            button_SaveCategory.IsEnabled = true;
             String selection = (sender as Xceed.Wpf.Toolkit.ColorPicker).SelectedColorText;
             if (selection != "")
             {
@@ -2380,6 +2400,7 @@ namespace HEAP
         }
         private void CategoryTimerOverlay_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            button_SaveCategory.IsEnabled = true;
             OverlayTimer selection = (OverlayTimer)(sender as ComboBox).SelectedItem;
             if (selection != null)
             {
@@ -2394,6 +2415,7 @@ namespace HEAP
         }
         private void ClrpckrTimerText_SelectedColorChanged(object sender, RoutedPropertyChangedEventArgs<Color?> e)
         {
+            button_SaveCategory.IsEnabled = true;
             String selection = (sender as Xceed.Wpf.Toolkit.ColorPicker).SelectedColorText;
             if (selection != "")
             {
@@ -2408,6 +2430,7 @@ namespace HEAP
         }
         private void ClrpckrTimerBar_SelectedColorChanged(object sender, RoutedPropertyChangedEventArgs<Color?> e)
         {
+            button_SaveCategory.IsEnabled = true;
             String selection = (sender as Xceed.Wpf.Toolkit.ColorPicker).SelectedColorText;
             if (selection != "")
             {
@@ -2422,6 +2445,7 @@ namespace HEAP
         }
         private void ComboOverrideTextOverlay_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            button_SaveCategory.IsEnabled = true;
             OverlayText selection = (OverlayText)(sender as ComboBox).SelectedItem;
             if (selection != null)
             {
@@ -2436,6 +2460,7 @@ namespace HEAP
         }
         private void ClrpckrTextOverride_SelectedColorChanged(object sender, RoutedPropertyChangedEventArgs<Color?> e)
         {
+            button_SaveCategory.IsEnabled = true;
             String selection = (sender as Xceed.Wpf.Toolkit.ColorPicker).SelectedColorText;
             if (selection != "")
             {
@@ -2450,6 +2475,7 @@ namespace HEAP
         }
         private void ComboTimerOverlayOverride_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            button_SaveCategory.IsEnabled = true;
             OverlayTimer selection = (OverlayTimer)(sender as ComboBox).SelectedItem;
             if (selection != null)
             {
@@ -2464,6 +2490,7 @@ namespace HEAP
         }
         private void ClrpckrTimerFontOverride_SelectedColorChanged(object sender, RoutedPropertyChangedEventArgs<Color?> e)
         {
+            button_SaveCategory.IsEnabled = true;
             String selection = (sender as Xceed.Wpf.Toolkit.ColorPicker).SelectedColorText;
             if (selection != "")
             {
@@ -2478,6 +2505,7 @@ namespace HEAP
         }
         private void ClrpckrTimerBarOverride_SelectedColorChanged(object sender, RoutedPropertyChangedEventArgs<Color?> e)
         {
+            button_SaveCategory.IsEnabled = true;
             String selection = (sender as Xceed.Wpf.Toolkit.ColorPicker).SelectedColorText;
             if (selection != "")
             {
@@ -2492,6 +2520,7 @@ namespace HEAP
         }
         private void CategoryColor_Checked(object sender, RoutedEventArgs e)
         {
+            button_SaveCategory.IsEnabled = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -2503,6 +2532,7 @@ namespace HEAP
         }
         private void CategoryColor_Unchecked(object sender, RoutedEventArgs e)
         {
+            button_SaveCategory.IsEnabled = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
             Console.WriteLine("UserChecked");
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
@@ -2515,6 +2545,7 @@ namespace HEAP
         }
         private void CategoryColorThis_Checked(object sender, RoutedEventArgs e)
         {
+            button_SaveCategory.IsEnabled = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -2526,6 +2557,7 @@ namespace HEAP
         }
         private void CategoryColorThis_Unchecked(object sender, RoutedEventArgs e)
         {
+            button_SaveCategory.IsEnabled = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -2537,6 +2569,7 @@ namespace HEAP
         }
         private void TimerColors_Checked(object sender, RoutedEventArgs e)
         {
+            button_SaveCategory.IsEnabled = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -2548,6 +2581,7 @@ namespace HEAP
         }
         private void TimerColors_Unchecked(object sender, RoutedEventArgs e)
         {
+            button_SaveCategory.IsEnabled = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -2559,6 +2593,7 @@ namespace HEAP
         }
         private void TimerThis_Checked(object sender, RoutedEventArgs e)
         {
+            button_SaveCategory.IsEnabled = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -2570,6 +2605,7 @@ namespace HEAP
         }
         private void TimerThis_Unchecked(object sender, RoutedEventArgs e)
         {
+            button_SaveCategory.IsEnabled = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -2581,6 +2617,7 @@ namespace HEAP
         }
         private void OverrideOverlayCategory_Checked(object sender, RoutedEventArgs e)
         {
+            button_SaveCategory.IsEnabled = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -2592,6 +2629,7 @@ namespace HEAP
         }
         private void OverrideOverlayCategory_Unchecked(object sender, RoutedEventArgs e)
         {
+            button_SaveCategory.IsEnabled = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -2603,6 +2641,7 @@ namespace HEAP
         }
         private void OverrideTextThis_Unchecked(object sender, RoutedEventArgs e)
         {
+            button_SaveCategory.IsEnabled = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -2614,6 +2653,7 @@ namespace HEAP
         }
         private void OverrideTextThis_Checked(object sender, RoutedEventArgs e)
         {
+            button_SaveCategory.IsEnabled = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -2625,6 +2665,7 @@ namespace HEAP
         }
         private void OverrideTextColorCategory_Checked(object sender, RoutedEventArgs e)
         {
+            button_SaveCategory.IsEnabled = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -2636,6 +2677,7 @@ namespace HEAP
         }
         private void OverrideTextColorCategory_Unchecked(object sender, RoutedEventArgs e)
         {
+            button_SaveCategory.IsEnabled = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -2647,6 +2689,7 @@ namespace HEAP
         }
         private void OverrideTextColorCharacter_Checked(object sender, RoutedEventArgs e)
         {
+            button_SaveCategory.IsEnabled = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -2658,6 +2701,7 @@ namespace HEAP
         }
         private void OverrideTextColorCharacter_Unchecked(object sender, RoutedEventArgs e)
         {
+            button_SaveCategory.IsEnabled = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -2669,6 +2713,7 @@ namespace HEAP
         }
         private void OverrideTextColorThis_Checked(object sender, RoutedEventArgs e)
         {
+            button_SaveCategory.IsEnabled = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -2680,6 +2725,7 @@ namespace HEAP
         }
         private void OverrideTextColorThis_Unchecked(object sender, RoutedEventArgs e)
         {
+            button_SaveCategory.IsEnabled = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -2691,6 +2737,7 @@ namespace HEAP
         }
         private void OverrideTimerCategory_Checked(object sender, RoutedEventArgs e)
         {
+            button_SaveCategory.IsEnabled = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -2702,6 +2749,7 @@ namespace HEAP
         }
         private void OverrideTimerCategory_Unchecked(object sender, RoutedEventArgs e)
         {
+            button_SaveCategory.IsEnabled = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -2713,6 +2761,7 @@ namespace HEAP
         }
         private void OverrideTimerThis_Checked(object sender, RoutedEventArgs e)
         {
+            button_SaveCategory.IsEnabled = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -2724,6 +2773,7 @@ namespace HEAP
         }
         private void OverrideTimerThis_Unchecked(object sender, RoutedEventArgs e)
         {
+            button_SaveCategory.IsEnabled = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -2735,6 +2785,7 @@ namespace HEAP
         }
         private void OverrideTimerColorCat_Checked(object sender, RoutedEventArgs e)
         {
+            button_SaveCategory.IsEnabled = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -2746,6 +2797,7 @@ namespace HEAP
         }
         private void OverrideTimerColorCat_Unchecked(object sender, RoutedEventArgs e)
         {
+            button_SaveCategory.IsEnabled = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -2757,6 +2809,7 @@ namespace HEAP
         }
         private void OverrideTimerColorChar_Checked(object sender, RoutedEventArgs e)
         {
+            button_SaveCategory.IsEnabled = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -2768,6 +2821,7 @@ namespace HEAP
         }
         private void OverrideTimerColorChar_Unchecked(object sender, RoutedEventArgs e)
         {
+            button_SaveCategory.IsEnabled = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -2779,6 +2833,7 @@ namespace HEAP
         }
         private void OverrideTimerColorThis_Checked(object sender, RoutedEventArgs e)
         {
+            button_SaveCategory.IsEnabled = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -2790,6 +2845,7 @@ namespace HEAP
         }
         private void OverrideTimerColorThis_Unchecked(object sender, RoutedEventArgs e)
         {
+            button_SaveCategory.IsEnabled = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
@@ -3019,7 +3075,7 @@ namespace HEAP
             TreeViewModel selectedGroup = (TreeViewModel)treeViewTriggers.SelectedItem;
             TriggerEditor newTrigger = new TriggerEditor(selectedGroup);
             newTrigger.Show();
-            TriggerLoad("cmAddTrigger_Click");
+            TriggerLoad();
         }
         #endregion
         #region Filtering
@@ -3215,7 +3271,7 @@ namespace HEAP
         private void ImportClick()
         {
             OpenFileDialog fileDialog = new OpenFileDialog();
-            fileDialog.Filter = "EQ Audio Trigger Package|*.zip";
+            fileDialog.Filter = "HEAP Package|*.heap";
             if (fileDialog.ShowDialog() == true)
             {
                 ImportZip(fileDialog.FileName,false);
@@ -3260,6 +3316,7 @@ namespace HEAP
                     {
                         TriggerGroupName = (string)group.SelectToken("TriggerGroupName"),
                         Id = triggergroupid,
+                        UniqueId = (string)group.SelectToken("UniqueId"),
                         Parent = parentid.ToString()
                     };
                     JToken comments = group.SelectToken("Comments");
@@ -3287,6 +3344,7 @@ namespace HEAP
                 TriggerGroup newgroup = new TriggerGroup
                 {
                     TriggerGroupName = (string)json.SelectToken("TriggerGroupName"),
+                    UniqueId = (string)json.SelectToken("UniqueId"),
                     Id = triggergroupid,
                     Parent = parentid.ToString()
                 };
@@ -3312,13 +3370,14 @@ namespace HEAP
 
             return rval;
         }
-        private int BuildTrigger(JToken jsontoken, int parentid)
+        private string BuildTrigger(JToken jsontoken, int parentid)
         {
-            int rval = triggerid;
+            string rval = (String)jsontoken["uniqueid"];
             Trigger newtrigger = new Trigger
             {
                 Id = triggerid,
-                Name = jsontoken["name"].ToString(),
+                UniqueId = rval,
+                Name = (String)jsontoken["name"],
                 Profiles = new ArrayList(),
                 SearchText = (String)jsontoken["searchText"],
                 Comments = (String)jsontoken["comments"],
@@ -3512,6 +3571,7 @@ namespace HEAP
                 TriggerGroupName = jsontoken["Name"].ToString(),
                 Comments = jsontoken["Comments"].ToString(),
                 Id = triggergroupid,
+                UniqueId = Guid.NewGuid().ToString(),
                 Parent = parentid.ToString()
             };
             mergegroups.Add(newgroup);
@@ -3559,9 +3619,9 @@ namespace HEAP
             }
             return rval;
         }
-        private int GetTrigger(JToken jsontoken, string parentid)
+        private string GetTrigger(JToken jsontoken, string parentid)
         {
-            int rval = triggerid;
+            string rval = Guid.NewGuid().ToString();
             Dictionary<String, String> timerconversion = new Dictionary<string, string>();
             timerconversion.Add("NoTimer", "No Timer");
             timerconversion.Add("Timer", "Timer(Count Down)");
@@ -3570,6 +3630,7 @@ namespace HEAP
             Trigger newtrigger = new Trigger
             {
                 Id = triggerid,
+                UniqueId = rval,
                 Name = jsontoken["Name"].ToString(),
                 Profiles = new ArrayList(),
                 SearchText = (String)jsontoken["TriggerText"],
@@ -3798,7 +3859,7 @@ namespace HEAP
             //Once we're done with the import, update the trigger view
             UpdateListView();
             UpdateTriggerView();
-            TriggerLoad("ImportTriggers");
+            TriggerLoad();
             //Keep the merge tree up until the user clears it
             if (mergetreeView.Count > 0)
             {
@@ -3978,7 +4039,7 @@ namespace HEAP
                 StringBuilder sb = new StringBuilder();
                 sb.Append(@"dataexport_");
                 sb.Append(DateTime.Now.ToString("MMddyyyy_HHmmss"));
-                sb.Append(@".zip");
+                sb.Append(@".heap");
                 //build the json
                 JArray rootnodes = new JArray();
                 if (startnode.Type == "triggergroup")
@@ -4465,5 +4526,10 @@ namespace HEAP
             File.Delete(tempfile);
         }
         #endregion
+
+        private void Button_SaveCategory_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }

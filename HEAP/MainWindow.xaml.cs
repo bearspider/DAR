@@ -222,7 +222,9 @@ namespace HEAP
         private CharacterProfile currentprofile;
         private Category defaultcategory;
         private String selectedcategory;
+        private Category tempcategory;
         private int categoryindex = 0;
+        private Boolean categorysave = false;
         private Boolean pushbackToggle = false;
         ParallelOptions po = new ParallelOptions();
 
@@ -2268,6 +2270,17 @@ namespace HEAP
                 ribbonMain.SelectedTabIndex = 3;
                 Refresh_Categories();
             }
+            else
+            {
+                if(categorysave)
+                {
+                    MessageBoxResult mbox = Xceed.Wpf.Toolkit.MessageBox.Show("You have unsaved changes, save now?", "Unsaved Changes", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                    if (mbox.ToString() == "Yes")
+                    {
+                        CategorySave();
+                    }
+                }
+            }
         }
         private void RibbonMain_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -2293,13 +2306,31 @@ namespace HEAP
             {
                 categoryindex = currenttab.SelectedIndex;
                 selectedcategory = currentcategory.CategoryItem.Name;
+                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                {
+                    LiteCollection<Category> categories = db.GetCollection<Category>("categories");
+                    tempcategory = categories.FindOne(x => x.Name == selectedcategory);
+                }
+            }
+            categorysave = false;
+            button_SaveCategory.IsEnabled = false;
+        }
+        private void CategorySave()
+        {
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                LiteCollection<Category> categories = db.GetCollection<Category>("categories");             
+                categories.Update(tempcategory);
             }
             button_SaveCategory.IsEnabled = false;
+            categorysave = false;
         }
         private void CategoryName_TextChanged(object sender, TextChangedEventArgs e)
         {
             string newname = (sender as TextBox).Text;
+            categorysave = true;
             button_SaveCategory.IsEnabled = true;
+            tempcategory.Name = newname;
             /*if (newname != "" && selectedcategory != "Default")
             {
                 using (var db = new LiteDatabase(GlobalVariables.defaultDB))
@@ -2369,9 +2400,14 @@ namespace HEAP
         }
         private void CategoryTextOverlay_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            button_SaveCategory.IsEnabled = true;
-            /*OverlayText selection = (OverlayText)(sender as ComboBox).SelectedItem;
+            OverlayText selection = (OverlayText)(sender as ComboBox).SelectedItem;
             if (selection != null)
+            {
+                categorysave = true;
+                button_SaveCategory.IsEnabled = true;
+                tempcategory.TextOverlay = selection.Name;
+            }
+            /*if (selection != null)
             {
                 using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                 {
@@ -2386,8 +2422,10 @@ namespace HEAP
         private void ClrpckrText_SelectedColorChanged(object sender, RoutedPropertyChangedEventArgs<Color?> e)
         {
             button_SaveCategory.IsEnabled = true;
+            categorysave = true;
             String selection = (sender as Xceed.Wpf.Toolkit.ColorPicker).SelectedColorText;
-            if (selection != "")
+            tempcategory.TextFontColor = selection;
+            /*if (selection != "")
             {
                 using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                 {
@@ -2396,13 +2434,18 @@ namespace HEAP
                     category.TextFontColor = selection;
                     categoriescol.Update(category);
                 }
-            }
+            }*/
         }
         private void CategoryTimerOverlay_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            button_SaveCategory.IsEnabled = true;
             OverlayTimer selection = (OverlayTimer)(sender as ComboBox).SelectedItem;
             if (selection != null)
+            {
+                button_SaveCategory.IsEnabled = true;
+                categorysave = true;
+                tempcategory.TimerOverlay = selection.Name;
+            }
+            /*if (selection != null)
             {
                 using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                 {
@@ -2411,13 +2454,15 @@ namespace HEAP
                     category.TimerOverlay = selection.Name;
                     categoriescol.Update(category);
                 }
-            }
+            }*/
         }
         private void ClrpckrTimerText_SelectedColorChanged(object sender, RoutedPropertyChangedEventArgs<Color?> e)
         {
             button_SaveCategory.IsEnabled = true;
+            categorysave = true;
             String selection = (sender as Xceed.Wpf.Toolkit.ColorPicker).SelectedColorText;
-            if (selection != "")
+            tempcategory.TimerFontColor = selection;
+            /*if (selection != "")
             {
                 using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                 {
@@ -2426,434 +2471,507 @@ namespace HEAP
                     category.TimerFontColor = selection;
                     categoriescol.Update(category);
                 }
-            }
+            }*/
         }
         private void ClrpckrTimerBar_SelectedColorChanged(object sender, RoutedPropertyChangedEventArgs<Color?> e)
         {
             button_SaveCategory.IsEnabled = true;
+            categorysave = true;
             String selection = (sender as Xceed.Wpf.Toolkit.ColorPicker).SelectedColorText;
-            if (selection != "")
-            {
-                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-                {
-                    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                    category.TimerBarColor = selection;
-                    categoriescol.Update(category);
-                }
-            }
+            tempcategory.TimerBarColor = selection;
+            //if (selection != "")
+            //{
+            //    using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //    {
+            //        LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //        var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //        category.TimerBarColor = selection;
+            //        categoriescol.Update(category);
+            //    }
+            //}
         }
         private void ComboOverrideTextOverlay_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            button_SaveCategory.IsEnabled = true;
             OverlayText selection = (OverlayText)(sender as ComboBox).SelectedItem;
             if (selection != null)
             {
-                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-                {
-                    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                    ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextOverlay = selection.Name;
-                    categoriescol.Update(category);
-                }
+                button_SaveCategory.IsEnabled = true;
+                categorysave = true;
+                ((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextOverlay = selection.Name;
             }
+            //if (selection != null)
+            //{
+            //    using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //    {
+            //        LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //        var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //        ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextOverlay = selection.Name;
+            //        categoriescol.Update(category);
+            //    }
+            //}
         }
         private void ClrpckrTextOverride_SelectedColorChanged(object sender, RoutedPropertyChangedEventArgs<Color?> e)
         {
             button_SaveCategory.IsEnabled = true;
+            categorysave = true;
             String selection = (sender as Xceed.Wpf.Toolkit.ColorPicker).SelectedColorText;
-            if (selection != "")
-            {
-                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-                {
-                    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                    ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextColorFont = selection;
-                    categoriescol.Update(category);
-                }
-            }
+            ((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextColorFont = selection;
+            //if (selection != "")
+            //{
+            //    using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //    {
+            //        LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //        var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //        ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextColorFont = selection;
+            //        categoriescol.Update(category);
+            //    }
+            //}
         }
         private void ComboTimerOverlayOverride_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            button_SaveCategory.IsEnabled = true;
             OverlayTimer selection = (OverlayTimer)(sender as ComboBox).SelectedItem;
             if (selection != null)
             {
-                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-                {
-                    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                    ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerOverlay = selection.Name;
-                    categoriescol.Update(category);
-                }
+                button_SaveCategory.IsEnabled = true;
+                categorysave = true;
+                ((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerOverlay = selection.Name;
             }
+            //if (selection != null)
+            //{
+            //    using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //    {
+            //        LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //        var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //        ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerOverlay = selection.Name;
+            //        categoriescol.Update(category);
+            //    }
+            //}
         }
         private void ClrpckrTimerFontOverride_SelectedColorChanged(object sender, RoutedPropertyChangedEventArgs<Color?> e)
         {
             button_SaveCategory.IsEnabled = true;
+            categorysave = true;
             String selection = (sender as Xceed.Wpf.Toolkit.ColorPicker).SelectedColorText;
-            if (selection != "")
-            {
-                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-                {
-                    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                    ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerColorFont = selection;
-                    categoriescol.Update(category);
-                }
-            }
+            ((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerColorFont = selection;
+            //if (selection != "")
+            //{
+            //    using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //    {
+            //        LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //        var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //        ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerColorFont = selection;
+            //        categoriescol.Update(category);
+            //    }
+            //}
         }
         private void ClrpckrTimerBarOverride_SelectedColorChanged(object sender, RoutedPropertyChangedEventArgs<Color?> e)
         {
             button_SaveCategory.IsEnabled = true;
+            categorysave = true;
             String selection = (sender as Xceed.Wpf.Toolkit.ColorPicker).SelectedColorText;
-            if (selection != "")
-            {
-                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-                {
-                    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                    ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerColorBar = selection;
-                    categoriescol.Update(category);
-                }
-            }
+            ((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerColorBar = selection;
+            //if (selection != "")
+            //{
+            //    using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //    {
+            //        LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //        var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //        ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerColorBar = selection;
+            //        categoriescol.Update(category);
+            //    }
+            //}
         }
         private void CategoryColor_Checked(object sender, RoutedEventArgs e)
         {
             button_SaveCategory.IsEnabled = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                category.TextColors = status;
-                categoriescol.Update(category);
-            }
+            categorysave = true;
+            tempcategory.TextColors = status;
+            //using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //{
+            //    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //    category.TextColors = status;
+            //    categoriescol.Update(category);
+            //}
         }
         private void CategoryColor_Unchecked(object sender, RoutedEventArgs e)
         {
             button_SaveCategory.IsEnabled = true;
+            categorysave = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            Console.WriteLine("UserChecked");
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                category.TextColors = status;
-                categoriescol.Update(category);
-            }
+            tempcategory.TextColors = status;
+            //using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //{
+            //    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //    category.TextColors = status;
+            //    categoriescol.Update(category);
+            //}
         }
         private void CategoryColorThis_Checked(object sender, RoutedEventArgs e)
         {
             button_SaveCategory.IsEnabled = true;
+            categorysave = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                category.TextThis = status;
-                categoriescol.Update(category);
-            }
+            tempcategory.TextThis = status;
+            //using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //{
+            //    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //    category.TextThis = status;
+            //    categoriescol.Update(category);
+            //}
         }
         private void CategoryColorThis_Unchecked(object sender, RoutedEventArgs e)
         {
             button_SaveCategory.IsEnabled = true;
+            categorysave = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                category.TextThis = status;
-                categoriescol.Update(category);
-            }
+            tempcategory.TextThis = status;
+            //using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //{
+            //    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //    category.TextThis = status;
+            //    categoriescol.Update(category);
+            //}
         }
         private void TimerColors_Checked(object sender, RoutedEventArgs e)
         {
             button_SaveCategory.IsEnabled = true;
+            categorysave = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                category.TimerColors = status;
-                categoriescol.Update(category);
-            }
+            tempcategory.TimerColors = status;
+            //using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //{
+            //    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //    category.TimerColors = status;
+            //    categoriescol.Update(category);
+            //}
         }
         private void TimerColors_Unchecked(object sender, RoutedEventArgs e)
         {
             button_SaveCategory.IsEnabled = true;
+            categorysave = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                category.TimerColors = status;
-                categoriescol.Update(category);
-            }
+            tempcategory.TimerColors = status;
+            //using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //{
+            //    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //    category.TimerColors = status;
+            //    categoriescol.Update(category);
+            //}
         }
         private void TimerThis_Checked(object sender, RoutedEventArgs e)
         {
             button_SaveCategory.IsEnabled = true;
+            categorysave = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                category.TimerThis = status;
-                categoriescol.Update(category);
-            }
+            tempcategory.TimerThis = status;
+            //using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //{
+            //    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //    category.TimerThis = status;
+            //    categoriescol.Update(category);
+            //}
         }
         private void TimerThis_Unchecked(object sender, RoutedEventArgs e)
         {
             button_SaveCategory.IsEnabled = true;
+            categorysave = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                category.TimerThis = status;
-                categoriescol.Update(category);
-            }
+            tempcategory.TimerThis = status;
+            //using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //{
+            //    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //    category.TimerThis = status;
+            //    categoriescol.Update(category);
+            //}
         }
         private void OverrideOverlayCategory_Checked(object sender, RoutedEventArgs e)
         {
             button_SaveCategory.IsEnabled = true;
+            categorysave = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextOverlayCategory = status;
-                categoriescol.Update(category);
-            }
+            ((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextOverlayCategory = status;
+            //using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //{
+            //    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //    ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextOverlayCategory = status;
+            //    categoriescol.Update(category);
+            //}
         }
         private void OverrideOverlayCategory_Unchecked(object sender, RoutedEventArgs e)
         {
             button_SaveCategory.IsEnabled = true;
+            categorysave = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextOverlayCategory = status;
-                categoriescol.Update(category);
-            }
+            ((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextOverlayCategory = status;
+            //using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //{
+            //    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //    ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextOverlayCategory = status;
+            //    categoriescol.Update(category);
+            //}
         }
         private void OverrideTextThis_Unchecked(object sender, RoutedEventArgs e)
         {
             button_SaveCategory.IsEnabled = true;
+            categorysave = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextOverlayThis = status;
-                categoriescol.Update(category);
-            }
+            ((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextOverlayThis = status;
+            //using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //{
+            //    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //    ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextOverlayThis = status;
+            //    categoriescol.Update(category);
+            //}
         }
         private void OverrideTextThis_Checked(object sender, RoutedEventArgs e)
         {
             button_SaveCategory.IsEnabled = true;
+            categorysave = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextOverlayThis = status;
-                categoriescol.Update(category);
-            }
+            ((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextOverlayThis = status;
+            //using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //{
+            //    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //    ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextOverlayThis = status;
+            //    categoriescol.Update(category);
+            //}
         }
         private void OverrideTextColorCategory_Checked(object sender, RoutedEventArgs e)
         {
             button_SaveCategory.IsEnabled = true;
+            categorysave = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextColorCategory = status;
-                categoriescol.Update(category);
-            }
+            ((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextColorCategory = status;
+            //using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //{
+            //    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //    ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextColorCategory = status;
+            //    categoriescol.Update(category);
+            //}
         }
         private void OverrideTextColorCategory_Unchecked(object sender, RoutedEventArgs e)
         {
             button_SaveCategory.IsEnabled = true;
+            categorysave = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextColorCategory = status;
-                categoriescol.Update(category);
-            }
+            ((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextColorCategory = status;
+            //using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //{
+            //    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //    ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextColorCategory = status;
+            //    categoriescol.Update(category);
+            //}
         }
         private void OverrideTextColorCharacter_Checked(object sender, RoutedEventArgs e)
         {
             button_SaveCategory.IsEnabled = true;
+            categorysave = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextColorCharacter = status;
-                categoriescol.Update(category);
-            }
+            ((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextColorCharacter = status;
+            //using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //{
+            //    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //    ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextColorCharacter = status;
+            //    categoriescol.Update(category);
+            //}
         }
         private void OverrideTextColorCharacter_Unchecked(object sender, RoutedEventArgs e)
         {
             button_SaveCategory.IsEnabled = true;
+            categorysave = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextColorCharacter = status;
-                categoriescol.Update(category);
-            }
+            ((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextColorCharacter = status;
+            //using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //{
+            //    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //    ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextColorCharacter = status;
+            //    categoriescol.Update(category);
+            //}
         }
         private void OverrideTextColorThis_Checked(object sender, RoutedEventArgs e)
         {
             button_SaveCategory.IsEnabled = true;
+            categorysave = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextColorThis = status;
-                categoriescol.Update(category);
-            }
+            ((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextColorThis = status;
+            //using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //{
+            //    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //    ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextColorThis = status;
+            //    categoriescol.Update(category);
+            //}
         }
         private void OverrideTextColorThis_Unchecked(object sender, RoutedEventArgs e)
         {
             button_SaveCategory.IsEnabled = true;
+            categorysave = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextColorThis = status;
-                categoriescol.Update(category);
-            }
+            ((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextColorThis = status;
+            //using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //{
+            //    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //    ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextColorThis = status;
+            //    categoriescol.Update(category);
+            //}
         }
         private void OverrideTimerCategory_Checked(object sender, RoutedEventArgs e)
         {
             button_SaveCategory.IsEnabled = true;
+            categorysave = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerOverlayCategory = status;
-                categoriescol.Update(category);
-            }
+            ((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerOverlayCategory = status;
+            //using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //{
+            //    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //    ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerOverlayCategory = status;
+            //    categoriescol.Update(category);
+            //}
         }
         private void OverrideTimerCategory_Unchecked(object sender, RoutedEventArgs e)
         {
             button_SaveCategory.IsEnabled = true;
+            categorysave = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerOverlayCategory = status;
-                categoriescol.Update(category);
-            }
+            ((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerOverlayCategory = status;
+            //using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //{
+            //    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //    ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerOverlayCategory = status;
+            //    categoriescol.Update(category);
+            //}
         }
         private void OverrideTimerThis_Checked(object sender, RoutedEventArgs e)
         {
             button_SaveCategory.IsEnabled = true;
+            categorysave = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerOverlayThis = status;
-                categoriescol.Update(category);
-            }
+            ((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerOverlayThis = status;
+            //using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //{
+            //    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //    ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerOverlayThis = status;
+            //    categoriescol.Update(category);
+            //}
         }
         private void OverrideTimerThis_Unchecked(object sender, RoutedEventArgs e)
         {
             button_SaveCategory.IsEnabled = true;
+            categorysave = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerOverlayThis = status;
-                categoriescol.Update(category);
-            }
+            ((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerOverlayThis = status;
+            //using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //{
+            //    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //    ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerOverlayThis = status;
+            //    categoriescol.Update(category);
+            //}
         }
         private void OverrideTimerColorCat_Checked(object sender, RoutedEventArgs e)
         {
             button_SaveCategory.IsEnabled = true;
+            categorysave = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerColorCategory = status;
-                categoriescol.Update(category);
-            }
+            ((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerColorCategory = status;
+            //using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //{
+            //    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //    ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerColorCategory = status;
+            //    categoriescol.Update(category);
+            //}
         }
         private void OverrideTimerColorCat_Unchecked(object sender, RoutedEventArgs e)
         {
             button_SaveCategory.IsEnabled = true;
+            categorysave = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerColorCategory = status;
-                categoriescol.Update(category);
-            }
+            ((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerColorCategory = status;
+            //using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //{
+            //    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //    ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerColorCategory = status;
+            //    categoriescol.Update(category);
+            //}
         }
         private void OverrideTimerColorChar_Checked(object sender, RoutedEventArgs e)
         {
             button_SaveCategory.IsEnabled = true;
+            categorysave = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerColorCharacter = status;
-                categoriescol.Update(category);
-            }
+            ((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerColorCharacter = status;
+            //using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //{
+            //    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //    ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerColorCharacter = status;
+            //    categoriescol.Update(category);
+            //}
         }
         private void OverrideTimerColorChar_Unchecked(object sender, RoutedEventArgs e)
         {
             button_SaveCategory.IsEnabled = true;
+            categorysave = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerColorCharacter = status;
-                categoriescol.Update(category);
-            }
+            ((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerColorCharacter = status;
+            //using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //{
+            //    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //    ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerColorCharacter = status;
+            //    categoriescol.Update(category);
+            //}
         }
         private void OverrideTimerColorThis_Checked(object sender, RoutedEventArgs e)
         {
             button_SaveCategory.IsEnabled = true;
+            categorysave = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerColorThis = status;
-                categoriescol.Update(category);
-            }
+            ((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerColorThis = status;
+            //using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //{
+            //    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //    ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerColorThis = status;
+            //    categoriescol.Update(category);
+            //}
         }
         private void OverrideTimerColorThis_Unchecked(object sender, RoutedEventArgs e)
         {
             button_SaveCategory.IsEnabled = true;
+            categorysave = true;
             Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
-                ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerColorThis = status;
-                categoriescol.Update(category);
-            }
+            ((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerColorThis = status;
+            //using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //{
+            //    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+            //    var category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
+            //    ((category.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerColorThis = status;
+            //    categoriescol.Update(category);
+            //}
         }
         private void CategoryDefault_Click(object sender, RoutedEventArgs e)
         {
@@ -2876,6 +2994,10 @@ namespace HEAP
             int tabindex = categoryindex;
             Refresh_Categories();
             tabcontrolCategory.SelectedIndex = tabindex;
+        }
+        private void Button_SaveCategory_Click(object sender, RoutedEventArgs e)
+        {
+            CategorySave();
         }
         #endregion
         #region Pushback Monitor
@@ -3109,6 +3231,11 @@ namespace HEAP
         #region Logfile Maintenance
         private void ScheduledMaintenance(String logfile, Maintenance logmaintenance)
         {
+            //check if archive folder exists and create it if missing
+            if (!Directory.Exists(logmaintenance.ArchiveFolder))
+            {
+                Directory.CreateDirectory(logmaintenance.ArchiveFolder);
+            }
             Boolean dailycheck = false;
             TimeSpan duration = DateTime.Now - logmaintenance.LastArchive;
             if (duration.Days > 1)
@@ -3117,11 +3244,6 @@ namespace HEAP
             }
             if (dailycheck || ((DateTime.Now - logmaintenance.LastArchive).Days >= 7))
             {
-                //check if archive folder exists and create it if missing
-                if (!Directory.Exists(logmaintenance.ArchiveFolder))
-                {
-                    Directory.CreateDirectory(logmaintenance.ArchiveFolder);
-                }
                 //move file
                 String filepostfix = DateTime.Now.ToString("MMddyyyy_HHmmss");
                 Regex regexfilename = new Regex(@"(?<path>.*?\\)(?<filename>eqlog.*?)(?<extension>\.txt)", RegexOptions.Compiled);
@@ -4526,10 +4648,5 @@ namespace HEAP
             File.Delete(tempfile);
         }
         #endregion
-
-        private void Button_SaveCategory_Click(object sender, RoutedEventArgs e)
-        {
-
-        }
     }
 }

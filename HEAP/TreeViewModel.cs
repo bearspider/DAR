@@ -89,6 +89,10 @@ namespace HEAP
             SetIsChecked(state, false, true);
         }
         #endregion
+        public TreeViewModel GetParent()
+        {
+            return _parent;
+        }
         public void Initialize()
         {
             foreach (TreeViewModel child in _children)

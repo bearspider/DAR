@@ -1340,6 +1340,11 @@ namespace HEAP
             {
                 DeleteTriggerGroupById(root.Id);
             }
+            var tvi = treeViewTriggers.ItemContainerGenerator.ContainerFromItem(root.GetParent()) as TreeViewItem;
+            if (tvi != null)
+            {
+                tvi.IsSelected = true;
+            }
             e.Handled = true;
         }
         private void TriggerGroupsAddSelected_Click(object sender, RoutedEventArgs e)
@@ -1579,7 +1584,7 @@ namespace HEAP
                 stopwatch.Stop();
                 Console.WriteLine($"Imported Triggers in {stopwatch.Elapsed.ToString()}");
             }
-            if (e.Data.GetDataPresent("MainTree"))
+            if (e.Data.GetDataPresent("MainTree") && droptree != null)
             {
                 TreeViewModel selectedbranch = e.Data.GetData("MainTree") as TreeViewModel;
                 if (selectedbranch.Type == "trigger" && droptree.Id != "0" && selectedbranch.Name != droptree.Name)

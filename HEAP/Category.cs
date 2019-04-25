@@ -12,21 +12,21 @@ namespace HEAP
 {
     public class Category
     {
-        public int id;
-        public String name;
-        public String textOverlay;
-        public String timerOverlay;
-        public String textFontColor;
-        public String timerFontColor;
-        public String timerBarColor;
-        public Boolean defaultCategory;
-        public Boolean textColors;
-        public Boolean textThis;
-        public Boolean timerColors;
-        public Boolean timerThis;
-        public ObservableCollection<CharacterOverride> characteroverrides;
-        public ObservableCollection<OverlayText> availabletextoverlays;
-        public ObservableCollection<OverlayTimer> availabletimeroverlays;
+        private int _id;
+        private String _name;
+        private String _textOverlay;
+        private String _timerOverlay;
+        private String _textFontColor;
+        private String _timerFontColor;
+        private String _timerBarColor;
+        private Boolean _defaultCategory;
+        private Boolean _textColors;
+        private Boolean _textThis;
+        private Boolean _timerColors;
+        private Boolean _timerThis;
+        private ObservableCollection<CharacterOverride> _characteroverrides;
+        private ObservableCollection<OverlayText> _availabletextoverlays;
+        private ObservableCollection<OverlayTimer> _availabletimeroverlays;
 
         public Category()
         {
@@ -46,21 +46,156 @@ namespace HEAP
             AvailableTimerOverlays = new ObservableCollection<OverlayTimer>();
         }
 
-        public int Id { get; set; }
-        public String Name { get; set; }
-        public String TextOverlay { get; set; }
-        public String TimerOverlay { get; set; }
-        public String TextFontColor { get; set; }
-        public String TimerFontColor { get; set; }
-        public String TimerBarColor { get; set; }
-        public Boolean DefaultCategory { get; set; }
-        public Boolean TextColors { get; set; }
-        public Boolean TextThis { get; set; }
-        public Boolean TimerColors { get; set; }
-        public Boolean TimerThis { get; set; }
-        public ArrayList Listtest { get; set; }
-        public ObservableCollection<CharacterOverride> CharacterOverrides { get; set; }
-        public ObservableCollection<OverlayText> AvailableTextOverlays { get; set; }
-        public ObservableCollection<OverlayTimer> AvailableTimerOverlays { get; set; }
+        public int Id
+        {
+            get { return _id; }
+            set { _id = value; }
+        }
+        public String Name
+        {
+            get { return _name; }
+            set { _name = value; }
+        }
+        public String TextOverlay
+        {
+            get { return _textOverlay; }
+            set { _textOverlay = value; }
+        }
+        public String TimerOverlay
+        {
+            get { return _timerOverlay; }
+            set { _timerOverlay = value; }
+        }
+        public String TextFontColor
+        {
+            get { return _textFontColor; }
+            set { _textFontColor = value; }
+        }
+        public String TimerFontColor
+        {
+            get { return _timerFontColor; }
+            set { _timerFontColor = value; }
+        }
+        public String TimerBarColor
+        {
+            get { return _timerBarColor; }
+            set { _timerBarColor = value; }
+        }
+        public Boolean DefaultCategory
+        {
+            get { return _defaultCategory; }
+            set { _defaultCategory = value; }
+        }
+        public Boolean TextColors
+        {
+            get { return _textColors; }
+            set { _textColors = value; }
+        }
+        public Boolean TextThis
+        {
+            get { return _textThis; }
+            set { _textThis = value; }
+        }
+        public Boolean TimerColors
+        {
+            get { return _timerColors; }
+            set { _timerColors = value; }
+        }
+        public Boolean TimerThis
+        {
+            get { return _timerThis; }
+            set { _timerThis = value; }
+        }
+        public ObservableCollection<CharacterOverride> CharacterOverrides
+        {
+            get { return _characteroverrides; }
+            set { _characteroverrides = value; }
+        }
+        public ObservableCollection<OverlayText> AvailableTextOverlays
+        {
+            get { return _availabletextoverlays; }
+            set { _availabletextoverlays = value; }
+        }
+        public ObservableCollection<OverlayTimer> AvailableTimerOverlays
+        {
+            get { return _availabletimeroverlays; }
+            set { _availabletimeroverlays = value; }
+        }
+        public bool Equals(Category compareto)
+        {
+            bool rval = false;
+            if(
+                _id == compareto.Id
+                && _name == compareto.Name
+                && _textOverlay == compareto.TextOverlay
+                && _timerOverlay == compareto.TimerOverlay
+                && _textFontColor == compareto.TextFontColor
+                && _timerFontColor == compareto.TimerFontColor
+                && _timerBarColor == compareto.TimerBarColor
+                && _defaultCategory == compareto.DefaultCategory
+                && _textColors == compareto.TextColors
+                && _textThis == compareto.TextThis
+                && _timerColors == compareto.TimerColors
+                && _timerThis == compareto.TimerThis)
+            {
+                rval = true;
+            }
+            else
+            {
+                return false;
+            }
+            int overridecount = CharacterOverrides.Count;
+            int textoverlaycount = AvailableTextOverlays.Count;
+            int timeroverlaycount = AvailableTimerOverlays.Count;
+            int compareoverridecount = compareto.CharacterOverrides.Count;
+            int comparetextoverlaycount = compareto.AvailableTextOverlays.Count;
+            int comparetimeroverlaycount = compareto.AvailableTimerOverlays.Count;
+            if(
+                overridecount == compareoverridecount
+                && textoverlaycount == comparetextoverlaycount
+                && timeroverlaycount == comparetimeroverlaycount
+                )
+            {
+                for(int i = 0; i < overridecount; i++)
+                {
+                    if(CharacterOverrides[i].Equals(compareto.CharacterOverrides[i]))
+                    {
+                        rval = true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+                for(int j = 0; j < textoverlaycount; j++)
+                {
+                    if(AvailableTextOverlays[j].Equals(compareto.AvailableTextOverlays[j]))
+                    {
+                        rval = true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+                for(int k = 0; k < timeroverlaycount; k++)
+                {
+                    if(AvailableTimerOverlays[k].Equals(compareto.AvailableTimerOverlays[k]))
+                    {
+                        rval = true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+                rval = true;
+            }
+            else
+            {
+                return false;
+            }
+            return rval;
+        }
     }
 }

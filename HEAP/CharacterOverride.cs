@@ -52,6 +52,36 @@ namespace HEAP
         public Boolean TimerColorCategory { get; set; }
         public Boolean TimerColorCharacter { get; set; }
         public Boolean TimerColorThis { get; set; }
+        public bool Equals(CharacterOverride compareto)
+        {
+            bool rval = false;
+            if(
+                ProfileName == compareto.ProfileName
+                && TextOverlaySelection == compareto.TextOverlaySelection
+                && TextColorSelection == compareto.TextColorSelection
+                && TimerOverlaySelection == compareto.TimerOverlaySelection
+                && TimerColorSelection == compareto.TimerColorSelection
+                && TextOverlay == compareto.TextOverlay
+                && TextColorFont == compareto.TextColorFont
+                && TimerOverlay == compareto.TimerOverlay
+                && TimerColorFont == compareto.TimerColorFont
+                && TimerColorBar == compareto.TimerColorBar
+                && TextOverlayCategory == compareto.TextOverlayCategory
+                && TextOverlayThis == compareto.TextOverlayThis
+                && TextColorCategory == compareto.TextColorCategory
+                && TextColorCharacter == compareto.TextColorCharacter
+                && TextColorThis == compareto.TextColorThis
+                && TimerColorCategory == compareto.TimerColorCategory
+                && TimerOverlayThis == compareto.TimerOverlayThis
+                && TimerColorCategory == compareto.TimerColorCategory
+                && TimerColorCharacter == compareto.TimerColorCharacter
+                && TimerColorThis == compareto.TimerColorThis
+                )
+            {
+                rval = true;
+            }
+            return rval;
+        }
 
     }
 }

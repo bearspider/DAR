@@ -40,5 +40,30 @@ namespace HEAP
         public double WindowWidth { get; set; }
         public double WindowX { get; set; }
         public double WindowY { get; set; }
+        public bool Equals(OverlayTimer compareto)
+        {
+            bool rval = false;
+            if(
+                Id == compareto.Id
+                && Name == compareto.Name
+                && Font == compareto.Font
+                && Size == compareto.Size
+                && BG == compareto.BG
+                && Faded == compareto.Faded
+                && Showtimer == compareto.Showtimer
+                && Emptycolor == compareto.Emptycolor
+                && Standardize == compareto.Standardize
+                && Group == compareto.Group
+                && Sortby == compareto.Sortby
+                && WindowHeight == compareto.WindowHeight
+                && WindowWidth == compareto.WindowWidth
+                && WindowX == compareto.WindowX
+                && WindowY == compareto.WindowY
+                )
+            {
+                rval = true;
+            }
+            return rval;
+        }
     }
 }

@@ -2308,76 +2308,77 @@ namespace HEAP
         }
         private void TabcontrolCategory_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (!refreshcategory)
-            {
-                if (e.AddedItems.Count > 0 && e.RemovedItems.Count > 0)
-                {
-                    if (e.AddedItems[0].GetType().ToString() == "Xceed.Wpf.Toolkit.ColorItem")
-                    {
-                        colorpicked = true;
-                    }
-                    if (e.RemovedItems[0].GetType().ToString() == "HEAP.CategoryWrapper")
-                    {
-                        using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-                        {
-                            LiteCollection<Category> categories = db.GetCollection<Category>("categories");
-                            Category dbentry = categories.FindOne(x => x.Name == ((CategoryWrapper)e.RemovedItems[0]).CategoryItem.Name);
-                            if (dbentry.Equals(((CategoryWrapper)e.RemovedItems[0]).CategoryItem))
-                            {
-                                categorysave = false;
-                            }
-                            else
-                            {
-                                categorysave = true;
-                            }
-                        }
-                        if (categorysave)
-                        {
-                            tempcategory = ((CategoryWrapper)e.RemovedItems[0]).CategoryItem;
-                            MessageBoxResult mbr = Xceed.Wpf.Toolkit.MessageBox.Show("You have unsaved changes, save now?", "Unsaved Changes", MessageBoxButton.YesNo, MessageBoxImage.Error);
-                            if (mbr.ToString() == "Yes")
-                            {
-                                CategorySave();
-                                string stop = "";
-                            }
-                            else
-                            {
-                                categorysave = false;
-                                e.Handled = true;
-                            }
-                        }
-                    }
-                }
-                if (colorpicked)
-                {
-                    colorpicked = false;
-                    e.Handled = true;
-                }
-                else
-                {
-                    TabControl currenttab = (sender as System.Windows.Controls.TabControl);
-                    tempcategory = new Category();
-                    if (currenttab.SelectedContent != null)
-                    {
-                        object tabcontent = currenttab.SelectedContent;
-                        CategoryWrapper currentcategory = (CategoryWrapper)tabcontent;
-                        Console.WriteLine($"Tab Selection Changed: {e.RoutedEvent.Name} --> {currentcategory.CategoryItem.Name}");
-                        Console.Write($"Refresh Category: {refreshcategory}");
-                        categoryindex = currenttab.SelectedIndex;
-                        selectedcategory = currentcategory.CategoryItem.Name;
-                        tempcategory = currentcategory.CategoryItem;
-                    }
-                    categorysave = false;
-                    button_SaveCategory.IsEnabled = false;
-                }
-            }
+            //if (!refreshcategory)
+            //{
+            //    if (e.AddedItems.Count > 0 && e.RemovedItems.Count > 0)
+            //    {
+            //        if (e.AddedItems[0].GetType().ToString() == "Xceed.Wpf.Toolkit.ColorItem")
+            //        {
+            //            colorpicked = true;
+            //        }
+            //        if (e.RemovedItems[0].GetType().ToString() == "HEAP.CategoryWrapper")
+            //        {
+            //            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //            {
+            //                LiteCollection<Category> categories = db.GetCollection<Category>("categories");
+            //                Category dbentry = categories.FindOne(x => x.Name == ((CategoryWrapper)e.RemovedItems[0]).CategoryItem.Name);
+            //                if (dbentry.Equals(((CategoryWrapper)e.RemovedItems[0]).CategoryItem))
+            //                {
+            //                    categorysave = false;
+            //                }
+            //                else
+            //                {
+            //                    categorysave = true;
+            //                }
+            //            }
+            //            if (categorysave)
+            //            {
+            //                tempcategory = ((CategoryWrapper)e.RemovedItems[0]).CategoryItem;
+            //                MessageBoxResult mbr = Xceed.Wpf.Toolkit.MessageBox.Show("You have unsaved changes, save now?", "Unsaved Changes", MessageBoxButton.YesNo, MessageBoxImage.Error);
+            //                if (mbr.ToString() == "Yes")
+            //                {
+            //                    CategorySave();
+            //                    string stop = "";
+            //                }
+            //                else
+            //                {
+            //                    categorysave = false;
+            //                    e.Handled = true;
+            //                }
+            //            }
+            //        }
+            //    }
+            //    if (colorpicked)
+            //    {
+            //        colorpicked = false;
+            //        e.Handled = true;
+            //    }
+            //    else
+            //    {
+            //        TabControl currenttab = (sender as System.Windows.Controls.TabControl);
+            //        tempcategory = new Category();
+            //        if (currenttab.SelectedContent != null)
+            //        {
+            //            object tabcontent = currenttab.SelectedContent;
+            //            CategoryWrapper currentcategory = (CategoryWrapper)tabcontent;
+            //            Console.WriteLine($"Tab Selection Changed: {e.RoutedEvent.Name} --> {currentcategory.CategoryItem.Name}");
+            //            Console.Write($"Refresh Category: {refreshcategory}");
+            //            categoryindex = currenttab.SelectedIndex;
+            //            selectedcategory = currentcategory.CategoryItem.Name;
+            //            tempcategory = currentcategory.CategoryItem;
+            //        }
+            //        categorysave = false;
+            //        button_SaveCategory.IsEnabled = false;
+            //    }
+            //}
         }
         private void CategorySave()
         {
+            int objects = tabcontrolCategory.Items.Count;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 LiteCollection<Category> categories = db.GetCollection<Category>("categories");             
-                categories.Update(tempcategory);
+                //categories.Update(tempcategory);
             }
             Refresh_Categories();
             button_SaveCategory.IsEnabled = false;

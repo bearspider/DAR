@@ -221,13 +221,13 @@ namespace HEAP
         private CharacterProfile currentprofile;
         private Category defaultcategory;
         private String selectedcategory;
-        private Category tempcategory = new Category();
         private int categoryindex = 0;
         private Boolean categorysave = false;
         private Boolean refreshcategory = false;
         private Boolean pushbackToggle = false;
         private Boolean colorpicked = false;
-        ParallelOptions po = new ParallelOptions();
+        private CategoryWrapper tempwrapper = new CategoryWrapper();
+        //ParallelOptions po = new ParallelOptions();
 
         //Locks for threads
         private object _itemsLock = new object();
@@ -257,7 +257,7 @@ namespace HEAP
 
         //Variable Collections
         //private ObservableCollection<Category> categorycollection = new ObservableCollection<Category>();
-        private List<Category> categorycollection = new List<Category>();
+        private ObservableCollection<Category> categorycollection = new ObservableCollection<Category>();
         private ObservableCollection<CategoryWrapper> CategoryTab = new ObservableCollection<CategoryWrapper>();
         private ObservableCollection<CharacterProfile> characterProfiles = new ObservableCollection<CharacterProfile>();
         private ObservableCollection<ActivatedTrigger> activatedTriggers = new ObservableCollection<ActivatedTrigger>();
@@ -291,7 +291,7 @@ namespace HEAP
         private Boolean soundenabled = true;
         private Boolean textenabled = true;
         private Boolean timerenabled = true;
-        private Boolean stopfirstmatch = true;
+        private Boolean stopfirstmatch = false;
         private Boolean logmatchestofile = true;
         private String clipboard = @"{C}";
         private Int32 mastervolume = 100;
@@ -305,7 +305,7 @@ namespace HEAP
         {
             InitializeComponent();
             syncontext = SynchronizationContext.Current;
-            po.MaxDegreeOfParallelism = System.Environment.ProcessorCount;
+            //po.MaxDegreeOfParallelism = System.Environment.ProcessorCount;
             textblockVersion.Text = version;
             statusbarStatus.DataContext = totallinecount;
             //Check if EQAudioTriggers folder exists, if not create.
@@ -870,71 +870,69 @@ namespace HEAP
                                 }
                                 else
                                 {
-                                    lock (_triggerlistLock)
+                                    Parallel.ForEach(listoftriggers, (KeyValuePair<Trigger, ArrayList> doc, ParallelLoopState state) =>
                                     {
-                                        foreach(KeyValuePair<Trigger, ArrayList> doc in listoftriggers)
-                                        {
                                         //Do regex match if enabled otherwise string.contains
                                         Boolean foundmatch = false;
-                                            if (doc.Key.Regex)
+                                        if (doc.Key.Regex)
+                                        {
+                                            Boolean checkregex = true;
+                                            if (doc.Key.Fastcheck)
                                             {
-                                                Boolean checkregex = true;
-                                                if (doc.Key.Fastcheck)
+                                                if (!capturedLine.Contains(doc.Key.Digest))
                                                 {
-                                                    if (!capturedLine.Contains(doc.Key.Digest))
-                                                    {
-                                                        checkregex = false;
-                                                    }
-                                                }
-                                                if (checkregex)
-                                                {
-                                                    foundmatch = (Regex.Match(capturedLine, doc.Key.SearchText, RegexOptions.IgnoreCase)).Success;
+                                                    checkregex = false;
                                                 }
                                             }
-                                            else
+                                            if (checkregex)
                                             {
-                                                String ucaselog = capturedLine.ToUpper();
-                                                String ucasetrigger = doc.Key.SearchText.ToUpper();
-                                                foundmatch = ucaselog.Contains(ucasetrigger);
-                                            }
-                                            if (doc.Key.EndEarlyText.Count > 0)
-                                            {
-                                                Boolean endearly = false;
-                                                foreach (SearchText earlyend in doc.Key.EndEarlyText)
-                                                {
-                                                    if (earlyend.Regex)
-                                                    {
-                                                        endearly = (Regex.Match(capturedLine, Regex.Escape(earlyend.Searchtext), RegexOptions.IgnoreCase)).Success;
-                                                    }
-                                                    else
-                                                    {
-                                                        String ucaselog = capturedLine.ToUpper();
-                                                        String ucasetrigger = earlyend.Searchtext.ToUpper();
-                                                        endearly = ucaselog.Contains(ucasetrigger);
-                                                    }
-                                                    if (endearly)
-                                                    {
-                                                        Console.WriteLine($"Early end for {doc.Key.Name} => {endearly}");
-                                                        ClearTimer(doc.Key);
-                                                    }
-                                                }
-                                            }
-                                            if (foundmatch && doc.Value.Contains(character.Id))
-                                            {
-                                                if (stopfirstmatch)
-                                                {
-                                                    break;
-                                                }
-                                                Match eqline = GlobalVariables.eqRegex.Match(capturedLine);
-                                                Console.WriteLine($"Matched Trigger {doc.Key.Id}");
-                                                Stopwatch firetrigger = new Stopwatch();
-                                                firetrigger.Start();
-                                                FireTrigger(doc.Key, character, capturedLine);
-                                                firetrigger.Stop();
-                                                Console.WriteLine($"Fired Trigger in {firetrigger.Elapsed.Seconds}");
+                                                foundmatch = (Regex.Match(capturedLine, doc.Key.SearchText, RegexOptions.IgnoreCase)).Success;
                                             }
                                         }
-                                    }
+                                        else
+                                        {
+                                            String ucaselog = capturedLine.ToUpper();
+                                            String ucasetrigger = doc.Key.SearchText.ToUpper();
+                                            foundmatch = ucaselog.Contains(ucasetrigger);
+                                        }
+                                        if (doc.Key.EndEarlyText.Count > 0)
+                                        {
+                                            Boolean endearly = false;
+                                            foreach (SearchText earlyend in doc.Key.EndEarlyText)
+                                            {
+                                                if (earlyend.Regex)
+                                                {
+                                                    endearly = (Regex.Match(capturedLine, Regex.Escape(earlyend.Searchtext), RegexOptions.IgnoreCase)).Success;
+                                                }
+                                                else
+                                                {
+                                                    String ucaselog = capturedLine.ToUpper();
+                                                    String ucasetrigger = earlyend.Searchtext.ToUpper();
+                                                    endearly = ucaselog.Contains(ucasetrigger);
+                                                }
+                                                //TO DO: Probably implement extra stuff on a early end trigger
+                                                if (endearly)
+                                                {
+                                                    Console.WriteLine($"Early end for {doc.Key.Name} => {endearly}");
+                                                    ClearTimer(doc.Key);
+                                                }
+                                            }
+                                        }
+                                        if (foundmatch && doc.Value.Contains(character.Id))
+                                        {
+                                            if (stopfirstmatch)
+                                            {
+                                                state.Break();
+                                            }
+                                            Match eqline = GlobalVariables.eqRegex.Match(capturedLine);
+                                            Console.WriteLine($"Matched Trigger {doc.Key.Id}");
+                                            Stopwatch firetrigger = new Stopwatch();
+                                            firetrigger.Start();
+                                            FireTrigger(doc.Key, character, capturedLine);
+                                            firetrigger.Stop();
+                                            Console.WriteLine($"Fired Trigger in {firetrigger.Elapsed.Seconds}");
+                                        }
+                                    });
                                     stopwatch.Stop();
                                     if (pushbackToggle)
                                     {
@@ -2034,6 +2032,7 @@ namespace HEAP
             tv.Initialize();
             tv.VerifyCheckedState();
             treeViewTriggers.ItemsSource = treeView;
+            TriggerLoad();
         }
         public void UpdateListView()
         {
@@ -2267,6 +2266,7 @@ namespace HEAP
                     CategoryTab.Add(newcat);
                 }
             }
+            fluentcategories.ItemsSource = categorycollection;
             tabcontrolCategory.DataContext = CategoryTab;
             tabcontrolCategory.SelectedIndex = categoryindex;
             refreshcategory = false;
@@ -2285,6 +2285,7 @@ namespace HEAP
                     MessageBoxResult mbox = Xceed.Wpf.Toolkit.MessageBox.Show("You have unsaved changes, save now?", "Unsaved Changes", MessageBoxButton.YesNo, MessageBoxImage.Question);
                     if (mbox.ToString() == "Yes")
                     {
+                        Console.WriteLine("Categories Ribbon Change");
                         CategorySave();
                     }
                 }
@@ -2308,89 +2309,64 @@ namespace HEAP
         }
         private void TabcontrolCategory_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            //if (!refreshcategory)
-            //{
-            //    if (e.AddedItems.Count > 0 && e.RemovedItems.Count > 0)
-            //    {
-            //        if (e.AddedItems[0].GetType().ToString() == "Xceed.Wpf.Toolkit.ColorItem")
-            //        {
-            //            colorpicked = true;
-            //        }
-            //        if (e.RemovedItems[0].GetType().ToString() == "HEAP.CategoryWrapper")
-            //        {
-            //            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            //            {
-            //                LiteCollection<Category> categories = db.GetCollection<Category>("categories");
-            //                Category dbentry = categories.FindOne(x => x.Name == ((CategoryWrapper)e.RemovedItems[0]).CategoryItem.Name);
-            //                if (dbentry.Equals(((CategoryWrapper)e.RemovedItems[0]).CategoryItem))
-            //                {
-            //                    categorysave = false;
-            //                }
-            //                else
-            //                {
-            //                    categorysave = true;
-            //                }
-            //            }
-            //            if (categorysave)
-            //            {
-            //                tempcategory = ((CategoryWrapper)e.RemovedItems[0]).CategoryItem;
-            //                MessageBoxResult mbr = Xceed.Wpf.Toolkit.MessageBox.Show("You have unsaved changes, save now?", "Unsaved Changes", MessageBoxButton.YesNo, MessageBoxImage.Error);
-            //                if (mbr.ToString() == "Yes")
-            //                {
-            //                    CategorySave();
-            //                    string stop = "";
-            //                }
-            //                else
-            //                {
-            //                    categorysave = false;
-            //                    e.Handled = true;
-            //                }
-            //            }
-            //        }
-            //    }
-            //    if (colorpicked)
-            //    {
-            //        colorpicked = false;
-            //        e.Handled = true;
-            //    }
-            //    else
-            //    {
-            //        TabControl currenttab = (sender as System.Windows.Controls.TabControl);
-            //        tempcategory = new Category();
-            //        if (currenttab.SelectedContent != null)
-            //        {
-            //            object tabcontent = currenttab.SelectedContent;
-            //            CategoryWrapper currentcategory = (CategoryWrapper)tabcontent;
-            //            Console.WriteLine($"Tab Selection Changed: {e.RoutedEvent.Name} --> {currentcategory.CategoryItem.Name}");
-            //            Console.Write($"Refresh Category: {refreshcategory}");
-            //            categoryindex = currenttab.SelectedIndex;
-            //            selectedcategory = currentcategory.CategoryItem.Name;
-            //            tempcategory = currentcategory.CategoryItem;
-            //        }
-            //        categorysave = false;
-            //        button_SaveCategory.IsEnabled = false;
-            //    }
-            //}
+            if((sender as TabControl).IsMouseOver && categorysave)
+            {
+                Console.WriteLine($"Mouse over tab: {categorysave}");
+                MessageBoxResult mbr = Xceed.Wpf.Toolkit.MessageBox.Show("You have unsaved changes, save now?", "Unsaved Changes", MessageBoxButton.YesNo, MessageBoxImage.Error);
+                if (mbr.ToString() == "Yes")
+                {
+                    using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                    {
+                        LiteCollection<Category> categories = db.GetCollection<Category>("categories");
+                        CategoryWrapper removedwrapper = (CategoryWrapper)e.RemovedItems[0];
+                        Category dbentry = categories.FindById(removedwrapper.CategoryItem.Id);
+                        CategorySave(removedwrapper);
+                        button_SaveCategory.IsEnabled = false;
+                    }
+                }
+            }
+            else
+            {
+                button_SaveCategory.IsEnabled = false;
+            }
         }
-        private void CategorySave()
+        private void CategorySave(CategoryWrapper wrapper)
         {
-            int objects = tabcontrolCategory.Items.Count;
+            Console.WriteLine($"New Category Name: {wrapper.CategoryItem.Name}");
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<Category> categories = db.GetCollection<Category>("categories");             
-                //categories.Update(tempcategory);
+                LiteCollection<Category> categories = db.GetCollection<Category>("categories");
+                Category updatecategory = categories.FindById(wrapper.CategoryItem.Id);
+                updatecategory = wrapper.CategoryItem;
+                int? profileindex = updatecategory.GetIndex(wrapper.SelectedOverride.ProfileName);
+                if (profileindex != null)
+                {
+                    updatecategory.CharacterOverrides[(int)profileindex] = wrapper.SelectedOverride;
+                }
+                categories.Update(updatecategory);
             }
             Refresh_Categories();
             button_SaveCategory.IsEnabled = false;
             categorysave = false;
         }
-        private void CategoryName_TextChanged(object sender, TextChangedEventArgs e)
+        private void CategorySave()
         {
-            string newname = (sender as TextBox).Text;
-            categorysave = true;
-            button_SaveCategory.IsEnabled = true;
-            //tempcategory.Name = newname;
-            e.Handled = true;
+            CategoryWrapper wrapper = (CategoryWrapper)tabcontrolCategory.SelectedItem;
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                LiteCollection<Category> categories = db.GetCollection<Category>("categories");
+                Category updatecategory = categories.FindById(wrapper.CategoryItem.Id);
+                updatecategory = wrapper.CategoryItem;
+                int? profileindex = updatecategory.GetIndex(wrapper.SelectedOverride.ProfileName);
+                if (profileindex != null)
+                {
+                    updatecategory.CharacterOverrides[(int)profileindex] = wrapper.SelectedOverride;
+                }
+                categories.Update(updatecategory);
+            }
+            Refresh_Categories();
+            button_SaveCategory.IsEnabled = false;
+            categorysave = false;
         }
         private void CategoryAdd_Click(object sender, RoutedEventArgs e)
         {
@@ -2441,328 +2417,351 @@ namespace HEAP
             }
             GenerateMasterList("CategoryRemove_Click");
         }
-        private void CategoryTextOverlay_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void CategoryName_TextChanged(object sender, TextChangedEventArgs e)
         {
-            OverlayText selection = (OverlayText)(sender as ComboBox).SelectedItem;
-            if (tempcategory != null && selection != null)
+            if((sender as TextBox).IsKeyboardFocused)
             {
                 categorysave = true;
                 button_SaveCategory.IsEnabled = true;
-                //tempcategory.TextOverlay = selection.Name;
+                tempwrapper = (CategoryWrapper)(sender as TextBox).DataContext;
+                if (tempwrapper != null)
+                {
+                    tempwrapper.CategoryItem.Name = (sender as TextBox).Text;
+                }
             }
-           e.Handled = true;
+            else
+            {
+                categorysave = false;
+                button_SaveCategory.IsEnabled = false;
+            }
+            e.Handled = true;
+        }
+        private void CategoryTextOverlay_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if ((sender as ComboBox).IsMouseOver)
+            {
+                categorysave = true;
+                button_SaveCategory.IsEnabled = true;
+            }
+            else
+            {
+                categorysave = false;
+                button_SaveCategory.IsEnabled = false;
+            }
+            e.Handled = true;
         }
         private void ClrpckrText_SelectedColorChanged(object sender, RoutedPropertyChangedEventArgs<Color?> e)
         {
-            colorpicked = true;
-            button_SaveCategory.IsEnabled = true;
-            categorysave = true;
-            String selection = (sender as Xceed.Wpf.Toolkit.ColorPicker).SelectedColorText;
-            //tempcategory.TextFontColor = selection;
+            if ((sender as Xceed.Wpf.Toolkit.ColorPicker).IsMouseOver)
+            {
+                colorpicked = true;
+                categorysave = true;
+                button_SaveCategory.IsEnabled = true;
+            }
+            else
+            {
+                categorysave = false;
+                button_SaveCategory.IsEnabled = false;
+            }
             e.Handled = true;
         }
         private void CategoryTimerOverlay_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            OverlayTimer selection = (OverlayTimer)(sender as ComboBox).SelectedItem;
-            if (tempcategory != null && selection != null)
+            if ((sender as ComboBox).IsMouseOver)
             {
-                button_SaveCategory.IsEnabled = true;
                 categorysave = true;
-                //tempcategory.TimerOverlay = selection.Name;
+                button_SaveCategory.IsEnabled = true;
+            }
+            else
+            {
+                categorysave = false;
+                button_SaveCategory.IsEnabled = false;
             }
             e.Handled = true;
         }
         private void ClrpckrTimerText_SelectedColorChanged(object sender, RoutedPropertyChangedEventArgs<Color?> e)
         {
-            colorpicked = true;
-            button_SaveCategory.IsEnabled = true;
-            categorysave = true;
-            String selection = (sender as Xceed.Wpf.Toolkit.ColorPicker).SelectedColorText;
-            //tempcategory.TimerFontColor = selection;
+            if ((sender as Xceed.Wpf.Toolkit.ColorPicker).IsMouseOver)
+            {
+                colorpicked = true;
+                categorysave = true;
+                button_SaveCategory.IsEnabled = true;
+            }
+            else
+            {
+                categorysave = false;
+                button_SaveCategory.IsEnabled = false;
+            }
+            e.Handled = true;
         }
         private void ClrpckrTimerBar_SelectedColorChanged(object sender, RoutedPropertyChangedEventArgs<Color?> e)
         {
-            colorpicked = true;
-            button_SaveCategory.IsEnabled = true;
-            categorysave = true;
-            String selection = (sender as Xceed.Wpf.Toolkit.ColorPicker).SelectedColorText;
-            //tempcategory.TimerBarColor = selection
+            if ((sender as Xceed.Wpf.Toolkit.ColorPicker).IsMouseOver)
+            {
+                colorpicked = true;
+                categorysave = true;
+                button_SaveCategory.IsEnabled = true;
+            }
+            else
+            {
+                categorysave = false;
+                button_SaveCategory.IsEnabled = false;
+            }
+            e.Handled = true;
         }
         private void ComboOverrideTextOverlay_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            OverlayText selection = (OverlayText)(sender as ComboBox).SelectedItem;
-            if (selection != null)
+            if ((sender as ComboBox).IsMouseOver)
             {
-                button_SaveCategory.IsEnabled = true;
                 categorysave = true;
-                //((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextOverlay = selection.Name;
+                button_SaveCategory.IsEnabled = true;
+            }
+            else
+            {
+                categorysave = false;
+                button_SaveCategory.IsEnabled = false;
             }
             e.Handled = true;
         }
         private void ClrpckrTextOverride_SelectedColorChanged(object sender, RoutedPropertyChangedEventArgs<Color?> e)
         {
-            colorpicked = true;
-            button_SaveCategory.IsEnabled = true;
-            categorysave = true;
-            String selection = (sender as Xceed.Wpf.Toolkit.ColorPicker).SelectedColorText;
-            //(tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextColorFont = selection;
+            if ((sender as Xceed.Wpf.Toolkit.ColorPicker).IsMouseOver)
+            {
+                colorpicked = true;
+                categorysave = true;
+                button_SaveCategory.IsEnabled = true;
+            }
+            else
+            {
+                categorysave = false;
+                button_SaveCategory.IsEnabled = false;
+            }
             e.Handled = true;
         }
         private void ComboTimerOverlayOverride_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            OverlayTimer selection = (OverlayTimer)(sender as ComboBox).SelectedItem;
-            if (selection != null)
+            if ((sender as ComboBox).IsMouseOver)
             {
-                button_SaveCategory.IsEnabled = true;
                 categorysave = true;
-                //((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerOverlay = selection.Name;
+                button_SaveCategory.IsEnabled = true;
+            }
+            else
+            {
+                categorysave = false;
+                button_SaveCategory.IsEnabled = false;
             }
             e.Handled = true;
         }
         private void ClrpckrTimerFontOverride_SelectedColorChanged(object sender, RoutedPropertyChangedEventArgs<Color?> e)
         {
-            colorpicked = true;
-            button_SaveCategory.IsEnabled = true;
-            categorysave = true;
-            String selection = (sender as Xceed.Wpf.Toolkit.ColorPicker).SelectedColorText;
-            //((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerColorFont = selection;
+            if ((sender as Xceed.Wpf.Toolkit.ColorPicker).IsMouseOver)
+            {
+                colorpicked = true;
+                categorysave = true;
+                button_SaveCategory.IsEnabled = true;
+            }
+            else
+            {
+                categorysave = false;
+                button_SaveCategory.IsEnabled = false;
+            }
             e.Handled = true;
         }
         private void ClrpckrTimerBarOverride_SelectedColorChanged(object sender, RoutedPropertyChangedEventArgs<Color?> e)
         {
-            colorpicked = true;
-            button_SaveCategory.IsEnabled = true;
-            categorysave = true;
-            String selection = (sender as Xceed.Wpf.Toolkit.ColorPicker).SelectedColorText;
-            //((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerColorBar = selection;
+            if ((sender as Xceed.Wpf.Toolkit.ColorPicker).IsMouseOver)
+            {
+                colorpicked = true;
+                categorysave = true;
+                button_SaveCategory.IsEnabled = true;
+            }
+            else
+            {
+                categorysave = false;
+                button_SaveCategory.IsEnabled = false;
+            }
             e.Handled = true;
         }
         private void CategoryColor_Checked(object sender, RoutedEventArgs e)
         {
-            Console.WriteLine("Category Color Checked");
-            button_SaveCategory.IsEnabled = true;
-            Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            categorysave = true;
-            //tempcategory.TextColors = status;
-            e.Handled = true;
-        }
-        private void CategoryColor_Unchecked(object sender, RoutedEventArgs e)
-        {
-            Console.WriteLine("Category Color UnChecked");
-            button_SaveCategory.IsEnabled = true;
-            categorysave = true;
-            Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            //tempcategory.TextColors = status;
+            if ((sender as RadioButton).IsMouseOver)
+            {
+                categorysave = true;
+                button_SaveCategory.IsEnabled = true;
+            }
+            else
+            {
+                categorysave = false;
+            }
             e.Handled = true;
         }
         private void CategoryColorThis_Checked(object sender, RoutedEventArgs e)
         {
-            Console.WriteLine("Category ColorThis Checked");
-            button_SaveCategory.IsEnabled = true;
-            categorysave = true;
-            Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            //tempcategory.TextThis = status;
-            e.Handled = true;
-        }
-        private void CategoryColorThis_Unchecked(object sender, RoutedEventArgs e)
-        {
-            Console.WriteLine("Category ColorThis UnChecked");
-            button_SaveCategory.IsEnabled = true;
-            categorysave = true;
-            Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            //tempcategory.TextThis = status;
+            if ((sender as RadioButton).IsMouseOver)
+            {
+                categorysave = true;
+                button_SaveCategory.IsEnabled = true;
+            }
+            else
+            {
+                categorysave = false;
+            }
             e.Handled = true;
         }
         private void TimerColors_Checked(object sender, RoutedEventArgs e)
         {
-            button_SaveCategory.IsEnabled = true;
-            categorysave = true;
-            Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            //tempcategory.TimerColors = status;
-            e.Handled = true;
-        }
-        private void TimerColors_Unchecked(object sender, RoutedEventArgs e)
-        {
-            button_SaveCategory.IsEnabled = true;
-            categorysave = true;
-            Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            //tempcategory.TimerColors = status;
+            if((sender as RadioButton).IsMouseOver)
+            {
+                categorysave = true;
+                button_SaveCategory.IsEnabled = true;
+            }
+            else
+            {
+                categorysave = false;
+            }
             e.Handled = true;
         }
         private void TimerThis_Checked(object sender, RoutedEventArgs e)
         {
-            button_SaveCategory.IsEnabled = true;
-            categorysave = true;
-            Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            //tempcategory.TimerThis = status;
-            e.Handled = true;
-        }
-        private void TimerThis_Unchecked(object sender, RoutedEventArgs e)
-        {
-            button_SaveCategory.IsEnabled = true;
-            categorysave = true;
-            Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            //tempcategory.TimerThis = status;
+            if ((sender as RadioButton).IsMouseOver)
+            {
+                categorysave = true;
+                button_SaveCategory.IsEnabled = true;
+            }
+            else
+            {
+                categorysave = false;
+            }
             e.Handled = true;
         }
         private void OverrideOverlayCategory_Checked(object sender, RoutedEventArgs e)
         {
-            button_SaveCategory.IsEnabled = true;
-            categorysave = true;
-            Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            //((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextOverlayCategory = status;
-            e.Handled = true;
-        }
-        private void OverrideOverlayCategory_Unchecked(object sender, RoutedEventArgs e)
-        {
-            button_SaveCategory.IsEnabled = true;
-            categorysave = true;
-            Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            //((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextOverlayCategory = status;
-            e.Handled = true;
-        }
-        private void OverrideTextThis_Unchecked(object sender, RoutedEventArgs e)
-        {
-            button_SaveCategory.IsEnabled = true;
-            categorysave = true;
-            Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            //((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextOverlayThis = status;
+            if ((sender as RadioButton).IsMouseOver)
+            {
+                categorysave = true;
+                button_SaveCategory.IsEnabled = true;
+            }
+            else
+            {
+                categorysave = false;
+            }
             e.Handled = true;
         }
         private void OverrideTextThis_Checked(object sender, RoutedEventArgs e)
         {
-            button_SaveCategory.IsEnabled = true;
-            categorysave = true;
-            Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            //((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextOverlayThis = status;
+            if ((sender as RadioButton).IsMouseOver)
+            {
+                categorysave = true;
+                button_SaveCategory.IsEnabled = true;
+            }
+            else
+            {
+                categorysave = false;
+            }
             e.Handled = true;
         }
         private void OverrideTextColorCategory_Checked(object sender, RoutedEventArgs e)
         {
-            button_SaveCategory.IsEnabled = true;
-            categorysave = true;
-            Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            //((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextColorCategory = status;
-            e.Handled = true;
-        }
-        private void OverrideTextColorCategory_Unchecked(object sender, RoutedEventArgs e)
-        {
-            button_SaveCategory.IsEnabled = true;
-            categorysave = true;
-            Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            //((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextColorCategory = status;
+            if ((sender as RadioButton).IsMouseOver)
+            {
+                categorysave = true;
+                button_SaveCategory.IsEnabled = true;
+            }
+            else
+            {
+                categorysave = false;
+            }
             e.Handled = true;
         }
         private void OverrideTextColorCharacter_Checked(object sender, RoutedEventArgs e)
         {
-            button_SaveCategory.IsEnabled = true;
-            categorysave = true;
-            Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            //((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextColorCharacter = status;
-            e.Handled = true;
-        }
-        private void OverrideTextColorCharacter_Unchecked(object sender, RoutedEventArgs e)
-        {
-            button_SaveCategory.IsEnabled = true;
-            categorysave = true;
-            Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            //((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextColorCharacter = status;
+            if ((sender as RadioButton).IsMouseOver)
+            {
+                categorysave = true;
+                button_SaveCategory.IsEnabled = true;
+            }
+            else
+            {
+                categorysave = false;
+            }
             e.Handled = true;
         }
         private void OverrideTextColorThis_Checked(object sender, RoutedEventArgs e)
         {
-            button_SaveCategory.IsEnabled = true;
-            categorysave = true;
-            Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            //((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextColorThis = status;
-            e.Handled = true;
-        }
-        private void OverrideTextColorThis_Unchecked(object sender, RoutedEventArgs e)
-        {
-            button_SaveCategory.IsEnabled = true;
-            categorysave = true;
-            Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            //((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TextColorThis = status;
+            if ((sender as RadioButton).IsMouseOver)
+            {
+                categorysave = true;
+                button_SaveCategory.IsEnabled = true;
+            }
+            else
+            {
+                categorysave = false;
+            }
             e.Handled = true;
         }
         private void OverrideTimerCategory_Checked(object sender, RoutedEventArgs e)
         {
-            button_SaveCategory.IsEnabled = true;
-            categorysave = true;
-            Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            //((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerOverlayCategory = status;
-            e.Handled = true;
-        }
-        private void OverrideTimerCategory_Unchecked(object sender, RoutedEventArgs e)
-        {
-            button_SaveCategory.IsEnabled = true;
-            categorysave = true;
-            Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            //((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerOverlayCategory = status;
+            if ((sender as RadioButton).IsMouseOver)
+            {
+                categorysave = true;
+                button_SaveCategory.IsEnabled = true;
+            }
+            else
+            {
+                categorysave = false;
+            }
             e.Handled = true;
         }
         private void OverrideTimerThis_Checked(object sender, RoutedEventArgs e)
         {
-            button_SaveCategory.IsEnabled = true;
-            categorysave = true;
-            Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            //((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerOverlayThis = status;
-            e.Handled = true;
-        }
-        private void OverrideTimerThis_Unchecked(object sender, RoutedEventArgs e)
-        {
-            button_SaveCategory.IsEnabled = true;
-            categorysave = true;
-            Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            //((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerOverlayThis = status;
+            if ((sender as RadioButton).IsMouseOver)
+            {
+                categorysave = true;
+                button_SaveCategory.IsEnabled = true;
+            }
+            else
+            {
+                categorysave = false;
+            }
             e.Handled = true;
         }
         private void OverrideTimerColorCat_Checked(object sender, RoutedEventArgs e)
         {
-            button_SaveCategory.IsEnabled = true;
-            categorysave = true;
-            Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            //((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerColorCategory = status;
-            e.Handled = true;
-        }
-        private void OverrideTimerColorCat_Unchecked(object sender, RoutedEventArgs e)
-        {
-            button_SaveCategory.IsEnabled = true;
-            categorysave = true;
-            Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            //((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerColorCategory = status;
+            if ((sender as RadioButton).IsMouseOver)
+            {
+                categorysave = true;
+                button_SaveCategory.IsEnabled = true;
+            }
+            else
+            {
+                categorysave = false;
+            }
             e.Handled = true;
         }
         private void OverrideTimerColorChar_Checked(object sender, RoutedEventArgs e)
         {
-            button_SaveCategory.IsEnabled = true;
-            categorysave = true;
-            Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            //((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerColorCharacter = status;
-            e.Handled = true;
-        }
-        private void OverrideTimerColorChar_Unchecked(object sender, RoutedEventArgs e)
-        {
-            button_SaveCategory.IsEnabled = true;
-            categorysave = true;
-            Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            //((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerColorCharacter = status;
+            if ((sender as RadioButton).IsMouseOver)
+            {
+                categorysave = true;
+                button_SaveCategory.IsEnabled = true;
+            }
+            else
+            {
+                categorysave = false;
+            }
             e.Handled = true;
         }
         private void OverrideTimerColorThis_Checked(object sender, RoutedEventArgs e)
         {
-            button_SaveCategory.IsEnabled = true;
-            categorysave = true;
-            Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            //((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerColorThis = status;
-            e.Handled = true;
-        }
-        private void OverrideTimerColorThis_Unchecked(object sender, RoutedEventArgs e)
-        {
-            button_SaveCategory.IsEnabled = true;
-            categorysave = true;
-            Boolean status = (Boolean)(sender as RadioButton).IsChecked;
-            //((tempcategory.CharacterOverrides.Where(x => x.ProfileName == currentprofile.ProfileName)).First()).TimerColorThis = status;
+            if ((sender as RadioButton).IsMouseOver)
+            {
+                categorysave = true;
+                button_SaveCategory.IsEnabled = true;
+            }
+            else
+            {
+                categorysave = false;
+            }
             e.Handled = true;
         }
         private void CategoryDefault_Click(object sender, RoutedEventArgs e)
@@ -2789,6 +2788,7 @@ namespace HEAP
         }
         private void Button_SaveCategory_Click(object sender, RoutedEventArgs e)
         {
+            Console.WriteLine("Save by button");
             CategorySave();
         }
         #endregion

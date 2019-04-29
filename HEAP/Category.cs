@@ -197,5 +197,18 @@ namespace HEAP
             }
             return rval;
         }
+        public int? GetIndex(string profilename)
+        {
+            int counter = 0;
+            foreach (CharacterOverride charoverride in _characteroverrides)
+            {
+                if(charoverride.ProfileName == profilename)
+                {
+                    return counter;
+                }
+                counter++;
+            }
+            return null;
+        }
     }
 }

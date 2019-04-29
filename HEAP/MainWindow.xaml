@@ -349,7 +349,9 @@
                                                         <ColumnDefinition Width="Auto"/>
                                                         <ColumnDefinition Width="Auto"/>
                                                     </Grid.ColumnDefinitions>
-                                                    <wpf:GroupBox Grid.Row="0" Grid.Column="0" Header="Text Settings">
+                                                    <Fluent:TextBox Grid.Row="0" Grid.Column="0" Header="Name: " Name="fluentcategoryname" Text="{Binding ElementName=fluentcategories,Path=SelectedItem.Name}"/>
+                                                    <Fluent:CheckBox FlowDirection="RightToLeft" Margin="0,0,250,0" VerticalContentAlignment="Center" Grid.Row="0" Grid.Column="1" Header=":Default" Name="fluentcategorydefault" IsChecked="{Binding ElementName=fluentcategories, Path=SelectedItem.DefaultCategory}"/>
+                                                    <wpf:GroupBox Grid.Row="1" Grid.Column="0" Header="Text Settings">
                                                         <StackPanel>
                                                             <Grid>
                                                                 <Grid.RowDefinitions>
@@ -363,17 +365,23 @@
                                                                     <ColumnDefinition Width="Auto"/>
                                                                     <ColumnDefinition Width="Auto"/>
                                                                 </Grid.ColumnDefinitions>
-                                                                <Fluent:ComboBox Grid.Row="0" Grid.Column="0" Name="defaulttextoverlay" Header="Overlay">
-
+                                                                <Fluent:ComboBox Grid.Row="0" Grid.Column="0" 
+                                                                                 Name="defaulttextoverlay" Header="Overlay"
+                                                                                 ItemsSource="{Binding ElementName=fluentcategories,Path=SelectedValue.AvailableTextOverlays}" SelectedValue="{Binding ElementName=fluentcategories,Path=SelectedItem.TextOverlay}" SelectedValuePath="Name">
+                                                                    <ComboBox.ItemTemplate>
+                                                                        <DataTemplate>
+                                                                            <TextBlock Text="{Binding Name}"/>
+                                                                        </DataTemplate>
+                                                                    </ComboBox.ItemTemplate>
                                                                 </Fluent:ComboBox>
-                                                                <Fluent:RadioButton Grid.Row="1" Grid.Column="0" Name="defaulttextcolor" Header="Use Character Colors" IsChecked="{x:Null}"/>
-                                                                <Fluent:RadioButton Grid.Row="2" Grid.Column="0" Name="defaulttextcoloruse" Header="Use These Colors:" IsChecked="{x:Null}"/>
+                                                                <Fluent:RadioButton Grid.Row="1" Grid.Column="0" Name="defaulttextcolor" Header="Use Character Colors" IsChecked="{Binding ElementName=fluentcategories,Path=SelectedValue.TextColors}"/>
+                                                                <Fluent:RadioButton Grid.Row="2" Grid.Column="0" Name="defaulttextcoloruse" Header="Use These Colors:" IsChecked="{Binding ElementName=fluentcategories,Path=SelectedValue.TextThis}"/>
                                                                 <Fluent:TwoLineLabel HorizontalAlignment="Center" Text="Font:" Grid.Row="3" Grid.Column="0" />
-                                                                <xctk:ColorPicker Grid.Row="3" Grid.Column="1" Name="defaulttextcolorpick" SelectedColor="{x:Null}"/>
+                                                                <xctk:ColorPicker Grid.Row="3" Grid.Column="1" Name="defaulttextcolorpick" SelectedColor="{Binding ElementName=fluentcategories,Path=SelectedValue.TextFontColor}"/>
                                                             </Grid>
                                                         </StackPanel>
                                                     </wpf:GroupBox>
-                                                    <wpf:GroupBox Grid.Row="0" Grid.Column="1" Header="Timer Settings">
+                                                    <wpf:GroupBox Grid.Row="1" Grid.Column="1" Header="Timer Settings">
                                                         <StackPanel>
                                                             <Grid>
                                                                 <Grid.RowDefinitions>
@@ -388,15 +396,20 @@
                                                                     <ColumnDefinition Width="Auto"/>
                                                                     <ColumnDefinition Width="Auto"/>
                                                                 </Grid.ColumnDefinitions>
-                                                                <Fluent:ComboBox Grid.Row="0" Grid.Column="0" Name="defaulttimeroverlay" Header="Overlay">
-
+                                                                <Fluent:ComboBox Grid.Row="0" Grid.Column="0" Name="defaulttimeroverlay" Header="Overlay"
+                                                                                 ItemsSource="{Binding ElementName=fluentcategories,Path=SelectedValue.AvailableTimerOverlays}" SelectedValue="{Binding ElementName=fluentcategories,Path=SelectedItem.TimerOverlay}" SelectedValuePath="Name">
+                                                                    <ComboBox.ItemTemplate>
+                                                                        <DataTemplate>
+                                                                            <TextBlock Text="{Binding Name}"/>
+                                                                        </DataTemplate>
+                                                                    </ComboBox.ItemTemplate>
                                                                 </Fluent:ComboBox>
-                                                                <Fluent:RadioButton Grid.Row="1" Grid.Column="0" Name="defaulttimercolor" Header="Use Character Colors" IsChecked="{x:Null}"/>
-                                                                <Fluent:RadioButton Grid.Row="2" Grid.Column="0" Name="defaulttimercoloruse" Header="Use These Colors:" IsChecked="{x:Null}"/>
+                                                                <Fluent:RadioButton Grid.Row="1" Grid.Column="0" Name="defaulttimercolor" Header="Use Character Colors" IsChecked="{Binding ElementName=fluentcategories,Path=SelectedValue.TimerColors}"/>
+                                                                <Fluent:RadioButton Grid.Row="2" Grid.Column="0" Name="defaulttimercoloruse" Header="Use These Colors:" IsChecked="{Binding ElementName=fluentcategories,Path=SelectedValue.TimerThis}"/>
                                                                 <Fluent:TwoLineLabel HorizontalAlignment="Center" Text="Font:" Grid.Row="3" Grid.Column="0" />
-                                                                <xctk:ColorPicker Grid.Row="3" Grid.Column="1" Name="defaulttimercolorpick" SelectedColor="{x:Null}"/>
+                                                                <xctk:ColorPicker Grid.Row="3" Grid.Column="1" Name="defaulttimercolorpick" SelectedColor="{Binding ElementName=fluentcategories,Path=SelectedValue.TimerFontColor}"/>
                                                                 <Fluent:TwoLineLabel HorizontalAlignment="Center" Text="Timer Bar:" Grid.Row="4" Grid.Column="0" />
-                                                                <xctk:ColorPicker Grid.Row="4" Grid.Column="1" Name="defaulttimerbarcolorpick" SelectedColor="{x:Null}"/>
+                                                                <xctk:ColorPicker Grid.Row="4" Grid.Column="1" Name="defaulttimerbarcolorpick" SelectedColor="{Binding ElementName=fluentcategories,Path=SelectedValue.TimerBarColor}"/>
                                                             </Grid>
                                                         </StackPanel>
                                                     </wpf:GroupBox>
@@ -418,7 +431,7 @@
                                                         <ColumnDefinition Width="Auto"/>
                                                     </Grid.ColumnDefinitions>
                                                 </Grid>
-                                                <wpf:GroupBox Grid.Row="0" Grid.Column="0" Header="Text Overrides">
+                                                <wpf:GroupBox Grid.Row="0" Grid.Column="0" Header="Text Overrides" BorderBrush="Red">
                                                     <StackPanel>
                                                         <Grid>
                                                             <Grid.RowDefinitions>
@@ -445,17 +458,41 @@
                                                                         <ColumnDefinition Width="Auto"/>
                                                                         <ColumnDefinition Width="Auto"/>
                                                                     </Grid.ColumnDefinitions>
-                                                                    <Fluent:RadioButton Header="Use Category Overlay"/>
-                                                                    <Fluent:RadioButton Header="Use This Overlay:"/>
+                                                                    <Fluent:RadioButton Name="chartextusecat" Grid.Row="0" Grid.Column="0" Header="Use Category Overlay" IsChecked="{Binding ElementName=fluentcategoryprofiles,Path=SelectedItem.TextOverlayCategory}"/>
+                                                                    <Fluent:RadioButton Name="chartextusethis" Grid.Row="1" Grid.Column="0" Header="Use This Overlay:" IsChecked="{Binding ElementName=fluentcategoryprofiles,Path=SelectedItem.TextOverlayThis}"/>
+                                                                    <Fluent:ComboBox Name="combochartextoverlay" Grid.Row="1" Grid.Column="1"
+                                                                        ItemsSource="{Binding ElementName=fluentcategories,Path=SelectedValue.AvailableTextOverlays}" SelectedValue="{Binding ElementName=fluentcategoryprofiles,Path=SelectedItem.TextOverlay}" SelectedValuePath="Name">
+                                                                        <ComboBox.ItemTemplate>
+                                                                            <DataTemplate>
+                                                                                <TextBlock Text="{Binding Name}"/>
+                                                                            </DataTemplate>
+                                                                        </ComboBox.ItemTemplate>
+                                                                    </Fluent:ComboBox>
                                                                 </Grid>
                                                             </wpf:GroupBox>
                                                             <wpf:GroupBox Grid.Row="0" Grid.Column="1" Header="Colors">
-
+                                                                <Grid>
+                                                                    <Grid.RowDefinitions>
+                                                                        <RowDefinition Height="Auto"/>
+                                                                        <RowDefinition Height="Auto"/>
+                                                                        <RowDefinition Height="Auto"/>
+                                                                        <RowDefinition Height="Auto"/>
+                                                                    </Grid.RowDefinitions>
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <Fluent:RadioButton Name="chartextcolorcat" Grid.Row="0" Grid.Column="0" Header="Use Category Colors"  IsChecked="{Binding ElementName=fluentcategoryprofiles,Path=SelectedItem.TextColorCategory}"/>
+                                                                    <Fluent:RadioButton Name="chartextcharcolor" Grid.Row="1" Grid.Column="0" Header="Use Character Colors"  IsChecked="{Binding ElementName=fluentcategoryprofiles,Path=SelectedItem.TextColorCharacter}"/>
+                                                                    <Fluent:RadioButton Name="chartextusecolor" Grid.Row="2" Grid.Column="0" Header="Use These Colors:"  IsChecked="{Binding ElementName=fluentcategoryprofiles,Path=SelectedItem.TextColorThis}"/>
+                                                                    <xctk:ColorPicker Name="chartextcolorpick" Grid.Row="2" Grid.Column="1" SelectedColor="{Binding ElementName=fluentcategoryprofiles,Path=SelectedItem.TextColorFont}"/>
+                                                                </Grid>
                                                             </wpf:GroupBox>
                                                         </Grid>
                                                     </StackPanel>
                                                 </wpf:GroupBox>
-                                                <wpf:GroupBox Grid.Row="0" Grid.Column="1" Header="Timer Overrides">
+                                                <wpf:GroupBox Grid.Row="0" Grid.Column="1" Header="Timer Overrides" BorderBrush="Red">
                                                     <StackPanel>
                                                         <Grid>
                                                             <Grid.RowDefinitions>
@@ -470,10 +507,55 @@
                                                                 <ColumnDefinition Width="Auto"/>
                                                             </Grid.ColumnDefinitions>
                                                             <wpf:GroupBox Grid.Row="0" Grid.Column="0" Header="Overlay">
-
+                                                                <StackPanel>
+                                                                <Grid>
+                                                                    <Grid.RowDefinitions>
+                                                                        <RowDefinition Height="Auto"/>
+                                                                        <RowDefinition Height="Auto"/>
+                                                                        <RowDefinition Height="Auto"/>
+                                                                        <RowDefinition Height="Auto"/>
+                                                                    </Grid.RowDefinitions>
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <Fluent:RadioButton Name="chartimercat" Grid.Row="0" Grid.Column="0" Header="Use Category Overlay" IsChecked="{Binding ElementName=fluentcategoryprofiles,Path=SelectedItem.TimerOverlayCategory}"/>
+                                                                    <Fluent:RadioButton Name="chartimerthis" Grid.Row="1" Grid.Column="0" Header="Use This Overlay:" IsChecked="{Binding ElementName=fluentcategoryprofiles,Path=SelectedItem.TimerOverlayThis}"/>
+                                                                    <Fluent:ComboBox Name="combochartimerthis" Grid.Row="1" Grid.Column="1"
+                                                                                     ItemsSource="{Binding ElementName=fluentcategories,Path=SelectedValue.AvailableTimerOverlays}" SelectedValue="{Binding ElementName=fluentcategoryprofiles,Path=SelectedItem.TimerOverlay}"  SelectedValuePath="Name">
+                                                                        <ComboBox.ItemTemplate>
+                                                                            <DataTemplate>
+                                                                                <TextBlock Text="{Binding Name}"/>
+                                                                            </DataTemplate>
+                                                                        </ComboBox.ItemTemplate>
+                                                                    </Fluent:ComboBox>
+                                                                    </Grid>
+                                                                </StackPanel>
                                                             </wpf:GroupBox>
                                                             <wpf:GroupBox Grid.Row="0" Grid.Column="1" Header="Colors">
-
+                                                                <Grid>
+                                                                    <Grid.RowDefinitions>
+                                                                        <RowDefinition Height="Auto"/>
+                                                                        <RowDefinition Height="Auto"/>
+                                                                        <RowDefinition Height="Auto"/>
+                                                                        <RowDefinition Height="Auto"/>
+                                                                        <RowDefinition Height="Auto"/>
+                                                                    </Grid.RowDefinitions>
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <Fluent:RadioButton Name="chartimercolorcat" Grid.Row="0" Grid.Column="0" Header="Use Category Colors" IsChecked="{Binding ElementName=fluentcategoryprofiles,Path=SelectedItem.TimerColorCategory}"/>
+                                                                    <Fluent:RadioButton Name="chartimercolorchar" Grid.Row="1" Grid.Column="0" Header="Use Character Colors" IsChecked="{Binding ElementName=fluentcategoryprofiles,Path=SelectedItem.TimerColorCharacter}"/>
+                                                                    <Fluent:RadioButton Name="chartimercolorthis" Grid.Row="2" Grid.Column="0" Header="Use These Colors:" IsChecked="{Binding ElementName=fluentcategoryprofiles,Path=SelectedItem.TimerColorThis}"/>
+                                                                    <Fluent:TwoLineLabel Text="Font: " Grid.Row="3" Grid.Column="0"/>
+                                                                    <xctk:ColorPicker Name="chartimerfontpick" Grid.Row="3" Grid.Column="1" SelectedColor="{Binding ElementName=fluentcategoryprofiles,Path=SelectedItem.TimerColorFont}"/>
+                                                                    <Fluent:TwoLineLabel Text="Timer Bar:" Grid.Row="4" Grid.Column="0"/>
+                                                                    <xctk:ColorPicker Name="chartimercolorbarpick" Grid.Row="4" Grid.Column="1" SelectedColor="{Binding ElementName=fluentcategoryprofiles,Path=SelectedItem.TimerColorBar}"/>
+                                                                </Grid>
                                                             </wpf:GroupBox>
                                                         </Grid>
                                                     </StackPanel>
@@ -481,6 +563,7 @@
                                             </StackPanel>
                                         </wpf:GroupBox>
                                     </Grid>
+                                    <Fluent:Button Grid.Row="3" Name="fluentcategorysave" Height="35" BorderThickness="0" Header="Save" Size="Middle" Icon="Images\Oxygen-Icons.org-Oxygen-Actions-document-save.ico" Click="Fluentcategorysave_Click"/>
                                 </Grid>
                             </StackPanel>
                         </Fluent:BackstageTabItem>

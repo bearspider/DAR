@@ -2267,39 +2267,40 @@ namespace HEAP
                 }
             }
             fluentcategories.ItemsSource = categorycollection;
-            tabcontrolCategory.DataContext = CategoryTab;
-            tabcontrolCategory.SelectedIndex = categoryindex;
+            //tabcontrolCategory.DataContext = CategoryTab;
+            //tabcontrolCategory.SelectedIndex = categoryindex;
             refreshcategory = false;
+            fluentcategories.SelectedIndex = 0;
+            if(fluentcategoryprofiles.Items.Count > 0)
+            {
+                fluentcategoryprofiles.SelectedIndex = 0;
+            }
         }
         private void Categories_IsSelectedChanged(object sender, EventArgs e)
         {
-            if (categoriesDocument.IsSelected == true)
-            {
-                ribbonMain.SelectedTabIndex = 3;
-                Refresh_Categories();
-            }
-            else
-            {
-                if(categorysave)
-                {
-                    MessageBoxResult mbox = Xceed.Wpf.Toolkit.MessageBox.Show("You have unsaved changes, save now?", "Unsaved Changes", MessageBoxButton.YesNo, MessageBoxImage.Question);
-                    if (mbox.ToString() == "Yes")
-                    {
-                        Console.WriteLine("Categories Ribbon Change");
-                        CategorySave();
-                    }
-                }
-            }
+            //if (categoriesDocument.IsSelected == true)
+            //{
+            //    ribbonMain.SelectedTabIndex = 3;
+            //    Refresh_Categories();
+            //}
+            //else
+            //{
+            //    if(categorysave)
+            //    {
+            //        MessageBoxResult mbox = Xceed.Wpf.Toolkit.MessageBox.Show("You have unsaved changes, save now?", "Unsaved Changes", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            //        if (mbox.ToString() == "Yes")
+            //        {
+            //            Console.WriteLine("Categories Ribbon Change");
+            //            CategorySave();
+            //        }
+            //    }
+            //}
         }
         private void RibbonMain_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             switch (ribbonMain.SelectedTabIndex)
             {
                 case 3:
-                    categoriesDocument.IsSelected = true;
-                    Refresh_Categories();
-                    break;
-                case 4:
                     firedtriggerspane.IsActive = true;
                     break;
                 default:
@@ -2321,13 +2322,13 @@ namespace HEAP
                         CategoryWrapper removedwrapper = (CategoryWrapper)e.RemovedItems[0];
                         Category dbentry = categories.FindById(removedwrapper.CategoryItem.Id);
                         CategorySave(removedwrapper);
-                        button_SaveCategory.IsEnabled = false;
+                        //button_SaveCategory.IsEnabled = false;
                     }
                 }
             }
             else
             {
-                button_SaveCategory.IsEnabled = false;
+                //button_SaveCategory.IsEnabled = false;
             }
         }
         private void CategorySave(CategoryWrapper wrapper)
@@ -2346,27 +2347,27 @@ namespace HEAP
                 categories.Update(updatecategory);
             }
             Refresh_Categories();
-            button_SaveCategory.IsEnabled = false;
+            //button_SaveCategory.IsEnabled = false;
             categorysave = false;
         }
         private void CategorySave()
         {
-            CategoryWrapper wrapper = (CategoryWrapper)tabcontrolCategory.SelectedItem;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<Category> categories = db.GetCollection<Category>("categories");
-                Category updatecategory = categories.FindById(wrapper.CategoryItem.Id);
-                updatecategory = wrapper.CategoryItem;
-                int? profileindex = updatecategory.GetIndex(wrapper.SelectedOverride.ProfileName);
-                if (profileindex != null)
-                {
-                    updatecategory.CharacterOverrides[(int)profileindex] = wrapper.SelectedOverride;
-                }
-                categories.Update(updatecategory);
-            }
-            Refresh_Categories();
-            button_SaveCategory.IsEnabled = false;
-            categorysave = false;
+            //CategoryWrapper wrapper = (CategoryWrapper)tabcontrolCategory.SelectedItem;
+            //using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            //{
+            //    LiteCollection<Category> categories = db.GetCollection<Category>("categories");
+            //    Category updatecategory = categories.FindById(wrapper.CategoryItem.Id);
+            //    updatecategory = wrapper.CategoryItem;
+            //    int? profileindex = updatecategory.GetIndex(wrapper.SelectedOverride.ProfileName);
+            //    if (profileindex != null)
+            //    {
+            //        updatecategory.CharacterOverrides[(int)profileindex] = wrapper.SelectedOverride;
+            //    }
+            //    categories.Update(updatecategory);
+            //}
+            //Refresh_Categories();
+            ////button_SaveCategory.IsEnabled = false;
+            //categorysave = false;
         }
         private void CategoryAdd_Click(object sender, RoutedEventArgs e)
         {
@@ -2412,7 +2413,7 @@ namespace HEAP
                     categoriescol.Delete(Query.EQ("Name", selectedcategory));
                     selectedcategory = "Default";
                     categoryindex = 0;
-                    tabcontrolCategory.SelectedIndex = categoryindex;
+                    //tabcontrolCategory.SelectedIndex = categoryindex;
                 }
             }
             GenerateMasterList("CategoryRemove_Click");
@@ -2422,7 +2423,7 @@ namespace HEAP
             if((sender as TextBox).IsKeyboardFocused)
             {
                 categorysave = true;
-                button_SaveCategory.IsEnabled = true;
+                //button_SaveCategory.IsEnabled = true;
                 tempwrapper = (CategoryWrapper)(sender as TextBox).DataContext;
                 if (tempwrapper != null)
                 {
@@ -2432,7 +2433,7 @@ namespace HEAP
             else
             {
                 categorysave = false;
-                button_SaveCategory.IsEnabled = false;
+                //button_SaveCategory.IsEnabled = false;
             }
             e.Handled = true;
         }
@@ -2441,12 +2442,12 @@ namespace HEAP
             if ((sender as ComboBox).IsMouseOver)
             {
                 categorysave = true;
-                button_SaveCategory.IsEnabled = true;
+                //button_SaveCategory.IsEnabled = true;
             }
             else
             {
                 categorysave = false;
-                button_SaveCategory.IsEnabled = false;
+                //button_SaveCategory.IsEnabled = false;
             }
             e.Handled = true;
         }
@@ -2456,12 +2457,12 @@ namespace HEAP
             {
                 colorpicked = true;
                 categorysave = true;
-                button_SaveCategory.IsEnabled = true;
+                //button_SaveCategory.IsEnabled = true;
             }
             else
             {
                 categorysave = false;
-                button_SaveCategory.IsEnabled = false;
+                //button_SaveCategory.IsEnabled = false;
             }
             e.Handled = true;
         }
@@ -2470,12 +2471,12 @@ namespace HEAP
             if ((sender as ComboBox).IsMouseOver)
             {
                 categorysave = true;
-                button_SaveCategory.IsEnabled = true;
+                //button_SaveCategory.IsEnabled = true;
             }
             else
             {
                 categorysave = false;
-                button_SaveCategory.IsEnabled = false;
+                //button_SaveCategory.IsEnabled = false;
             }
             e.Handled = true;
         }
@@ -2485,12 +2486,12 @@ namespace HEAP
             {
                 colorpicked = true;
                 categorysave = true;
-                button_SaveCategory.IsEnabled = true;
+                //button_SaveCategory.IsEnabled = true;
             }
             else
             {
                 categorysave = false;
-                button_SaveCategory.IsEnabled = false;
+                //button_SaveCategory.IsEnabled = false;
             }
             e.Handled = true;
         }
@@ -2500,12 +2501,12 @@ namespace HEAP
             {
                 colorpicked = true;
                 categorysave = true;
-                button_SaveCategory.IsEnabled = true;
+                //button_SaveCategory.IsEnabled = true;
             }
             else
             {
                 categorysave = false;
-                button_SaveCategory.IsEnabled = false;
+                //button_SaveCategory.IsEnabled = false;
             }
             e.Handled = true;
         }
@@ -2514,12 +2515,12 @@ namespace HEAP
             if ((sender as ComboBox).IsMouseOver)
             {
                 categorysave = true;
-                button_SaveCategory.IsEnabled = true;
+                //button_SaveCategory.IsEnabled = true;
             }
             else
             {
                 categorysave = false;
-                button_SaveCategory.IsEnabled = false;
+                //button_SaveCategory.IsEnabled = false;
             }
             e.Handled = true;
         }
@@ -2529,12 +2530,12 @@ namespace HEAP
             {
                 colorpicked = true;
                 categorysave = true;
-                button_SaveCategory.IsEnabled = true;
+                //button_SaveCategory.IsEnabled = true;
             }
             else
             {
                 categorysave = false;
-                button_SaveCategory.IsEnabled = false;
+                //button_SaveCategory.IsEnabled = false;
             }
             e.Handled = true;
         }
@@ -2543,12 +2544,12 @@ namespace HEAP
             if ((sender as ComboBox).IsMouseOver)
             {
                 categorysave = true;
-                button_SaveCategory.IsEnabled = true;
+                //button_SaveCategory.IsEnabled = true;
             }
             else
             {
                 categorysave = false;
-                button_SaveCategory.IsEnabled = false;
+                //button_SaveCategory.IsEnabled = false;
             }
             e.Handled = true;
         }
@@ -2558,12 +2559,12 @@ namespace HEAP
             {
                 colorpicked = true;
                 categorysave = true;
-                button_SaveCategory.IsEnabled = true;
+                //button_SaveCategory.IsEnabled = true;
             }
             else
             {
                 categorysave = false;
-                button_SaveCategory.IsEnabled = false;
+                //button_SaveCategory.IsEnabled = false;
             }
             e.Handled = true;
         }
@@ -2573,12 +2574,12 @@ namespace HEAP
             {
                 colorpicked = true;
                 categorysave = true;
-                button_SaveCategory.IsEnabled = true;
+                //button_SaveCategory.IsEnabled = true;
             }
             else
             {
                 categorysave = false;
-                button_SaveCategory.IsEnabled = false;
+                //button_SaveCategory.IsEnabled = false;
             }
             e.Handled = true;
         }
@@ -2587,7 +2588,7 @@ namespace HEAP
             if ((sender as RadioButton).IsMouseOver)
             {
                 categorysave = true;
-                button_SaveCategory.IsEnabled = true;
+                //button_SaveCategory.IsEnabled = true;
             }
             else
             {
@@ -2600,7 +2601,7 @@ namespace HEAP
             if ((sender as RadioButton).IsMouseOver)
             {
                 categorysave = true;
-                button_SaveCategory.IsEnabled = true;
+                //button_SaveCategory.IsEnabled = true;
             }
             else
             {
@@ -2613,7 +2614,7 @@ namespace HEAP
             if((sender as RadioButton).IsMouseOver)
             {
                 categorysave = true;
-                button_SaveCategory.IsEnabled = true;
+                //button_SaveCategory.IsEnabled = true;
             }
             else
             {
@@ -2626,7 +2627,7 @@ namespace HEAP
             if ((sender as RadioButton).IsMouseOver)
             {
                 categorysave = true;
-                button_SaveCategory.IsEnabled = true;
+               //button_SaveCategory.IsEnabled = true;
             }
             else
             {
@@ -2639,7 +2640,7 @@ namespace HEAP
             if ((sender as RadioButton).IsMouseOver)
             {
                 categorysave = true;
-                button_SaveCategory.IsEnabled = true;
+               //button_SaveCategory.IsEnabled = true;
             }
             else
             {
@@ -2652,7 +2653,7 @@ namespace HEAP
             if ((sender as RadioButton).IsMouseOver)
             {
                 categorysave = true;
-                button_SaveCategory.IsEnabled = true;
+                //button_SaveCategory.IsEnabled = true;
             }
             else
             {
@@ -2665,7 +2666,7 @@ namespace HEAP
             if ((sender as RadioButton).IsMouseOver)
             {
                 categorysave = true;
-                button_SaveCategory.IsEnabled = true;
+                //button_SaveCategory.IsEnabled = true;
             }
             else
             {
@@ -2678,7 +2679,7 @@ namespace HEAP
             if ((sender as RadioButton).IsMouseOver)
             {
                 categorysave = true;
-                button_SaveCategory.IsEnabled = true;
+                //button_SaveCategory.IsEnabled = true;
             }
             else
             {
@@ -2691,7 +2692,7 @@ namespace HEAP
             if ((sender as RadioButton).IsMouseOver)
             {
                 categorysave = true;
-                button_SaveCategory.IsEnabled = true;
+               //button_SaveCategory.IsEnabled = true;
             }
             else
             {
@@ -2704,7 +2705,7 @@ namespace HEAP
             if ((sender as RadioButton).IsMouseOver)
             {
                 categorysave = true;
-                button_SaveCategory.IsEnabled = true;
+                //button_SaveCategory.IsEnabled = true;
             }
             else
             {
@@ -2717,7 +2718,7 @@ namespace HEAP
             if ((sender as RadioButton).IsMouseOver)
             {
                 categorysave = true;
-                button_SaveCategory.IsEnabled = true;
+               //button_SaveCategory.IsEnabled = true;
             }
             else
             {
@@ -2730,7 +2731,7 @@ namespace HEAP
             if ((sender as RadioButton).IsMouseOver)
             {
                 categorysave = true;
-                button_SaveCategory.IsEnabled = true;
+                //button_SaveCategory.IsEnabled = true;
             }
             else
             {
@@ -2743,7 +2744,7 @@ namespace HEAP
             if ((sender as RadioButton).IsMouseOver)
             {
                 categorysave = true;
-                button_SaveCategory.IsEnabled = true;
+                //button_SaveCategory.IsEnabled = true;
             }
             else
             {
@@ -2756,7 +2757,7 @@ namespace HEAP
             if ((sender as RadioButton).IsMouseOver)
             {
                 categorysave = true;
-                button_SaveCategory.IsEnabled = true;
+                //button_SaveCategory.IsEnabled = true;
             }
             else
             {
@@ -2781,10 +2782,10 @@ namespace HEAP
                 category.DefaultCategory = true;
                 categoriescol.Update(category);
             }
-            button_CategorySetDefault.Focus();
+            //button_CategorySetDefault.Focus();
             int tabindex = categoryindex;
             Refresh_Categories();
-            tabcontrolCategory.SelectedIndex = tabindex;
+            //tabcontrolCategory.SelectedIndex = tabindex;
         }
         private void Button_SaveCategory_Click(object sender, RoutedEventArgs e)
         {
@@ -4454,7 +4455,80 @@ namespace HEAP
 
         private void Fluentcategorysave_Click(object sender, RoutedEventArgs e)
         {
+            int index = fluentcategories.SelectedIndex;
+            int charindex = fluentcategoryprofiles.SelectedIndex;
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                LiteCollection<Category> categories = db.GetCollection<Category>("categories");
+                categories.Update((Category)fluentcategories.SelectedItem);
+            }
+            Refresh_Categories();
+            fluentcategories.SelectedIndex = index;
+            if(charindex != -1)
+            {
+                fluentcategoryprofiles.SelectedIndex = charindex;
+            }
+        }
 
+        private void Fluentaddcategory_Click(object sender, RoutedEventArgs e)
+        {
+            Category newcategory = new Category();
+            newcategory.Name = "NewCategory";
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+                LiteCollection<CharacterProfile> profilecol = db.GetCollection<CharacterProfile>("profiles");
+                Category exists = categoriescol.FindOne(x => x.Name == newcategory.Name);
+                if(exists != null)
+                {
+                    newcategory.Name = Guid.NewGuid().ToString();
+                }
+                foreach (var profile in profilecol.FindAll())
+                {
+                    CharacterOverride newoverride = new CharacterOverride();
+                    newoverride.ProfileName = profile.ProfileName;
+                    newcategory.CharacterOverrides.Add(newoverride);
+                }
+                categoriescol.Insert(newcategory);
+            }
+            Refresh_Categories();
+            int index = fluentcategories.Items.Count;
+            fluentcategories.SelectedIndex = (index - 1);
+        }
+
+        private void Fluentremovecategory_Click(object sender, RoutedEventArgs e)
+        {
+            Category selectedcategory = (Category)fluentcategories.SelectedItem;
+            if (selectedcategory.Name != "Default")
+            {
+                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                {
+                    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+                    LiteCollection<Trigger> triggerscol = db.GetCollection<Trigger>("triggers");
+                    Category category = categoriescol.FindOne(Query.EQ("Name", selectedcategory.Name));
+                    Category defaultcategory = categoriescol.FindOne(Query.EQ("Name", "Default"));
+                    //If a trigger is in this category, reset it's category to default
+                    foreach (var trigger in triggerscol.FindAll())
+                    {
+                        if (trigger.TriggerCategory == category.Id)
+                        {
+                            trigger.TriggerCategory = defaultcategory.Id;
+                            triggerscol.Update(trigger);
+                        }
+                    }
+                    categoriescol.Delete(Query.EQ("Name", selectedcategory.Name));
+                }
+            }
+            GenerateMasterList("CategoryRemove_Click");
+            Refresh_Categories();
+        }
+
+        private void Fluentcategories_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if(fluentcategoryprofiles.Items.Count > 0)
+            {
+                fluentcategoryprofiles.SelectedIndex = 0;
+            }
         }
     }
 }

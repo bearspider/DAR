@@ -849,17 +849,23 @@ namespace HEAP
             {
                 using (FileStream filestream = File.Open(character.LogFile, System.IO.FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
-                    filestream.Seek(0, SeekOrigin.End);
+                    character.LastLogPosition = filestream.Seek(0, SeekOrigin.End);
+                    FileSystemWatcher filewatcher = new FileSystemWatcher();
+                    filewatcher.Path = Path.GetDirectoryName(character.LogFile);
+                    filewatcher.Filter = Path.GetFileName(character.LogFile);
                     using (StreamReader streamReader = new StreamReader(filestream))
                     {
                         while (true)
                         {
-                            String capturedLine = streamReader.ReadLine();
+                            WaitForChangedResult cr = filewatcher.WaitForChanged(WatcherChangeTypes.Changed,-1);
+                            Console.WriteLine($"{cr.TimedOut}");
+                            String capturedLine = streamReader.ReadToEnd();
                             if (capturedLine != null)
                             {
                                 Stopwatch stopwatch = new Stopwatch();
                                 stopwatch.Start();
-                                UpdateLineCount(1);
+                                Boolean triggered = false;
+                                //UpdateLineCount(1);
                                 if (capturedLine.Contains(@"{HEAP:"))
                                 {
                                     Match sharingmatch = GlobalVariables.shareRegex.Match(capturedLine);
@@ -920,20 +926,39 @@ namespace HEAP
                                         }
                                         if (foundmatch && doc.Value.Contains(character.Id))
                                         {
+                                            triggered = true;
                                             if (stopfirstmatch)
                                             {
                                                 state.Break();
                                             }
-                                            Match eqline = GlobalVariables.eqRegex.Match(capturedLine);
-                                            Console.WriteLine($"Matched Trigger {doc.Key.Id}");
-                                            Stopwatch firetrigger = new Stopwatch();
-                                            firetrigger.Start();
-                                            FireTrigger(doc.Key, character, capturedLine);
-                                            firetrigger.Stop();
-                                            Console.WriteLine($"Fired Trigger in {firetrigger.Elapsed.Seconds}");
+                                            using (StringReader stringread = new StringReader(capturedLine))
+                                            {
+                                                String newstring;
+                                                while ((newstring = stringread.ReadLine()) != null)
+                                                {
+                                                    if (newstring.ToUpper().Contains(doc.Key.SearchText.ToUpper()))
+                                                    {
+                                                        Console.WriteLine($"Matched Trigger {doc.Key.Id}");
+                                                        Stopwatch firetrigger = new Stopwatch();
+                                                        firetrigger.Start();
+                                                        FireTrigger(doc.Key, character, newstring);
+                                                        firetrigger.Stop();
+                                                        Console.WriteLine($"Fired Trigger in {firetrigger.Elapsed}");
+                                                    }
+                                                }
+                                            }
+                                            //Match eqline = GlobalVariables.eqRegex.Match(capturedLine);
+                                            //find specific line that matched
+
                                         }
                                     });
                                     stopwatch.Stop();
+                                    if(triggered)
+                                    {
+                                        Console.WriteLine($"Time to match: {stopwatch.Elapsed}");
+                                        triggered = false;
+                                    }
+                                    
                                     if (pushbackToggle)
                                     {
                                         PushMonitor(capturedLine, character.ProfileName);
@@ -944,7 +969,6 @@ namespace HEAP
                             {
                                 break;
                             }
-                            Thread.Sleep(1);
                         }
                     }
                 }
@@ -4120,6 +4144,80 @@ namespace HEAP
         }
         #endregion
         #region Fluent Backstage
+        private void Fluentcategorysave_Click(object sender, RoutedEventArgs e)
+        {
+            int index = fluentcategories.SelectedIndex;
+            int charindex = fluentcategoryprofiles.SelectedIndex;
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                LiteCollection<Category> categories = db.GetCollection<Category>("categories");
+                categories.Update((Category)fluentcategories.SelectedItem);
+            }
+            Refresh_Categories();
+            fluentcategories.SelectedIndex = index;
+            if (charindex != -1)
+            {
+                fluentcategoryprofiles.SelectedIndex = charindex;
+            }
+        }
+        private void Fluentaddcategory_Click(object sender, RoutedEventArgs e)
+        {
+            Category newcategory = new Category();
+            newcategory.Name = "NewCategory";
+            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            {
+                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+                LiteCollection<CharacterProfile> profilecol = db.GetCollection<CharacterProfile>("profiles");
+                Category exists = categoriescol.FindOne(x => x.Name == newcategory.Name);
+                if (exists != null)
+                {
+                    newcategory.Name = Guid.NewGuid().ToString();
+                }
+                foreach (var profile in profilecol.FindAll())
+                {
+                    CharacterOverride newoverride = new CharacterOverride();
+                    newoverride.ProfileName = profile.ProfileName;
+                    newcategory.CharacterOverrides.Add(newoverride);
+                }
+                categoriescol.Insert(newcategory);
+            }
+            Refresh_Categories();
+            int index = fluentcategories.Items.Count;
+            fluentcategories.SelectedIndex = (index - 1);
+        }
+        private void Fluentremovecategory_Click(object sender, RoutedEventArgs e)
+        {
+            Category selectedcategory = (Category)fluentcategories.SelectedItem;
+            if (selectedcategory.Name != "Default")
+            {
+                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+                {
+                    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+                    LiteCollection<Trigger> triggerscol = db.GetCollection<Trigger>("triggers");
+                    Category category = categoriescol.FindOne(Query.EQ("Name", selectedcategory.Name));
+                    Category defaultcategory = categoriescol.FindOne(Query.EQ("Name", "Default"));
+                    //If a trigger is in this category, reset it's category to default
+                    foreach (var trigger in triggerscol.FindAll())
+                    {
+                        if (trigger.TriggerCategory == category.Id)
+                        {
+                            trigger.TriggerCategory = defaultcategory.Id;
+                            triggerscol.Update(trigger);
+                        }
+                    }
+                    categoriescol.Delete(Query.EQ("Name", selectedcategory.Name));
+                }
+            }
+            GenerateMasterList("CategoryRemove_Click");
+            Refresh_Categories();
+        }
+        private void Fluentcategories_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (fluentcategoryprofiles.Items.Count > 0)
+            {
+                fluentcategoryprofiles.SelectedIndex = 0;
+            }
+        }
         private String SelectFolder(String currentpath)
         {
             String rval = currentpath;
@@ -4453,82 +4551,6 @@ namespace HEAP
         }
         #endregion
 
-        private void Fluentcategorysave_Click(object sender, RoutedEventArgs e)
-        {
-            int index = fluentcategories.SelectedIndex;
-            int charindex = fluentcategoryprofiles.SelectedIndex;
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<Category> categories = db.GetCollection<Category>("categories");
-                categories.Update((Category)fluentcategories.SelectedItem);
-            }
-            Refresh_Categories();
-            fluentcategories.SelectedIndex = index;
-            if(charindex != -1)
-            {
-                fluentcategoryprofiles.SelectedIndex = charindex;
-            }
-        }
 
-        private void Fluentaddcategory_Click(object sender, RoutedEventArgs e)
-        {
-            Category newcategory = new Category();
-            newcategory.Name = "NewCategory";
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-            {
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                LiteCollection<CharacterProfile> profilecol = db.GetCollection<CharacterProfile>("profiles");
-                Category exists = categoriescol.FindOne(x => x.Name == newcategory.Name);
-                if(exists != null)
-                {
-                    newcategory.Name = Guid.NewGuid().ToString();
-                }
-                foreach (var profile in profilecol.FindAll())
-                {
-                    CharacterOverride newoverride = new CharacterOverride();
-                    newoverride.ProfileName = profile.ProfileName;
-                    newcategory.CharacterOverrides.Add(newoverride);
-                }
-                categoriescol.Insert(newcategory);
-            }
-            Refresh_Categories();
-            int index = fluentcategories.Items.Count;
-            fluentcategories.SelectedIndex = (index - 1);
-        }
-
-        private void Fluentremovecategory_Click(object sender, RoutedEventArgs e)
-        {
-            Category selectedcategory = (Category)fluentcategories.SelectedItem;
-            if (selectedcategory.Name != "Default")
-            {
-                using (var db = new LiteDatabase(GlobalVariables.defaultDB))
-                {
-                    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                    LiteCollection<Trigger> triggerscol = db.GetCollection<Trigger>("triggers");
-                    Category category = categoriescol.FindOne(Query.EQ("Name", selectedcategory.Name));
-                    Category defaultcategory = categoriescol.FindOne(Query.EQ("Name", "Default"));
-                    //If a trigger is in this category, reset it's category to default
-                    foreach (var trigger in triggerscol.FindAll())
-                    {
-                        if (trigger.TriggerCategory == category.Id)
-                        {
-                            trigger.TriggerCategory = defaultcategory.Id;
-                            triggerscol.Update(trigger);
-                        }
-                    }
-                    categoriescol.Delete(Query.EQ("Name", selectedcategory.Name));
-                }
-            }
-            GenerateMasterList("CategoryRemove_Click");
-            Refresh_Categories();
-        }
-
-        private void Fluentcategories_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if(fluentcategoryprofiles.Items.Count > 0)
-            {
-                fluentcategoryprofiles.SelectedIndex = 0;
-            }
-        }
     }
 }

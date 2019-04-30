@@ -26,6 +26,7 @@ namespace HEAP
         private string _voice;
         private ArrayList _triggers;
         private SpeechSynthesizer _synth;
+        private long _lastlogposition;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -48,6 +49,11 @@ namespace HEAP
             _synth.Volume = _volumeValue;
             _synth.SelectVoice(_voice);
             _triggers = new ArrayList();
+        }
+        public long LastLogPosition
+        {
+            get { return _lastlogposition; }
+            set { _lastlogposition = value; }
         }
         public int Id
         {

@@ -853,6 +853,9 @@ namespace HEAP
                     FileSystemWatcher filewatcher = new FileSystemWatcher();
                     filewatcher.Path = Path.GetDirectoryName(character.LogFile);
                     filewatcher.Filter = Path.GetFileName(character.LogFile);
+                    filewatcher.EnableRaisingEvents = true;
+                    filewatcher.Error += Filewatcher_Error;
+                    filewatcher.InternalBufferSize = 16384;
                     using (StreamReader streamReader = new StreamReader(filestream))
                     {
                         while (true)
@@ -862,10 +865,11 @@ namespace HEAP
                             String capturedLine = streamReader.ReadToEnd();
                             if (capturedLine != null)
                             {
+                                string[] capturedlines = capturedLine.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
                                 Stopwatch stopwatch = new Stopwatch();
                                 stopwatch.Start();
                                 Boolean triggered = false;
-                                //UpdateLineCount(1);
+                                UpdateLineCount(capturedlines.Count<string>());
                                 if (capturedLine.Contains(@"{HEAP:"))
                                 {
                                     Match sharingmatch = GlobalVariables.shareRegex.Match(capturedLine);
@@ -879,18 +883,18 @@ namespace HEAP
                                     Parallel.ForEach(listoftriggers, (KeyValuePair<Trigger, ArrayList> doc, ParallelLoopState state) =>
                                     {
                                         //Do regex match if enabled otherwise string.contains
+                                        //capturedline is a whole block of text.  If we match something inside that block, then compare each single line to find it.
                                         Boolean foundmatch = false;
                                         if (doc.Key.Regex)
-                                        {
-                                            Boolean checkregex = true;
+                                        {                                            
                                             if (doc.Key.Fastcheck)
                                             {
-                                                if (!capturedLine.Contains(doc.Key.Digest))
+                                                if (capturedLine.ToUpper().Contains(doc.Key.Digest.ToUpper()))
                                                 {
-                                                    checkregex = false;
+                                                    foundmatch = true;
                                                 }
                                             }
-                                            if (checkregex)
+                                            else
                                             {
                                                 foundmatch = (Regex.Match(capturedLine, doc.Key.SearchText, RegexOptions.IgnoreCase)).Success;
                                             }
@@ -919,7 +923,6 @@ namespace HEAP
                                                 //TO DO: Probably implement extra stuff on a early end trigger
                                                 if (endearly)
                                                 {
-                                                    Console.WriteLine($"Early end for {doc.Key.Name} => {endearly}");
                                                     ClearTimer(doc.Key);
                                                 }
                                             }
@@ -927,29 +930,36 @@ namespace HEAP
                                         if (foundmatch && doc.Value.Contains(character.Id))
                                         {
                                             triggered = true;
+
+                                            foreach(string newstring in capturedlines)
+                                            {
+                                                Boolean starttrigger = false;
+                                                if(doc.Key.Regex)
+                                                {
+                                                    if((Regex.Match(capturedLine, doc.Key.SearchText, RegexOptions.IgnoreCase)).Success)
+                                                    {
+                                                        starttrigger = true;
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    if ((newstring.ToUpper().Contains(doc.Key.SearchText.ToUpper())))
+                                                    {
+                                                        starttrigger = true;
+                                                    }
+                                                }
+                                                if(starttrigger)
+                                                {
+                                                    Stopwatch firetrigger = new Stopwatch();
+                                                    firetrigger.Start();
+                                                    FireTrigger(doc.Key, character, newstring);
+                                                    firetrigger.Stop();
+                                                }
+                                            }
                                             if (stopfirstmatch)
                                             {
                                                 state.Break();
                                             }
-                                            using (StringReader stringread = new StringReader(capturedLine))
-                                            {
-                                                String newstring;
-                                                while ((newstring = stringread.ReadLine()) != null)
-                                                {
-                                                    if (newstring.ToUpper().Contains(doc.Key.SearchText.ToUpper()))
-                                                    {
-                                                        Console.WriteLine($"Matched Trigger {doc.Key.Id}");
-                                                        Stopwatch firetrigger = new Stopwatch();
-                                                        firetrigger.Start();
-                                                        FireTrigger(doc.Key, character, newstring);
-                                                        firetrigger.Stop();
-                                                        Console.WriteLine($"Fired Trigger in {firetrigger.Elapsed}");
-                                                    }
-                                                }
-                                            }
-                                            //Match eqline = GlobalVariables.eqRegex.Match(capturedLine);
-                                            //find specific line that matched
-
                                         }
                                     });
                                     stopwatch.Stop();
@@ -975,6 +985,12 @@ namespace HEAP
             });
             #endregion
         }
+
+        private void Filewatcher_Error(object sender, ErrorEventArgs e)
+        {
+            Console.WriteLine(e.GetException().GetType().ToString());
+        }
+
         private void ClearTimer(Trigger activetrigger)
         {
             Console.WriteLine($"Clearing Timer for {activetrigger.TimerName}");
@@ -3149,15 +3165,20 @@ namespace HEAP
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 LiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
-                TriggerGroup newgroup = new TriggerGroup
+                //Determine if the group already exists
+                TriggerGroup newgroup = triggergroups.FindOne(x => x.UniqueId == (string)token.SelectToken("UniqueId"));
+                //If it doesn't exist, create a new group
+                if (newgroup == null)
                 {
-                    TriggerGroupName = (string)token.SelectToken("TriggerGroupName")
-                };
-                //if this was at the rootnode just put it a zero.
-                if (parentid == "0")
-                {
-                    newgroup.Parent = "0";
+                    newgroup.TriggerGroupName = (string)token.SelectToken("TriggerGroupName");
+                    //if this was at the rootnode just put it a zero.
+                    if (parentid == "0")
+                    {
+                        newgroup.Parent = "0";
+                    }
                 }
+                
+
                 else
                 {
                     TriggerGroup parentgroup = triggergroups.FindOne(x => x.UniqueId == parentid);
@@ -3321,7 +3342,7 @@ namespace HEAP
                 SearchText = (String)jsontoken["searchText"],
                 Comments = (String)jsontoken["comments"],
                 Regex = (bool)jsontoken["regex"],
-                Fastcheck = (bool)jsontoken["fastcheck"],
+                Fastcheck = false,
                 Parent = parentid.ToString(),
                 TriggerCategory = 0,
                 Displaytext = (String)jsontoken["displaytext"],
@@ -3364,6 +3385,11 @@ namespace HEAP
                     Searchtext = (String)earlytoken["searchtext"]
                 };
                 newtrigger.EndEarlyText.Add(st);                
+            }
+            //Protecting from stupid people.  If using regex, always use fast check
+            if(newtrigger.Regex)
+            {
+                newtrigger.Fastcheck = true;
             }
             mergetriggers.Add(newtrigger);
             triggerid++;
@@ -3586,7 +3612,7 @@ namespace HEAP
                 SearchText = (String)jsontoken["TriggerText"],
                 Comments = (String)jsontoken["Comments"],
                 Regex = (bool)jsontoken["EnableRegex"],
-                Fastcheck = (bool)jsontoken["UseFastCheck"],
+                Fastcheck = false,
                 Parent = parentid,
                 TriggerCategory = 0,
                 Displaytext = (String)jsontoken["DisplayText"],
@@ -3609,6 +3635,11 @@ namespace HEAP
                 ResetCounter = (bool)jsontoken["UseCounterResetTimer"],
                 ResetCounterDuration = (int)jsontoken["CounterResetDuration"],
             };
+            //protect from stupid people, if using regex always use fast check
+            if(newtrigger.Regex)
+            {
+                newtrigger.Fastcheck = true;
+            }
             //Set Timer Behavior
             switch ((String)jsontoken["TimerStartBehavior"])
             {

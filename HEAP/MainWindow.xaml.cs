@@ -38,6 +38,7 @@ namespace HEAP
     {
         public static string defaultPath = @"C:\HEAP";
         public static string defaultDB = $"{defaultPath}\\eqtriggers.db";
+        public static ConnectionString connectionstring = new ConnectionString(@"filename=""C:\HEAP\eqtriggers.db""; Connection = shared;");
         public static string backupDB = $"{defaultPath}\\BackupDB";
         public static Regex eqRegex = new Regex(@"\[(?<eqtime>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\](?<stringToMatch>.*)",RegexOptions.Compiled);
         public static Regex shareRegex = new Regex(@".*?\{HEAP:(?<GUID>.*?)\}",RegexOptions.Compiled);
@@ -316,13 +317,13 @@ namespace HEAP
             }
             //Check if database exists, if it does, make a backup.
             //Else, this is a new instance.  Set the log maintenance start as today.
-            if(File.Exists(GlobalVariables.defaultDB))
+            if (File.Exists(GlobalVariables.defaultDB))
             {
                 if (!Directory.Exists(GlobalVariables.backupDB))
                 {
                     Directory.CreateDirectory(GlobalVariables.backupDB);
                 }
-                File.Copy(GlobalVariables.defaultDB, (GlobalVariables.backupDB + @"\eqtriggers.db"),true);
+                File.Copy(GlobalVariables.defaultDB, (GlobalVariables.backupDB + @"\eqtriggers.db"), true);
             }
             else
             {
@@ -330,13 +331,13 @@ namespace HEAP
                 Properties.Settings.Default.Save();
             }
             //Load settings
+            Boolean newdb = false;
             using (LiteDatabase db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 ILiteCollection<Setting> settings = db.GetCollection<Setting>("settings");
                 if (settings.Count() == 0)
                 {
-                    //populate default settings
-                    DefaultSettings();
+                    newdb = true;
                 }
                 else
                 {
@@ -346,6 +347,11 @@ namespace HEAP
                     }
                     LoadSettingsTab();
                 }
+            }
+            if (newdb)
+            {
+                //populate default settings
+                DefaultSettings();
             }
             //Setup the system tray
             MyNotifyIcon = new System.Windows.Forms.NotifyIcon();
@@ -382,7 +388,7 @@ namespace HEAP
 
             //Deploy Overlays
             //Check if no overlays exist.  If none exist, prompt the editors to create the first entries.
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            using (var db = new LiteDatabase(GlobalVariables.connectionstring))
             {
                 ILiteCollection<CharacterProfile> dbcharacterProfiles = db.GetCollection<CharacterProfile>("profiles");
                 ILiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
@@ -395,7 +401,6 @@ namespace HEAP
                     newProfile.Topmost = true;
                     while ((bool)newProfile.ShowDialog()) { };
                 }
-
                 //If no categories exist(Blank Database), create a default category. DEFAULT category is immutable.
                 defaultcategory = categoriescol.FindOne(Query.EQ("Name", "Default"));
                 if (defaultcategory == null)
@@ -412,7 +417,7 @@ namespace HEAP
                     defaultcategory.AvailableTextOverlays = availoverlaytexts;
                     categoriescol.Insert(defaultcategory);
                 }
-            }
+            }  
             //Update List View
             UpdateListView();
 
@@ -1298,14 +1303,14 @@ namespace HEAP
         private void TriggerEdit_Click(object sender, RoutedEventArgs e)
         {
             TreeViewModel root = (TreeViewModel)treeViewTriggers.SelectedItem;
+            Trigger currentTrigger = new Trigger();
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 var triggerCollection = db.GetCollection<Trigger>("triggers");
-                var currentTrigger = triggerCollection.FindById(root.Id);
-                //var currentTrigger = triggerCollection.FindOne(Query.EQ("Name", root.Name));
-                TriggerEditor triggerDialog = new TriggerEditor(currentTrigger.Id);
-                triggerDialog.Show();
+                currentTrigger = triggerCollection.Query().Where(x => x.UniqueId.Equals(root.Id)).First();
             }
+            TriggerEditor triggerDialog = new TriggerEditor(currentTrigger.Id);
+            triggerDialog.Show();
         }
         private void Availabletriggers_IsSelectedChanged(object sender, EventArgs e)
         {
@@ -1319,9 +1324,9 @@ namespace HEAP
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 var col = db.GetCollection<Trigger>("triggers");
-                Trigger deadtrigger = col.FindOne(Query.EQ("Name", triggername));
+                Trigger deadtrigger = col.FindOne(Query.EQ("UniqueId", triggername));
                 var triggergroup = db.GetCollection<TriggerGroup>("triggergroups");
-                var getGroup = triggergroup.FindById(deadtrigger.Parent);
+                TriggerGroup getGroup = triggergroup.FindOne(Query.EQ("UniqueId", deadtrigger.Parent));
                 var colProfiles = db.GetCollection<CharacterProfile>("profiles");
                 var profiles = colProfiles.FindAll();
                 foreach (CharacterProfile profile in profiles)

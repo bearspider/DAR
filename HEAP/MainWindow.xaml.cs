@@ -850,6 +850,15 @@ namespace HEAP
             {
                 ScheduledMaintenance(character.LogFile, logmaintenance);
             }
+            List<Trigger> triggerlist = new List<Trigger>();
+            foreach (string triggerguid in character.Triggers)
+            {
+                Trigger trigger = dballtriggers.Find(x => x.UniqueId == triggerguid);
+                if (trigger != null)
+                {
+                    triggerlist.Add(trigger);
+                }
+            }
             #region threading
             await Task.Run(() =>
             {
@@ -861,7 +870,7 @@ namespace HEAP
                     filewatcher.Filter = Path.GetFileName(character.LogFile);
                     filewatcher.EnableRaisingEvents = true;
                     filewatcher.Error += Filewatcher_Error;
-                    filewatcher.InternalBufferSize = 16384;
+                    filewatcher.InternalBufferSize = 65536;
                     using (StreamReader streamReader = new StreamReader(filestream))
                     {
                         while (true)
@@ -886,35 +895,35 @@ namespace HEAP
                                 }
                                 else
                                 {
-                                    Parallel.ForEach(listoftriggers, (KeyValuePair<Trigger, ArrayList> doc, ParallelLoopState state) =>
+                                    Parallel.ForEach(triggerlist, (Trigger doc, ParallelLoopState state) =>
                                     {
                                         //Do regex match if enabled otherwise string.contains
                                         //capturedline is a whole block of text.  If we match something inside that block, then compare each single line to find it.
                                         Boolean foundmatch = false;
-                                        if (doc.Key.Regex)
-                                        {                                            
-                                            if (doc.Key.Fastcheck)
+                                        if (doc.Regex)
+                                        {
+                                            if (doc.Fastcheck)
                                             {
-                                                if (capturedLine.ToUpper().Contains(doc.Key.Digest.ToUpper()))
+                                                if (capturedLine.ToUpper().Contains(doc.Digest.ToUpper()))
                                                 {
                                                     foundmatch = true;
                                                 }
                                             }
                                             else
                                             {
-                                                foundmatch = (Regex.Match(capturedLine, doc.Key.SearchText, RegexOptions.IgnoreCase)).Success;
+                                                foundmatch = (Regex.Match(capturedLine, doc.SearchText, RegexOptions.IgnoreCase)).Success;
                                             }
                                         }
                                         else
                                         {
                                             String ucaselog = capturedLine.ToUpper();
-                                            String ucasetrigger = doc.Key.SearchText.ToUpper();
+                                            String ucasetrigger = doc.SearchText.ToUpper();
                                             foundmatch = ucaselog.Contains(ucasetrigger);
                                         }
-                                        if (doc.Key.EndEarlyText.Count > 0)
+                                        if (doc.EndEarlyText.Count > 0)
                                         {
                                             Boolean endearly = false;
-                                            foreach (SearchText earlyend in doc.Key.EndEarlyText)
+                                            foreach (SearchText earlyend in doc.EndEarlyText)
                                             {
                                                 if (earlyend.Regex)
                                                 {
@@ -929,36 +938,36 @@ namespace HEAP
                                                 //TO DO: Probably implement extra stuff on a early end trigger
                                                 if (endearly)
                                                 {
-                                                    ClearTimer(doc.Key);
+                                                    ClearTimer(doc);
                                                 }
                                             }
                                         }
-                                        if (foundmatch && doc.Value.Contains(character.Id))
+                                        if (foundmatch)
                                         {
                                             triggered = true;
 
-                                            foreach(string newstring in capturedlines)
+                                            foreach (string newstring in capturedlines)
                                             {
                                                 Boolean starttrigger = false;
-                                                if(doc.Key.Regex)
+                                                if (doc.Regex)
                                                 {
-                                                    if((Regex.Match(capturedLine, doc.Key.SearchText, RegexOptions.IgnoreCase)).Success)
+                                                    if ((Regex.Match(capturedLine, doc.SearchText, RegexOptions.IgnoreCase)).Success)
                                                     {
                                                         starttrigger = true;
                                                     }
                                                 }
                                                 else
                                                 {
-                                                    if ((newstring.ToUpper().Contains(doc.Key.SearchText.ToUpper())))
+                                                    if ((newstring.ToUpper().Contains(doc.SearchText.ToUpper())))
                                                     {
                                                         starttrigger = true;
                                                     }
                                                 }
-                                                if(starttrigger)
+                                                if (starttrigger)
                                                 {
                                                     Stopwatch firetrigger = new Stopwatch();
                                                     firetrigger.Start();
-                                                    FireTrigger(doc.Key, character, newstring);
+                                                    //FireTrigger(doc, character, newstring);
                                                     firetrigger.Stop();
                                                 }
                                             }
@@ -975,10 +984,10 @@ namespace HEAP
                                         triggered = false;
                                     }
                                     
-                                    if (pushbackToggle)
-                                    {
-                                        PushMonitor(capturedLine, character.ProfileName);
-                                    }
+                                //    if (pushbackToggle)
+                                //    {
+                                //        PushMonitor(capturedLine, character.ProfileName);
+                                //    }
                                 }
                             }
                             if (characterProfiles.Any(x => x.Monitor == false && x.ProfileName == character.ProfileName))
@@ -3093,10 +3102,10 @@ namespace HEAP
                 if (matchfile.Success)
                 {
                     newpath = logmaintenance.ArchiveFolder + @"\" + matchfile.Groups["filename"].Value.ToString() + "_" + filepostfix + ".txt";
-                    File.Move(logfile, newpath);
+                    //File.Move(logfile, newpath);
                     //create new file
-                    FileStream created = File.Create(logfile);
-                    created.Close();
+                    //FileStream created = File.Create(logfile);
+                    //created.Close();
                 }
             }
             if (logmaintenance.CompressArchive == "true")

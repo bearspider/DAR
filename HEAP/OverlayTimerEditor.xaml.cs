@@ -32,7 +32,7 @@ namespace HEAP
             InitializeComponent();
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");
+                ILiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");
                 OverlayTimer window = overlaytimers.FindOne(Query.EQ("Name", toedit));
                 this.Width = window.WindowWidth;
                 this.Height = window.WindowHeight;
@@ -91,7 +91,7 @@ namespace HEAP
             };
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");
+                ILiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");
                 var getTimer = overlaytimers.FindOne(Query.EQ("Name", timer.Name));
                 if(getTimer != null)
                 {

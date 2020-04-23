@@ -8,7 +8,7 @@
         xmlns:local="clr-namespace:HEAP"
         xmlns:Custom="http://schemas.microsoft.com/winfx/2006/xaml/presentation/ribbon"
         xmlns:Fluent="urn:fluent-ribbon"
-        xmlns:wpf="http://schemas.microsoft.com/netfx/2009/xaml/presentation"
+        xmlns:wpf="http://schemas.microsoft.com/netfx/2009/xaml/presentation" 
     x:Class="HEAP.MainWindow"
         mc:Ignorable="d"
         Title="HEAP" Height="812" Width="1170" Icon="Images/Tonev-Windows-7-Windows-7-headphone.ico" 
@@ -716,7 +716,7 @@
                            BorderBrush="Black"
                            BorderThickness="5" Margin="0,0,0,0" Grid.Row="1">
             <xcad:DockingManager.Theme>
-                <xcad:Vs2013DarkTheme />
+                <xcad:VS2010Theme/>
             </xcad:DockingManager.Theme>
 
             <xcad:LayoutRoot x:Name="_layoutRoot">

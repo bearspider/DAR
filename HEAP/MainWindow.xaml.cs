@@ -1,4 +1,5 @@
-﻿using LiteDB;
+﻿using AvalonDock.Themes;
+using LiteDB;
 using Microsoft.Win32;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -27,7 +28,6 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Xml;
-using Xceed.Wpf.AvalonDock.Themes;
 
 namespace HEAP
 {
@@ -330,9 +330,9 @@ namespace HEAP
                 Properties.Settings.Default.Save();
             }
             //Load settings
-            using (var db = new LiteDatabase(GlobalVariables.defaultDB))
+            using (LiteDatabase db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<Setting> settings = db.GetCollection<Setting>("settings");
+                ILiteCollection<Setting> settings = db.GetCollection<Setting>("settings");
                 if (settings.Count() == 0)
                 {
                     //populate default settings
@@ -384,8 +384,8 @@ namespace HEAP
             //Check if no overlays exist.  If none exist, prompt the editors to create the first entries.
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<CharacterProfile> dbcharacterProfiles = db.GetCollection<CharacterProfile>("profiles");
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+                ILiteCollection<CharacterProfile> dbcharacterProfiles = db.GetCollection<CharacterProfile>("profiles");
+                ILiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
 
                 //Load saved characters, populates characterProfiles.  If no characters then prompt to create one.
                 IEnumerable<CharacterProfile> profilecollection = dbcharacterProfiles.FindAll();
@@ -395,28 +395,7 @@ namespace HEAP
                     newProfile.Topmost = true;
                     while ((bool)newProfile.ShowDialog()) { };
                 }
-                UpdateListView();
 
-                //Find all text overlays, if none create one, then deploy.
-                OverlayText_Refresh();
-                foreach (OverlayText overlay in availoverlaytexts)
-                {
-                    OverlayTextWindow newWindow = new OverlayTextWindow();
-                    newWindow.SetProperties(overlay);
-                    newWindow.ShowInTaskbar = false;
-                    textWindows.Add(newWindow);
-                    newWindow.Show();
-                }
-                //Find all timer overlays, if none create one, then deploy.
-                OverlayTimer_Refresh();
-                foreach (OverlayTimer overlay in availoverlaytimers)
-                {
-                    OverlayTimerWindow newWindow = new OverlayTimerWindow();
-                    newWindow.SetProperties(overlay);
-                    newWindow.ShowInTaskbar = false;
-                    timerWindows.Add(newWindow);
-                    newWindow.Show();
-                }
                 //If no categories exist(Blank Database), create a default category. DEFAULT category is immutable.
                 defaultcategory = categoriescol.FindOne(Query.EQ("Name", "Default"));
                 if (defaultcategory == null)
@@ -433,11 +412,37 @@ namespace HEAP
                     defaultcategory.AvailableTextOverlays = availoverlaytexts;
                     categoriescol.Insert(defaultcategory);
                 }
-                Refresh_Categories();
+            }
+            //Update List View
+            UpdateListView();
+
+            //Find all text overlays, if none create one, then deploy.
+            OverlayText_Refresh();
+            foreach (OverlayText overlay in availoverlaytexts)
+            {
+                OverlayTextWindow newWindow = new OverlayTextWindow();
+                newWindow.SetProperties(overlay);
+                newWindow.ShowInTaskbar = false;
+                textWindows.Add(newWindow);
+                newWindow.Show();
+            }
+
+            //Find all timer overlays, if none create one, then deploy.
+            OverlayTimer_Refresh();
+            foreach (OverlayTimer overlay in availoverlaytimers)
+            {
+                OverlayTimerWindow newWindow = new OverlayTimerWindow();
+                newWindow.SetProperties(overlay);
+                newWindow.ShowInTaskbar = false;
+                timerWindows.Add(newWindow);
+                newWindow.Show();
             }
 
             //Load Triggers
             UpdateTriggerView();
+
+            //Refresh Categories
+            Refresh_Categories();
 
             //Start Monitoring
             StartMonitoring();
@@ -474,8 +479,8 @@ namespace HEAP
             dballtriggers.Clear();
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
-                LiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
+                ILiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
+                ILiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
                 dballgroups = (triggergroups.FindAll()).ToList();
                 dballtriggers = (triggers.FindAll()).ToList();
             }
@@ -593,7 +598,8 @@ namespace HEAP
                 MessageBoxResult result = MessageBox.Show($"Are you sure you want to Delete {selectedCharacter}", "Confirmation", MessageBoxButton.YesNo);
                 if (result == MessageBoxResult.Yes)
                 {
-                    var dbdelete = col.Delete(Query.EQ("ProfileName", selectedCharacter));
+                    var charquery = col.Query().Where(x => x.ProfileName.Equals(selectedCharacter)).First();
+                    var dbdelete = col.Delete(charquery.Id);
                     currentSelection = null;
                     foreach (var trigger in triggers.FindAll())
                     {
@@ -669,7 +675,7 @@ namespace HEAP
             //update the monitor variable in the database in case we have to refresh the character list, then we know the current state of it's monitor.
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<CharacterProfile> profiles = db.GetCollection<CharacterProfile>("profiles");
+                ILiteCollection<CharacterProfile> profiles = db.GetCollection<CharacterProfile>("profiles");
                 CharacterProfile tochange = profiles.FindOne(Query.EQ("Name", selected.Name));
                 tochange.Monitor = selected.Monitor;
                 profiles.Update(tochange);
@@ -1967,7 +1973,7 @@ namespace HEAP
             };
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<Setting> settings = db.GetCollection<Setting>("settings");
+                ILiteCollection<Setting> settings = db.GetCollection<Setting>("settings");
                 settings.Insert(mastervolume);
                 settings.Insert(update);
                 settings.Insert(enablesound);
@@ -2149,8 +2155,9 @@ namespace HEAP
             String overlayname = (sender as Fluent.Button).Name;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
-                overlaytexts.Delete(Query.EQ("Name", overlayname));
+                ILiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
+                var overlayquery = overlaytexts.Query().Where(x => x.Name.Equals(overlayname)).First();
+                overlaytexts.Delete(overlayquery.Id);
             }
             //Kill current overlay if running
             foreach (OverlayTextWindow overlay in textWindows)
@@ -2168,8 +2175,9 @@ namespace HEAP
             String overlayname = (sender as Fluent.Button).Name;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");
-                overlaytimers.Delete(Query.EQ("Name", overlayname));
+                ILiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");
+                var timerquery = overlaytimers.Query().Where(x => x.Name.Equals(overlayname)).First();
+                overlaytimers.Delete(timerquery.Id);
             }
             //Kill current overlay if running
             List<OverlayTimerWindow> toremove = new List<OverlayTimerWindow>();
@@ -2200,7 +2208,7 @@ namespace HEAP
             }
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");
+                ILiteCollection<OverlayTimer> overlaytimers = db.GetCollection<OverlayTimer>("overlaytimers");
                 IEnumerable<OverlayTimer> overlaytimercollection = overlaytimers.FindAll();
                 if (overlaytimercollection.Count() == 0)
                 {
@@ -2245,7 +2253,7 @@ namespace HEAP
             }
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
+                ILiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
                 IEnumerable<OverlayText> overlaytextcollection = overlaytexts.FindAll();
                 if (overlaytextcollection.Count() == 0)
                 {
@@ -2290,7 +2298,7 @@ namespace HEAP
             categorycollection.Clear();
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+                ILiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
                 foreach (var category in categoriescol.FindAll())
                 {
                     category.AvailableTextOverlays = availoverlaytexts;
@@ -2358,7 +2366,7 @@ namespace HEAP
                 {
                     using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                     {
-                        LiteCollection<Category> categories = db.GetCollection<Category>("categories");
+                        ILiteCollection<Category> categories = db.GetCollection<Category>("categories");
                         CategoryWrapper removedwrapper = (CategoryWrapper)e.RemovedItems[0];
                         Category dbentry = categories.FindById(removedwrapper.CategoryItem.Id);
                         CategorySave(removedwrapper);
@@ -2376,7 +2384,7 @@ namespace HEAP
             Console.WriteLine($"New Category Name: {wrapper.CategoryItem.Name}");
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<Category> categories = db.GetCollection<Category>("categories");
+                ILiteCollection<Category> categories = db.GetCollection<Category>("categories");
                 Category updatecategory = categories.FindById(wrapper.CategoryItem.Id);
                 updatecategory = wrapper.CategoryItem;
                 int? profileindex = updatecategory.GetIndex(wrapper.SelectedOverride.ProfileName);
@@ -2418,8 +2426,8 @@ namespace HEAP
                 newcategory.Name = addcategory.textboxName.Text;
                 using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                 {
-                    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                    LiteCollection<CharacterProfile> profilecol = db.GetCollection<CharacterProfile>("profiles");
+                    ILiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+                    ILiteCollection<CharacterProfile> profilecol = db.GetCollection<CharacterProfile>("profiles");
                     foreach (var profile in profilecol.FindAll())
                     {
                         CharacterOverride newoverride = new CharacterOverride();
@@ -2437,8 +2445,8 @@ namespace HEAP
             {
                 using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                 {
-                    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                    LiteCollection<Trigger> triggerscol = db.GetCollection<Trigger>("triggers");
+                    ILiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+                    ILiteCollection<Trigger> triggerscol = db.GetCollection<Trigger>("triggers");
                     Category category = categoriescol.FindOne(Query.EQ("Name", selectedcategory));
                     Category defaultcategory = categoriescol.FindOne(Query.EQ("Name", "Default"));
                     //If a trigger is in this category, reset it's category to default
@@ -2450,7 +2458,7 @@ namespace HEAP
                             triggerscol.Update(trigger);
                         }
                     }
-                    categoriescol.Delete(Query.EQ("Name", selectedcategory));
+                    categoriescol.Delete(category.Id);
                     selectedcategory = "Default";
                     categoryindex = 0;
                     //tabcontrolCategory.SelectedIndex = categoryindex;
@@ -2809,7 +2817,7 @@ namespace HEAP
         {
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+                ILiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
                 foreach (var cat in categoriescol.FindAll())
                 {
                     if (cat.DefaultCategory)
@@ -3164,7 +3172,7 @@ namespace HEAP
         {
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
+                ILiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
                 //Determine if the group already exists
                 TriggerGroup newgroup = triggergroups.FindOne(x => x.UniqueId == (string)token.SelectToken("UniqueId"));
                 //If it doesn't exist, create a new group
@@ -3887,7 +3895,7 @@ namespace HEAP
             JArray subgroups = new JArray();
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
+                ILiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
                 group = triggergroups.FindOne(x => x.UniqueId == groupid);
                 
                 if (group.Triggers.Count > 0)
@@ -3924,7 +3932,7 @@ namespace HEAP
             Trigger exporttrigger = new Trigger();
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
+                ILiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
                 exporttrigger = triggers.FindOne(x => x.UniqueId == triggerid);
             }
             if(exporttrigger.AudioSettings.SoundFileId != null)
@@ -3998,7 +4006,7 @@ namespace HEAP
             string rval = "";
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
+                ILiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
                 rval = (triggergroups.FindById(groupid)).Parent;
             }
             return rval;
@@ -4077,7 +4085,7 @@ namespace HEAP
                                 {
                                     using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                                     {
-                                        LiteFileInfo file = db.FileStorage.FindById($"{GlobalVariables.litedbfileprefix}{soundid}");
+                                        var file = db.FileStorage.FindById($"{GlobalVariables.litedbfileprefix}{soundid}");
                                         var soundfile = archive.CreateEntry(soundid);
                                         using (var soundstream = soundfile.Open())
                                         {
@@ -4181,7 +4189,7 @@ namespace HEAP
             int charindex = fluentcategoryprofiles.SelectedIndex;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<Category> categories = db.GetCollection<Category>("categories");
+                ILiteCollection<Category> categories = db.GetCollection<Category>("categories");
                 categories.Update((Category)fluentcategories.SelectedItem);
             }
             Refresh_Categories();
@@ -4197,8 +4205,8 @@ namespace HEAP
             newcategory.Name = "NewCategory";
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                LiteCollection<CharacterProfile> profilecol = db.GetCollection<CharacterProfile>("profiles");
+                ILiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+                ILiteCollection<CharacterProfile> profilecol = db.GetCollection<CharacterProfile>("profiles");
                 Category exists = categoriescol.FindOne(x => x.Name == newcategory.Name);
                 if (exists != null)
                 {
@@ -4223,8 +4231,8 @@ namespace HEAP
             {
                 using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                 {
-                    LiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
-                    LiteCollection<Trigger> triggerscol = db.GetCollection<Trigger>("triggers");
+                    ILiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
+                    ILiteCollection<Trigger> triggerscol = db.GetCollection<Trigger>("triggers");
                     Category category = categoriescol.FindOne(Query.EQ("Name", selectedcategory.Name));
                     Category defaultcategory = categoriescol.FindOne(Query.EQ("Name", "Default"));
                     //If a trigger is in this category, reset it's category to default
@@ -4236,7 +4244,7 @@ namespace HEAP
                             triggerscol.Update(trigger);
                         }
                     }
-                    categoriescol.Delete(Query.EQ("Name", selectedcategory.Name));
+                    categoriescol.Delete(category.Id);
                 }
             }
             GenerateMasterList("CategoryRemove_Click");
@@ -4277,7 +4285,7 @@ namespace HEAP
         {
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<Setting> settings = db.GetCollection<Setting>("settings");
+                ILiteCollection<Setting> settings = db.GetCollection<Setting>("settings");
                 //update settings
                 Setting autoarchive = settings.FindOne(Query.EQ("Name", "AutoArchive"));
                 autoarchive.Value = checkboxAutoArchive.IsChecked.ToString();
@@ -4303,7 +4311,7 @@ namespace HEAP
         {
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<Setting> settings = db.GetCollection<Setting>("settings");
+                ILiteCollection<Setting> settings = db.GetCollection<Setting>("settings");
                 Setting shareuri = settings.FindOne(Query.EQ("Name", "ShareServiceURI"));
                 shareuri.Value = textboxShareURI.Text;
                 settings.Update(shareuri);
@@ -4367,7 +4375,7 @@ namespace HEAP
                     break;
             }
             String senders = programsettings.Single<Setting>(i => i.Name == "TrustedSenderList").Value;
-            if(senders != "")
+            if(!string.IsNullOrEmpty(senders))
             {
                 string[] senderarray = senders.Split(',');
                 foreach (string sender in senderarray)
@@ -4395,7 +4403,7 @@ namespace HEAP
         {
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<Setting> settings = db.GetCollection<Setting>("settings");
+                ILiteCollection<Setting> settings = db.GetCollection<Setting>("settings");
                 Setting enablesharing = settings.FindOne(Query.EQ("Name", "SharingEnabled"));
                 enablesharing.Value = checkboxEnableSharing.IsChecked.ToString();
                 settings.Update(enablesharing);
@@ -4461,7 +4469,7 @@ namespace HEAP
             {
                 using (var db = new LiteDatabase(GlobalVariables.defaultDB))
                 {
-                    LiteCollection<Setting> settings = db.GetCollection<Setting>("settings");
+                    ILiteCollection<Setting> settings = db.GetCollection<Setting>("settings");
                     Setting enablesound = settings.FindOne(Query.EQ("Name", "EnableSound"));
                     enablesound.Value = checkboxSoundEnable.IsChecked.ToString();
                     settings.Update(enablesound);
@@ -4552,13 +4560,13 @@ namespace HEAP
         private void CheckboxDarkmode_Checked(object sender, RoutedEventArgs e)
         {
             Vs2013LightTheme lighttheme = new Vs2013LightTheme();
-            dockingmanager.Theme = lighttheme;
+            //dockingmanager.Theme = lighttheme;
             Fluent.ThemeManager.ChangeTheme(this, "Light.Blue");
         }
         private void CheckboxDarkmode_Unchecked(object sender, RoutedEventArgs e)
         {
             Vs2013DarkTheme darktheme = new Vs2013DarkTheme();
-            dockingmanager.Theme = darktheme;
+            //dockingmanager.Theme = darktheme;
             Fluent.ThemeManager.ChangeTheme(this, "Dark.Blue");
         }
         #endregion

@@ -30,7 +30,7 @@ namespace HEAP
             InitializeComponent();
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
+                ILiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
                 OverlayText window = overlaytexts.FindOne(Query.EQ("Name", toedit));
                 this.Width = window.WindowWidth;
                 this.Height = window.WindowHeight;
@@ -87,7 +87,7 @@ namespace HEAP
             };
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
+                ILiteCollection<OverlayText> overlaytexts = db.GetCollection<OverlayText>("overlaytexts");
                 var getTextGroup = overlaytexts.FindOne(Query.EQ("Name", overlaytext.Name));
                 if (getTextGroup != null)
                 {

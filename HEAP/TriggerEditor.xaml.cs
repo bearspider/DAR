@@ -57,7 +57,7 @@ namespace HEAP
             datagridEarly.DataContext = dt.DefaultView;
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<TriggerGroup> groupsCol = db.GetCollection<TriggerGroup>("triggergroups");
+                ILiteCollection<TriggerGroup> groupsCol = db.GetCollection<TriggerGroup>("triggergroups");
                 var getTriggerGroup = groupsCol.FindOne(x => x.UniqueId == selectedGroup.Id);
                 selectedGroupId = getTriggerGroup.UniqueId;
             }
@@ -69,8 +69,8 @@ namespace HEAP
             LoadCharacters();
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
-                LiteCollection<Category> categories = db.GetCollection<Category>("categories");                
+                ILiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
+                ILiteCollection<Category> categories = db.GetCollection<Category>("categories");                
                 Trigger trigger = triggers.FindById(selectedTrigger);
                 Category category = categories.FindById(trigger.TriggerCategory);
                 textboxName.Text = trigger.Name;
@@ -195,8 +195,8 @@ namespace HEAP
         {
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<CharacterProfile> characterProfilesCol = db.GetCollection<CharacterProfile>("profiles");
-                LiteCollection<Category> categoriesCol = db.GetCollection<Category>("categories");
+                ILiteCollection<CharacterProfile> characterProfilesCol = db.GetCollection<CharacterProfile>("profiles");
+                ILiteCollection<Category> categoriesCol = db.GetCollection<Category>("categories");
                 var profiles = characterProfilesCol.FindAll();
                 foreach (var profile in profiles)
                 {
@@ -428,10 +428,10 @@ namespace HEAP
 
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
-                LiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
-                LiteCollection<CharacterProfile> profiles = db.GetCollection<CharacterProfile>("profiles");
-                LiteCollection<Category> categories = db.GetCollection<Category>("categories");
+                ILiteCollection<Trigger> triggers = db.GetCollection<Trigger>("triggers");
+                ILiteCollection<TriggerGroup> triggergroups = db.GetCollection<TriggerGroup>("triggergroups");
+                ILiteCollection<CharacterProfile> profiles = db.GetCollection<CharacterProfile>("profiles");
+                ILiteCollection<Category> categories = db.GetCollection<Category>("categories");
                 int categoryid = (categories.FindOne(Query.EQ("Name", comboCategory.SelectedItem.ToString()))).Id;
                 var existingTrigger = triggers.FindOne(Query.EQ("Name", textboxName.Text));
                 var characters = profiles.FindAll();

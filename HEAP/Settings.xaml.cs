@@ -32,7 +32,7 @@ namespace HEAP
             InitializeComponent();
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<Setting> settings = db.GetCollection<Setting>("settings");
+                ILiteCollection<Setting> settings = db.GetCollection<Setting>("settings");
                 foreach(Setting appsetting in settings.FindAll())
                 {
                     settinglist.Add(appsetting.Name,appsetting);
@@ -177,7 +177,7 @@ namespace HEAP
         {
             using (var db = new LiteDatabase(GlobalVariables.defaultDB))
             {
-                LiteCollection<Setting> settings = db.GetCollection<Setting>("settings");
+                ILiteCollection<Setting> settings = db.GetCollection<Setting>("settings");
                 foreach (KeyValuePair<String,Setting> appsetting in settinglist)
                 {
                     if (appsetting.Key == "TrustedSenderList")

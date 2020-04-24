@@ -37,8 +37,10 @@ namespace HEAP
     public class GlobalVariables
     {
         public static string defaultPath = @"C:\HEAP";
-        public static string defaultDB = $"{defaultPath}\\eqtriggers.db";
-        public static ConnectionString connectionstring = new ConnectionString(@"filename=""C:\HEAP\eqtriggers.db""; Connection = shared;");
+        //public static string defaultDB = $"{defaultPath}\\eqtriggers.db";
+        public static ConnectionString defaultDB = new ConnectionString($@"filename=""{defaultPath}\\eqtriggers.db""; Connection = shared; Upgrade = true");
+        //public static ConnectionString connectionstring = new ConnectionString(@"filename=""C:\HEAP\eqtriggers.db""; Connection = shared;");
+        public static string dbpath = $"{defaultPath}\\eqtriggers.db";
         public static string backupDB = $"{defaultPath}\\BackupDB";
         public static Regex eqRegex = new Regex(@"\[(?<eqtime>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\](?<stringToMatch>.*)",RegexOptions.Compiled);
         public static Regex shareRegex = new Regex(@".*?\{HEAP:(?<GUID>.*?)\}",RegexOptions.Compiled);
@@ -317,13 +319,13 @@ namespace HEAP
             }
             //Check if database exists, if it does, make a backup.
             //Else, this is a new instance.  Set the log maintenance start as today.
-            if (File.Exists(GlobalVariables.defaultDB))
+            if (File.Exists(GlobalVariables.dbpath))
             {
                 if (!Directory.Exists(GlobalVariables.backupDB))
                 {
                     Directory.CreateDirectory(GlobalVariables.backupDB);
                 }
-                File.Copy(GlobalVariables.defaultDB, (GlobalVariables.backupDB + @"\eqtriggers.db"), true);
+                File.Copy(GlobalVariables.dbpath, (GlobalVariables.backupDB + @"\eqtriggers.db"), true);
             }
             else
             {
@@ -388,7 +390,7 @@ namespace HEAP
 
             //Deploy Overlays
             //Check if no overlays exist.  If none exist, prompt the editors to create the first entries.
-            using (var db = new LiteDatabase(GlobalVariables.connectionstring))
+            using (LiteDatabase db = new LiteDatabase(GlobalVariables.defaultDB))
             {
                 ILiteCollection<CharacterProfile> dbcharacterProfiles = db.GetCollection<CharacterProfile>("profiles");
                 ILiteCollection<Category> categoriescol = db.GetCollection<Category>("categories");
@@ -417,7 +419,7 @@ namespace HEAP
                     defaultcategory.AvailableTextOverlays = availoverlaytexts;
                     categoriescol.Insert(defaultcategory);
                 }
-            }  
+            }
             //Update List View
             UpdateListView();
 
@@ -786,8 +788,8 @@ namespace HEAP
                     {
                         var line = reader.ReadLine();
                         String[] vars = line.Split(',');
-                        Tuple<String, Double> entry = new Tuple<string, double>(vars[1], Convert.ToDouble(vars[2]));
-                        masterpushbacklist.Add(vars[0], entry);
+                        //Tuple<String, Double> entry = new Tuple<string, double>(vars[1], Convert.ToDouble(vars[2]));
+                        //masterpushbacklist.Add(vars[0], entry);
                     }
                 }
             });
@@ -972,7 +974,7 @@ namespace HEAP
                                                 {
                                                     Stopwatch firetrigger = new Stopwatch();
                                                     firetrigger.Start();
-                                                    //FireTrigger(doc, character, newstring);
+                                                    FireTrigger(doc, character, newstring);
                                                     firetrigger.Stop();
                                                 }
                                             }

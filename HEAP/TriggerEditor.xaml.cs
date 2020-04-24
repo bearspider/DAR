@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Media;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -35,6 +36,8 @@ namespace HEAP
         private Audio basicAudioSettings = new Audio();
         private Audio endedEarlyAudioSettings = new Audio();
         private Audio endingEarlyAudioSettings = new Audio();
+        private Regex digestregex = new Regex(@"\[(?<digest>\w\s?\w?\s?\w?\s?\w?\s?\w?\s?\w?\s?\w?\s?)", RegexOptions.Compiled);
+
         public TriggerEditor()
         {
             InitializeComponent();
@@ -182,6 +185,16 @@ namespace HEAP
                 textboxCounterMinutes.Text = resetTimer.Minutes.ToString();
                 textboxCounterSeconds.Text = resetTimer.Seconds.ToString();
             }
+        }
+        private string CreateDigest(string searchstring)
+        {
+            string digest = "";
+            Match digestmatch = digestregex.Match(searchstring);
+            if (digestmatch.Success)
+            {
+                digest = digestmatch.Groups["digest"].Value.ToString();
+            }
+            return digest;
         }
         private int GetDuration(String hours, String minutes, String seconds)
         {
@@ -449,6 +462,7 @@ namespace HEAP
                         existingTrigger.Comments = textboxComments.Text;
                         existingTrigger.Regex = (Boolean)checkboxRegex.IsChecked;
                         existingTrigger.Fastcheck = (Boolean)checkboxFast.IsChecked;
+                        existingTrigger.Digest = CreateDigest(textboxSearch.Text);
                         existingTrigger.Parent = selectedGroupId;
                         existingTrigger.TriggerCategory = categoryid;
                         existingTrigger.Displaytext = textboxBasicDisplay.Text;
@@ -485,6 +499,7 @@ namespace HEAP
                         Comments = textboxComments.Text,
                         Regex = (Boolean)checkboxRegex.IsChecked,
                         Fastcheck = (Boolean)checkboxFast.IsChecked,
+                        Digest = CreateDigest(textboxSearch.Text),
                         UniqueId = Guid.NewGuid().ToString(),
                         Parent = selectedGroupId,
                         TriggerCategory = categoryid,

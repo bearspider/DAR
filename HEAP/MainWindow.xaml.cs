@@ -37,9 +37,7 @@ namespace HEAP
     public class GlobalVariables
     {
         public static string defaultPath = @"C:\HEAP";
-        //public static string defaultDB = $"{defaultPath}\\eqtriggers.db";
         public static ConnectionString defaultDB = new ConnectionString($@"filename=""{defaultPath}\\eqtriggers.db""; Connection = shared; Upgrade = true");
-        //public static ConnectionString connectionstring = new ConnectionString(@"filename=""C:\HEAP\eqtriggers.db""; Connection = shared;");
         public static string dbpath = $"{defaultPath}\\eqtriggers.db";
         public static string backupDB = $"{defaultPath}\\BackupDB";
         public static Regex eqRegex = new Regex(@"\[(?<eqtime>\w+\s\w+\s+\d+\s\d+:\d+:\d+\s\d+)\](?<stringToMatch>.*)",RegexOptions.Compiled);
